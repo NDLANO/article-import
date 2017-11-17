@@ -115,7 +115,7 @@ trait ConverterService {
       ArticleTitle(articleTitle.title, articleTitle.language)
     }
 
-    def toDomainContent(articleContent: api.ArticleContentV2): ArticleContent = {
+    def toDomainContent(articleContent: api.ArticleContent): ArticleContent = {
       ArticleContent(removeUnknownEmbedTagAttributes(articleContent.content), articleContent.language)
     }
 
@@ -197,8 +197,8 @@ trait ConverterService {
       api.ArticleTitle(title.title, title.language)
     }
 
-    def toApiArticleContentV2(content: ArticleContent): api.ArticleContentV2 = {
-      api.ArticleContentV2(
+    def toApiArticleContent(content: ArticleContent): api.ArticleContent = {
+      api.ArticleContent(
         content.content,
         content.language
       )
@@ -260,9 +260,66 @@ trait ConverterService {
       )
     }
 
+    def toNewApiConcept(concept: Concept, language: String): api.NewConcept = {
+      val title = findByLanguageOrBestEffort(concept.title, language).map(_.title).getOrElse("")
+      val content = findByLanguageOrBestEffort(concept.content, language).map(_.content).getOrElse("")
+
+      api.NewConcept(
+        language,
+        title,
+        content,
+        concept.copyright.map(toApiCopyright),
+      )
+    }
+
+    def toUpdateApiConcept(concept: Concept, language: String): api.UpdateConcept = {
+      val title = findByLanguageOrBestEffort(concept.title, language).map(_.title)
+      val content = findByLanguageOrBestEffort(concept.content, language).map(_.content)
+
+      api.UpdateConcept(
+        language,
+        title,
+        content,
+        concept.copyright.map(toApiCopyright),
+      )
+    }
+
     def toApiConceptTitle(title: ConceptTitle): api.ConceptTitle = api.ConceptTitle(title.title, title.language)
 
     def toApiConceptContent(title: ConceptContent): api.ConceptContent= api.ConceptContent(title.content, title.language)
+
+    def toApiNewArticle(article: Article, lang: String): api.NewArticle = {
+      api.NewArticle(
+        findByLanguageOrBestEffort(article.title, lang).map(_.value).getOrElse(""),
+        findByLanguageOrBestEffort(article.content, lang).map(_.value).getOrElse(""),
+        findByLanguageOrBestEffort(article.tags, lang).map(_.value).getOrElse(Seq.empty),
+        findByLanguageOrBestEffort(article.introduction, lang).map(_.value),
+        findByLanguageOrBestEffort(article.metaDescription, lang).map(_.value),
+        article.metaImageId,
+        findByLanguageOrBestEffort(article.visualElement, lang).map(_.value),
+        toApiCopyright(article.copyright),
+        article.requiredLibraries.map(toApiRequiredLibrary),
+        article.articleType,
+        lang
+      )
+    }
+
+    def toApiUpdateArticle(article: Article, lang: String, revision: Int): api.UpdateArticle = {
+      api.UpdateArticle(
+        revision,
+        lang,
+        findByLanguageOrBestEffort(article.title, lang).map(_.value),
+        findByLanguageOrBestEffort(article.content, lang).map(_.value),
+        findByLanguageOrBestEffort(article.tags, lang).map(_.value).getOrElse(Seq.empty),
+        findByLanguageOrBestEffort(article.introduction, lang).map(_.value),
+        findByLanguageOrBestEffort(article.metaDescription, lang).map(_.value),
+        article.metaImageId,
+        findByLanguageOrBestEffort(article.visualElement, lang).map(_.value),
+        Some(toApiCopyright(article.copyright)),
+        article.requiredLibraries.map(toApiRequiredLibrary),
+        Some(article.articleType)
+      )
+    }
 
   }
 }

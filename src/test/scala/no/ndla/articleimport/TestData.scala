@@ -24,12 +24,12 @@ object TestData {
 
   val (articleId, externalId) = (1, "751234")
 
-  val sampleArticleV2 = api.ArticleV2(
+  val sampleArticleV2 = api.Article(
     id=1,
     oldNdlaUrl = None,
     revision=1,
     title=api.ArticleTitle("title", "nb"),
-    content=api.ArticleContentV2("this is content", "nb"),
+    content=api.ArticleContent("this is content", "nb"),
     copyright = api.Copyright(api.License("licence", None, None), "origin", Seq(api.Author("developer", "Per"))),
     tags = api.ArticleTag(Seq("tag"), "nb"),
     requiredLibraries = Seq(api.RequiredLibrary("JS", "JavaScript", "url")),
@@ -73,12 +73,12 @@ object TestData {
                       |}
                     """.stripMargin
 
-  val apiArticleV2 = api.ArticleV2(
+  val apiArticleV2 = api.Article(
     articleId,
     Some(s"//red.ndla.no/node/$externalId"),
     2,
     api.ArticleTitle("title", "nb"),
-    api.ArticleContentV2("content", "nb"),
+    api.ArticleContent("content", "nb"),
     api.Copyright(api.License("by", Some("Creative Commons Attribution 2.0 Generic"), Some("https://creativecommons.org/licenses/by/2.0/")), "", Seq()),
     api.ArticleTag(Seq(), "nb"),
     Seq(),
@@ -175,7 +175,7 @@ object TestData {
     "nb"
   )
 
-  val updatedArticleV2 = api.UpdatedArticleV2(
+  val updatedArticleV2 = api.UpdateArticle(
     1,
     "nb",
     Some("updated title"),
@@ -216,12 +216,12 @@ object TestData {
     ArticleType.Standard.toString
   )
 
-  val apiArticleWithHtmlFaultV2 = api.ArticleV2(
+  val apiArticleWithHtmlFaultV2 = api.Article(
     1,
     None,
     1,
     api.ArticleTitle("test", "en"),
-    api.ArticleContentV2(
+    api.ArticleContent(
       """<ul><li><h1>Det er ikke lov å gjøre dette.</h1> Tekst utenfor.</li><li>Dette er helt ok</li></ul>
         |<ul><li><h2>Det er ikke lov å gjøre dette.</h2></li><li>Dette er helt ok</li></ul>
         |<ol><li><h3>Det er ikke lov å gjøre dette.</h3></li><li>Dette er helt ok</li></ol>
