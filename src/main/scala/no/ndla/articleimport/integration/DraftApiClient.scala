@@ -8,7 +8,7 @@
 package no.ndla.articleimport.integration
 
 import no.ndla.articleimport.ArticleImportProperties
-import no.ndla.articleimport.model.api.{NewArticle, NewConcept, NotFoundException}
+import no.ndla.articleimport.model.api.{ImportException, NewArticle, NewConcept, NotFoundException}
 import no.ndla.articleimport.model.domain.{Article, Concept, Language}
 import no.ndla.network.NdlaClient
 import no.ndla.articleimport.model.api
@@ -23,11 +23,11 @@ trait DraftApiClient {
   val draftApiClient: DraftApiClient
 
   class DraftApiClient {
+    implicit val formats = org.json4s.DefaultFormats
+
     private val DraftApiInternEndpoint = s"http://${ArticleImportProperties.DraftHost}/intern"
     private val DraftApiPublicEndpoint = s"http://${ArticleImportProperties.DraftHost}/draft-api/v1/drafts"
     private val DraftApiConceptPublicEndpoint = s"http://${ArticleImportProperties.DraftHost}/draft-api/v1/concepts"
-    private val DraftIdFromExternalIdEndpoint = s"$DraftApiInternEndpoint/external_id/:nid"
-    private val ImportAudioEndpoint = s"$DraftApiInternEndpoint/import/:external_id"
     private val DraftHealthEndpoint = s"http://${ArticleImportProperties.DraftHost}/health"
 
     def getContentByExternalId(externalId: String): Option[Article] = {
@@ -43,27 +43,30 @@ trait DraftApiClient {
     }
 
     def newArticle(article: NewArticle, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
-      implicit val formats = org.json4s.DefaultFormats
       post[api.Article, NewArticle](s"$DraftApiPublicEndpoint/", article, Seq("externalId" -> mainNodeId))
     }
 
     def newArticle(article: Article, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
-      implicit val formats = org.json4s.DefaultFormats
       val newArt = converterService.toApiNewArticle(article, article.supportedLanguages.head)
       val updateArticles = article.supportedLanguages.drop(1).zipWithIndex
           .map { case (lang, idx) => converterService.toApiUpdateArticle(article, lang, idx + 1)}
 
-      for {
-        a <- newArticle(newArt, mainNodeId, subjectIds)
-        updatedArticle <- updateArticles
-        _ <- updateArticle(updatedArticle, a.id, forceUpdate = true)
-      } yield a
+      newArticle(newArt, mainNodeId, subjectIds) match {
+        case Success(a) =>
+          val (failed, _) = updateArticles.map(u => updateArticle(u, a.id, forceUpdate = true)).partition(_.isFailure)
+          if (failed.nonEmpty) {
+            val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
+            Failure(ImportException(s"Failed to update one or more article: $failedMsgs"))
+          } else {
+            Success(a)
+          }
+        case Failure(ex) => Failure(ex)
+      }
     }
 
     def newEmptyArticle(mainNodeId: String, subjectIds: Set[String]): Try[Long] = post(s"$DraftApiInternEndpoint/empty_article", "")
 
     def updateArticle(article: api.UpdateArticle, id: Long, forceUpdate: Boolean): Try[api.Article] = {
-      implicit val formats = org.json4s.DefaultFormats
       patch[api.Article, api.UpdateArticle](s"$DraftApiPublicEndpoint/$id", article)
     }
 
@@ -74,17 +77,25 @@ trait DraftApiClient {
       }
     }
 
-    def setArticleStatus(id: Long, status: Set[String]): Try[_] = throw new NotImplementedError()
+    def updateArticle(article: Article, mainNodeId: String, forceUpdate: Boolean): Try[api.Article] = {
+      val updateArticles = article.supportedLanguages.zipWithIndex
+        .map { case (lang, idx) => converterService.toApiUpdateArticle(article, lang, idx + 1)}
+
+      val (failed, updated) = updateArticles.map(u => updateArticle(u, mainNodeId, forceUpdate)).partition(_.isFailure)
+      if (failed.nonEmpty) {
+        val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
+        Failure(ImportException(s"Failed to update one or more article: $failedMsg"))
+      } else {
+        updated.head
+      }
+    }
 
     def publishArticle(id: Long): Try[Long] = post(s"$DraftApiInternEndpoint/article/$id/publish", "")
 
-    def deleteArticle(id: Long): Try[_] = throw new NotImplementedError()
+    def deleteArticle(id: Long): Try[_] = post(s"$DraftApiPublicEndpoint/article/$id/delete", "")
 
-
-    def newOrUpdateConcept(externalId: String, article: Article): Try[Article] = throw new NotImplementedError()
 
     def newConcept(concept: NewConcept, mainNodeId: String): Try[api.Concept] = {
-      implicit val formats = org.json4s.DefaultFormats
       post[api.Concept, NewConcept](s"$DraftApiConceptPublicEndpoint/", concept, Seq("externalId" -> mainNodeId))
     }
 
@@ -92,37 +103,51 @@ trait DraftApiClient {
       val newCon: api.NewConcept = converterService.toNewApiConcept(concept, concept.supportedLanguages.headOption.getOrElse(Language.UnknownLanguage))
       val updateCons = concept.supportedLanguages.drop(1).map(l => converterService.toUpdateApiConcept(concept, l))
 
-      for {
-        c <- newConcept(newCon, mainNodeId)
-        updatedCon <- updateCons
-        _ <- updateConcept(updatedCon, c.id, forceUpdate = true)
-      } yield c
+      newConcept(newCon, mainNodeId) match {
+        case Success(c) =>
+          val (failed, _) = updateCons.map(u => updateConcept(u, c.id, forceUpdate = true)).partition(_.isFailure)
+          if (failed.nonEmpty) {
+            val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
+            Failure(ImportException(s"Failed to update one or more article: $failedMsgs"))
+          } else {
+            Success(c)
+          }
+        case Failure(ex) => Failure(ex)
+      }
     }
 
     def newEmptyConcept(mainNodeId: String): Try[Long] =
       post(s"$DraftApiInternEndpoint/empty_concept", "")
 
     def updateConcept(concept: api.UpdateConcept, id: Long, forceUpdate: Boolean): Try[api.Concept] = {
-      implicit val formats = org.json4s.DefaultFormats
       patch(s"$DraftApiInternEndpoint/$id", concept)
     }
 
     def updateConcept(concept: api.UpdateConcept, mainNodeId: String, forceUpdate: Boolean): Try[api.Concept] = {
-      val a = getConceptIdFromExternalId(mainNodeId) match {
-        case Some(id) => updateConcept(concept, id, forceUpdate))
+      getConceptIdFromExternalId(mainNodeId) match {
+        case Some(id) => updateConcept(concept, id, forceUpdate)
         case None => Failure(NotFoundException(s"No concept with external id $mainNodeId found"))
       }
     }
 
-    def setConceptStatus(id: Long, status: Set[String]): Try[_] = throw new NotImplementedError()
+    def updateConcept(concept: Concept, mainNodeId: String, forceUpdate: Boolean): Try[api.Concept] = {
+      val updateCons = concept.supportedLanguages.map(l => converterService.toUpdateApiConcept(concept, l))
+      val (failed, updated) = updateCons.map(u => updateConcept(u, mainNodeId, forceUpdate)).partition(_.isFailure)
+      if (failed.nonEmpty) {
+        val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
+        Failure(ImportException(s"Failed to update one or more article: $failedMsg"))
+      } else {
+        updated.head
+      }
+    }
 
-    def publishConcept(id: Long): Try[_] = throw new NotImplementedError()
+    def publishConcept(id: Long): Try[Long] = post(s"$DraftApiInternEndpoint/$id/publish", "")
 
     def getConceptIdFromExternalId(externalId: String): Option[Long] = {
       get[ContentId](s"$DraftApiConceptPublicEndpoint/external_id/$externalId").map(_.id).toOption
     }
 
-    def deleteConcept(id: Long): Try[_] =  throw new NotImplementedError()
+    def deleteConcept(id: Long): Try[_] = post(s"$DraftApiConceptPublicEndpoint/$id/delete", "")
 
     private def get[A](endpointUrl: String, params: Seq[(String, String)] = Seq.empty)(implicit mf: Manifest[A]): Try[A] = {
       ndlaClient.fetch[A](Http(endpointUrl).params(params))

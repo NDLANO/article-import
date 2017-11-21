@@ -108,7 +108,7 @@ trait ExtractConvertStoreContent {
         case false => draftApiClient.newArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
       }
 
-      storedArticle.map(a => draftApiClient.publishArticle(a.id.get)).flatMap(_ => storedArticle)
+      storedArticle.flatMap(a => draftApiClient.publishArticle(a.id)).map(id => article.copy(id=Some(id)))
     }
 
     private def storeConcept(concept: Concept, mainNodeNid: String, forceUpdate: Boolean): Try[Content] = {
@@ -117,7 +117,7 @@ trait ExtractConvertStoreContent {
         case false => draftApiClient.newConcept(concept, mainNodeNid)
       }
 
-      storedConcept.map(a => draftApiClient.publishConcept(a.id.get)).flatMap(_ => storedConcept)
+      storedConcept.flatMap(c => draftApiClient.publishConcept(c.id)).map(id => concept.copy(id=Some(id)))
     }
 
     private def getSubjectIds(nodeId: String): Set[String] =
