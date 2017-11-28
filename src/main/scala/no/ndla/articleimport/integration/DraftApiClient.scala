@@ -30,12 +30,12 @@ trait DraftApiClient {
     private val DraftApiConceptPublicEndpoint = s"http://${ArticleImportProperties.DraftHost}/draft-api/v1/concepts"
     private val DraftHealthEndpoint = s"http://${ArticleImportProperties.DraftHost}/health"
 
-    def getContentByExternalId(externalId: String): Option[Article] = {
+    def getContentByExternalId(externalId: String): Option[api.Article] = {
       getArticleIdFromExternalId(externalId).flatMap(getArticleFromId)
     }
 
-    def getArticleFromId(id: Long): Option[Article] = {
-      get[Article](s"$DraftApiPublicEndpoint/$id").toOption
+    private def getArticleFromId(id: Long): Option[api.Article] = {
+      get[api.Article](s"$DraftApiPublicEndpoint/$id").toOption
     }
 
     def getArticleIdFromExternalId(externalId: String): Option[Long] = {
@@ -43,7 +43,7 @@ trait DraftApiClient {
     }
 
     def newArticle(article: NewArticle, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
-      post[api.Article, NewArticle](s"$DraftApiPublicEndpoint/", article, Seq("externalId" -> mainNodeId))
+      postWithData[api.Article, NewArticle](s"$DraftApiPublicEndpoint/", article, Seq("externalId" -> mainNodeId))
     }
 
     def newArticle(article: Article, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
@@ -64,7 +64,10 @@ trait DraftApiClient {
       }
     }
 
-    def newEmptyArticle(mainNodeId: String, subjectIds: Set[String]): Try[Long] = post(s"$DraftApiInternEndpoint/empty_article", "")
+    def newEmptyArticle(mainNodeId: String, subjectIds: Set[String]): Try[Long] =
+      post(s"$DraftApiInternEndpoint/empty_article",
+        "external-id" -> mainNodeId,
+        "external-subject-ids" -> subjectIds.mkString(","))
 
     def updateArticle(article: api.UpdateArticle, id: Long, forceUpdate: Boolean): Try[api.Article] = {
       patch[api.Article, api.UpdateArticle](s"$DraftApiPublicEndpoint/$id", article)
@@ -78,8 +81,9 @@ trait DraftApiClient {
     }
 
     def updateArticle(article: Article, mainNodeId: String, forceUpdate: Boolean): Try[api.Article] = {
+      val startRevision = getContentByExternalId(mainNodeId).map(_.revision).getOrElse(1)
       val updateArticles = article.supportedLanguages.zipWithIndex
-        .map { case (lang, idx) => converterService.toApiUpdateArticle(article, lang, idx + 1)}
+        .map { case (lang, idx) => converterService.toApiUpdateArticle(article, lang, startRevision + idx)}
 
       val (failed, updated) = updateArticles.map(u => updateArticle(u, mainNodeId, forceUpdate)).partition(_.isFailure)
       if (failed.nonEmpty) {
@@ -90,13 +94,16 @@ trait DraftApiClient {
       }
     }
 
-    def publishArticle(id: Long): Try[Long] = post(s"$DraftApiInternEndpoint/article/$id/publish", "")
-
-    def deleteArticle(id: Long): Try[_] = post(s"$DraftApiPublicEndpoint/article/$id/delete", "")
+    def publishArticle(id: Long): Try[Long] = {
+      for {
+        _ <- put[ContentId](s"$DraftApiPublicEndpoint/$id/publish")
+        a <- post[ContentId](s"$DraftApiInternEndpoint/article/$id/publish")
+      } yield a.id
+    }
 
 
     def newConcept(concept: NewConcept, mainNodeId: String): Try[api.Concept] = {
-      post[api.Concept, NewConcept](s"$DraftApiConceptPublicEndpoint/", concept, Seq("externalId" -> mainNodeId))
+      postWithData[api.Concept, NewConcept](s"$DraftApiConceptPublicEndpoint/", concept, Seq("externalId" -> mainNodeId))
     }
 
     def newConcept(concept: Concept, mainNodeId: String): Try[api.Concept] = {
@@ -117,7 +124,7 @@ trait DraftApiClient {
     }
 
     def newEmptyConcept(mainNodeId: String): Try[Long] =
-      post(s"$DraftApiInternEndpoint/empty_concept", "")
+      post(s"$DraftApiInternEndpoint/empty_concept", "external-id" -> mainNodeId)
 
     def updateConcept(concept: api.UpdateConcept, id: Long, forceUpdate: Boolean): Try[api.Concept] = {
       patch(s"$DraftApiInternEndpoint/$id", concept)
@@ -141,25 +148,34 @@ trait DraftApiClient {
       }
     }
 
-    def publishConcept(id: Long): Try[Long] = post(s"$DraftApiInternEndpoint/$id/publish", "")
+    def publishConcept(id: Long): Try[Long] = {
+      post(s"$DraftApiInternEndpoint/concept/$id/publish")
+    }
 
     def getConceptIdFromExternalId(externalId: String): Option[Long] = {
       get[ContentId](s"$DraftApiConceptPublicEndpoint/external_id/$externalId").map(_.id).toOption
     }
 
-    def deleteConcept(id: Long): Try[_] = post(s"$DraftApiConceptPublicEndpoint/$id/delete", "")
-
     private def get[A](endpointUrl: String, params: Seq[(String, String)] = Seq.empty)(implicit mf: Manifest[A]): Try[A] = {
       ndlaClient.fetch[A](Http(endpointUrl).params(params))
     }
 
-    private def post[A, B <: AnyRef](endpointUrl: String, data: B, params: Seq[(String, String)] = Seq.empty)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
+    private def post[A](endpointUrl: String, params: (String, String)*)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
+      ndlaClient.fetch[A](Http(endpointUrl).method("POST").params(params.toMap))
+    }
+
+    private def postWithData[A, B <: AnyRef](endpointUrl: String, data: B, params: Seq[(String, String)] = Seq.empty)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
       ndlaClient.fetch[A](
         Http(endpointUrl)
           .postData(write(data))
           .method("POST")
           .header("content-type", "application/json")
+          .params(params.toMap)
       )
+    }
+
+    private def put[A](endpointUrl: String)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
+      ndlaClient.fetch[A](Http(endpointUrl).method("PUT"))
     }
 
     private def patch[A, B <: AnyRef](endpointUrl: String, data: B, params: Seq[(String, String)] = Seq.empty)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {

@@ -10,8 +10,8 @@ package no.ndla.articleimport.service.converters.contentbrowser
 
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.DraftApiClient
-import no.ndla.articleimport.model.api.ImportException
-import no.ndla.articleimport.model.domain._
+import no.ndla.articleimport.model.api.{Article, Concept, ImportException}
+import no.ndla.articleimport.model.domain.{ImportStatus, Language, RequiredLibrary}
 import no.ndla.articleimport.service.converters.HtmlTagGenerator
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
 
@@ -75,8 +75,8 @@ trait GeneralContentConverterModule {
         case (None, None) =>
           logger.info(s"Article with node id $mainNodeId does not exist. Importing it!")
           extractConvertStoreContent.processNode(mainNodeId, importStatus) match {
-            case Success((c: Article, is)) => Success(c.id, None, is)
-            case Success((c: Concept, is)) => Success(None, c.id, is)
+            case Success((c: Article, is)) => Success(Some(c.id), None, is)
+            case Success((c: Concept, is)) => Success(None, Some(c.id), is)
             case Failure(ex) => Failure(ex)
           }
         case (Some(articleId), _) => Success(Some(articleId), None, importStatus)

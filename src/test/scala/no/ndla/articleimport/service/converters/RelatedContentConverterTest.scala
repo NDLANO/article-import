@@ -33,8 +33,8 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     val origContent = "<section><h1>hmm</h1></section>"
 
     when(extractConvertStoreContent
-      .processNode(any[String], any[ImportStatus], any[Boolean])).thenReturn(Success((TestData.sampleArticleWithByNcSa.copy(id=Some(1)), ImportStatus.empty)))
-      .thenReturn(Success((TestData.sampleArticleWithByNcSa.copy(id=Some(2)), ImportStatus.empty)))
+      .processNode(any[String], any[ImportStatus], any[Boolean])).thenReturn(Success((TestData.sampleApiArticle.copy(id = 1: Long), ImportStatus.empty)))
+      .thenReturn(Success((TestData.sampleApiArticle.copy(id=2), ImportStatus.empty)))
 
     val expectedContent = origContent + s"""<section><$ResourceHtmlEmbedTag $DataArticleIds="1,2" $DataResource="$RelatedContent"></section>"""
 
@@ -44,8 +44,8 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
 
   test("convert should return a Failure if trying to link to a concept as related content") {
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus], any[Boolean]))
-      .thenReturn(Success((TestData.sampleConcept.copy(id=Some(1)), ImportStatus.empty)))
-      .thenReturn(Success((TestData.sampleArticleWithByNcSa.copy(id=Some(2)), ImportStatus.empty)))
+      .thenReturn(Success((TestData.sampleApiConcept.copy(id=1), ImportStatus.empty)))
+      .thenReturn(Success((TestData.sampleApiArticle.copy(id=2), ImportStatus.empty)))
 
     val result = RelatedContentConverter.convert(languageContent, ImportStatus.empty)
     result should equal (Failure(ImportException("Failed to import one or more related contents: Related content points to a concept. This should not be legal, no?")))
@@ -62,7 +62,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     val origContent = "<section><h1>hmm</h1></section>"
 
     when(extractService.getNodeType("5678")).thenReturn(Some("link"))
-    when(extractConvertStoreContent.processNode(any[String], any[ImportStatus], any[Boolean])).thenReturn(Success((TestData.sampleArticleWithByNcSa.copy(id=Some(1)), ImportStatus.empty)))
+    when(extractConvertStoreContent.processNode(any[String], any[ImportStatus], any[Boolean])).thenReturn(Success((TestData.sampleApiArticle.copy(id=1), ImportStatus.empty)))
 
     val expectedContent = origContent + s"""<section><$ResourceHtmlEmbedTag $DataArticleIds="1" $DataResource="$RelatedContent"></section>"""
 

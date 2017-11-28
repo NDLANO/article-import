@@ -29,7 +29,7 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
   val sampleFagstoff2 = NodeGeneralContent(nodeId, nodeId2, "Tittel", "Innhald", "nn")
   val sampleNodeToConvert = NodeToConvert(Seq(ArticleTitle("title", "en")), Seq(), "publicdomain", Seq(), Seq(), "fagstoff", "fagstoff", new Date(0), new Date(1), ArticleType.Standard)
   val sampleContent = TestData.sampleContent.copy(content="<div>sample content</div>")
-  val sampleArticle = TestData.sampleArticleWithByNcSa
+  val sampleArticle = TestData.sampleApiArticle
 
   val generalContentConverter = new GeneralContentConverter {
     override val typeName: String = "test"
@@ -65,7 +65,7 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
     val expectedResult = s"<details><summary>Tittel</summary>${sampleFagstoff1.content}</details>"
 
     when(extractService.getNodeGeneralContent(nodeId)).thenReturn(Seq(sampleFagstoff1, sampleFagstoff2))
-    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(sampleArticle.id)
+    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(Some(sampleArticle.id))
     when(draftApiClient.getConceptIdFromExternalId(nodeId)).thenReturn(None)
     val Success((result, requiredLibraries, status)) = generalContentConverter.convert(content, ImportStatus.empty)
 
@@ -81,7 +81,7 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
     val expectedResult = s""" <$ResourceHtmlEmbedTag data-content-id="1" data-link-text="Tittel" data-resource="content-link" />"""
 
     when(extractService.getNodeGeneralContent(nodeId)).thenReturn(Seq(sampleFagstoff1, sampleFagstoff2))
-    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(sampleArticle.id)
+    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(Some(sampleArticle.id))
     when(draftApiClient.getConceptIdFromExternalId(nodeId)).thenReturn(None)
     val Success((result, requiredLibraries, status)) = generalContentConverter.convert(content, ImportStatus.empty)
 
@@ -96,7 +96,7 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
     val expectedResult = s""" <$ResourceHtmlEmbedTag data-content-id="1" data-link-text="Tittel" data-resource="content-link" />"""
 
     when(extractService.getNodeGeneralContent(nodeId)).thenReturn(Seq(sampleFagstoff1, sampleFagstoff2))
-    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(sampleArticle.id)
+    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(Some(sampleArticle.id))
     when(draftApiClient.getConceptIdFromExternalId(nodeId)).thenReturn(None)
     val Success((result, requiredLibraries, status)) = generalContentConverter.convert(content, ImportStatus.empty)
 
@@ -111,7 +111,7 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
     val expectedResult = s""" <$ResourceHtmlEmbedTag data-content-id="1" data-link-text="Tittel" data-resource="content-link" />"""
 
     when(extractService.getNodeGeneralContent(nodeId)).thenReturn(Seq(sampleFagstoff1, sampleFagstoff2))
-    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(sampleArticle.id)
+    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(Some(sampleArticle.id))
     when(draftApiClient.getConceptIdFromExternalId(nodeId)).thenReturn(None)
 
     val Success((result, requiredLibraries, status)) = generalContentConverter.convert(content, ImportStatus.empty)
@@ -130,7 +130,7 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeGeneralContent(nodeId)).thenReturn(Seq(sampleFagstoff1, sampleFagstoff2))
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
     when(draftApiClient.getConceptIdFromExternalId(nodeId)).thenReturn(None)
-    when(extractConvertStoreContent.processNode(nodeId, ImportStatus(Seq(), Set(nodeId2)))).thenReturn(Try((TestData.sampleArticleWithByNcSa.copy(id=Some(newNodeid)), ImportStatus(Seq(), Set(nodeId2, nodeId)))))
+    when(extractConvertStoreContent.processNode(nodeId, ImportStatus(Seq(), Set(nodeId2)))).thenReturn(Try((TestData.sampleApiArticle.copy(id=newNodeid), ImportStatus(Seq(), Set(nodeId2, nodeId)))))
 
     val Success((result, _, status)) = generalContentConverter.convert(content, ImportStatus(Seq.empty, Set(nodeId2)))
 

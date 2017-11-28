@@ -39,7 +39,7 @@ class InternControllerTest extends UnitSuite with TestEnvironment with ScalatraF
 
   test("That POST /import/:node_id returns a json status-object on success") {
     val newNodeId: Long = 4444
-    val newArticle = TestData.sampleArticleWithByNcSa.copy(id=Some(newNodeId))
+    val newArticle = TestData.sampleApiArticle.copy(id=newNodeId)
     when(extractConvertStoreContent.processNode(nodeId, false)).thenReturn(Try((newArticle, ImportStatus.empty)))
 
     post(s"/import/$nodeId", "forceUpdate" -> "false") {
