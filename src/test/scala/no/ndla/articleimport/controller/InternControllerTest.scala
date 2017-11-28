@@ -40,7 +40,7 @@ class InternControllerTest extends UnitSuite with TestEnvironment with ScalatraF
   test("That POST /import/:node_id returns a json status-object on success") {
     val newNodeId: Long = 4444
     val newArticle = TestData.sampleApiArticle.copy(id=newNodeId)
-    when(extractConvertStoreContent.processNode(nodeId, false)).thenReturn(Try((newArticle, ImportStatus.empty)))
+    when(extractConvertStoreContent.processNode(nodeId)).thenReturn(Try((newArticle, ImportStatus.empty)))
 
     post(s"/import/$nodeId", "forceUpdate" -> "false") {
       status should equal(200)
@@ -50,7 +50,7 @@ class InternControllerTest extends UnitSuite with TestEnvironment with ScalatraF
   }
 
   test("That POST /import/:node_id status code is 500 with a message if processNode fails") {
-    when(extractConvertStoreContent.processNode(nodeId, false)).thenReturn(Failure(new RuntimeException("processNode failed")))
+    when(extractConvertStoreContent.processNode(nodeId)).thenReturn(Failure(new RuntimeException("processNode failed")))
 
     post(s"/import/$nodeId", "forceUpdate" -> "false") {
       status should equal(500)

@@ -100,7 +100,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   }
 
   test("That ETL returns a Failure if failed to persist the converted article") {
-    when(draftApiClient.updateArticle(any[Article], any[String], any[Boolean])).thenReturn(Failure(new OptimisticLockException()))
+    when(draftApiClient.updateArticle(any[Article], any[String])).thenReturn(Failure(new OptimisticLockException()))
     when(draftApiClient.getArticleIdFromExternalId(sampleNode.contents.head.nid)).thenReturn(Some(1: Long))
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
     when(draftApiClient.newArticle(any[Article], any[String], any[Set[String]])).thenReturn(Failure(new HttpRequestException("store")))
@@ -120,10 +120,11 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   }
 
   test("Articles should be force-updated if flag is set") {
+    reset(draftApiClient)
     val sampleArticle = TestData.sampleApiArticle
     when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty.addVisitedNode(nodeId))).thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2)))))
-    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(Some(1: Long))
-    when(draftApiClient.updateArticle(any[Article], any[String], any[Boolean])).thenReturn(Success(TestData.sampleApiArticle))
+    when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(Some(1: Long))
+    when(draftApiClient.updateArticle(any[Article], any[String])).thenReturn(Success(TestData.sampleApiArticle))
 
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
     when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(1: Long))
@@ -131,7 +132,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty, forceUpdateArticles = true)
     status should equal(ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId), Some(sampleArticle.id), false))
 
-    verify(draftApiClient, times(1)).updateArticle(any[Article], any[String], Matchers.eq(true))
+    verify(draftApiClient, times(1)).updateArticle(any[Article], any[String])
   }
 
   test("Articles should not be force-updated if flag is not set") {
@@ -139,14 +140,14 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     reset(draftApiClient)
     when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty.addVisitedNode(nodeId))).thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2)))))
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(Some(1: Long))
-    when(draftApiClient.updateArticle(any[Article], any[String], any[Boolean])).thenReturn(Success(TestData.sampleApiArticle))
+    when(draftApiClient.updateArticle(any[Article], any[String])).thenReturn(Success(TestData.sampleApiArticle))
 
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
     when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(1: Long))
 
     val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty)
     status should equal(ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId), Some(sampleArticle.id), false))
-    verify(draftApiClient, times(1)).updateArticle(any[Article], any[String], Matchers.eq(false))
+    verify(draftApiClient, times(1)).updateArticle(any[Article], any[String])
   }
 
 }

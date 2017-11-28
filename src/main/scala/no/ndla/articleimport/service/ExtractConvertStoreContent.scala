@@ -26,8 +26,8 @@ trait ExtractConvertStoreContent {
   val extractConvertStoreContent: ExtractConvertStoreContent
 
   class ExtractConvertStoreContent extends LazyLogging {
-    def processNode(externalId: String, forceUpdateArticles: Boolean): Try[(ApiContent, ImportStatus)] =
-      processNode(externalId, ImportStatus.empty, forceUpdateArticles)
+    def processNode(externalId: String): Try[(ApiContent, ImportStatus)] =
+      processNode(externalId, ImportStatus.empty)
 
     def processNode(externalId: String, importStatus: ImportStatus = ImportStatus.empty, forceUpdateArticles: Boolean = false): Try[(ApiContent, ImportStatus)] = {
       if (importStatus.visitedNodes.contains(externalId)) {
@@ -48,7 +48,7 @@ trait ExtractConvertStoreContent {
 
       for {
         (convertedContent, updatedImportStatus) <- converterService.toDomainArticle(node, importStatus)
-        content <- store(convertedContent, mainNodeId, forceUpdateArticles)
+        content <- store(convertedContent, mainNodeId)
       } yield (content, updatedImportStatus.addMessage(s"Successfully imported node $externalId: ${content.id}").setArticleId(content.id))
     }
 
@@ -68,25 +68,25 @@ trait ExtractConvertStoreContent {
       }
     }
 
-    private def store(content: Content, mainNodeId: String, forceUpdateArticle: Boolean): Try[ApiContent] = {
+    private def store(content: Content, mainNodeId: String): Try[ApiContent] = {
       content match {
-        case article: Article => storeArticle(article, mainNodeId, forceUpdateArticle)
-        case concept: Concept => storeConcept(concept, mainNodeId, forceUpdateArticle)
+        case article: Article => storeArticle(article, mainNodeId)
+        case concept: Concept => storeConcept(concept, mainNodeId)
       }
     }
 
-    private def storeArticle(article: Article, mainNodeNid: String, forceUpdate: Boolean): Try[ApiContent] = {
+    private def storeArticle(article: Article, mainNodeNid: String): Try[ApiContent] = {
       val storedArticle = draftApiClient.getArticleIdFromExternalId(mainNodeNid).isDefined match {
-        case true => draftApiClient.updateArticle(article, mainNodeNid, forceUpdate)
+        case true => draftApiClient.updateArticle(article, mainNodeNid)
         case false => draftApiClient.newArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
       }
 
       storedArticle.flatMap(a => draftApiClient.publishArticle(a.id)).flatMap(_ => storedArticle)
     }
 
-    private def storeConcept(concept: Concept, mainNodeNid: String, forceUpdate: Boolean): Try[ApiContent] = {
+    private def storeConcept(concept: Concept, mainNodeNid: String): Try[ApiContent] = {
       val storedConcept = draftApiClient.getConceptIdFromExternalId(mainNodeNid).isDefined match {
-        case true => draftApiClient.updateConcept(concept, mainNodeNid, forceUpdate)
+        case true => draftApiClient.updateConcept(concept, mainNodeNid)
         case false => draftApiClient.newConcept(concept, mainNodeNid)
       }
 

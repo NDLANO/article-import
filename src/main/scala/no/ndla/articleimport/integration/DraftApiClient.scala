@@ -53,7 +53,7 @@ trait DraftApiClient {
 
       newArticle(newArt, mainNodeId, subjectIds) match {
         case Success(a) =>
-          val (failed, _) = updateArticles.map(u => updateArticle(u, a.id, forceUpdate = true)).partition(_.isFailure)
+          val (failed, _) = updateArticles.map(u => updateArticle(u, a.id)).partition(_.isFailure)
           if (failed.nonEmpty) {
             val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
             Failure(ImportException(s"Failed to update one or more article: $failedMsgs"))
@@ -69,23 +69,23 @@ trait DraftApiClient {
         "external-id" -> mainNodeId,
         "external-subject-ids" -> subjectIds.mkString(","))
 
-    def updateArticle(article: api.UpdateArticle, id: Long, forceUpdate: Boolean): Try[api.Article] = {
+    def updateArticle(article: api.UpdateArticle, id: Long): Try[api.Article] = {
       patch[api.Article, api.UpdateArticle](s"$DraftApiPublicEndpoint/$id", article)
     }
 
-    def updateArticle(article: api.UpdateArticle, mainNodeId: String, forceUpdate: Boolean): Try[api.Article] = {
+    def updateArticle(article: api.UpdateArticle, mainNodeId: String): Try[api.Article] = {
       getArticleIdFromExternalId(mainNodeId) match {
-        case Some(id) => updateArticle(article, id, forceUpdate = true)
+        case Some(id) => updateArticle(article, id)
         case None => Failure(NotFoundException(s"No article with external id $mainNodeId found"))
       }
     }
 
-    def updateArticle(article: Article, mainNodeId: String, forceUpdate: Boolean): Try[api.Article] = {
+    def updateArticle(article: Article, mainNodeId: String): Try[api.Article] = {
       val startRevision = getContentByExternalId(mainNodeId).map(_.revision).getOrElse(1)
       val updateArticles = article.supportedLanguages.zipWithIndex
         .map { case (lang, idx) => converterService.toApiUpdateArticle(article, lang, startRevision + idx)}
 
-      val (failed, updated) = updateArticles.map(u => updateArticle(u, mainNodeId, forceUpdate)).partition(_.isFailure)
+      val (failed, updated) = updateArticles.map(u => updateArticle(u, mainNodeId)).partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
         Failure(ImportException(s"Failed to update one or more article: $failedMsg"))
@@ -112,7 +112,7 @@ trait DraftApiClient {
 
       newConcept(newCon, mainNodeId) match {
         case Success(c) =>
-          val (failed, _) = updateCons.map(u => updateConcept(u, c.id, forceUpdate = true)).partition(_.isFailure)
+          val (failed, _) = updateCons.map(u => updateConcept(u, c.id)).partition(_.isFailure)
           if (failed.nonEmpty) {
             val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
             Failure(ImportException(s"Failed to update one or more article: $failedMsgs"))
@@ -126,20 +126,20 @@ trait DraftApiClient {
     def newEmptyConcept(mainNodeId: String): Try[Long] =
       post(s"$DraftApiInternEndpoint/empty_concept", "external-id" -> mainNodeId)
 
-    def updateConcept(concept: api.UpdateConcept, id: Long, forceUpdate: Boolean): Try[api.Concept] = {
+    def updateConcept(concept: api.UpdateConcept, id: Long): Try[api.Concept] = {
       patch(s"$DraftApiInternEndpoint/$id", concept)
     }
 
-    def updateConcept(concept: api.UpdateConcept, mainNodeId: String, forceUpdate: Boolean): Try[api.Concept] = {
+    def updateConcept(concept: api.UpdateConcept, mainNodeId: String): Try[api.Concept] = {
       getConceptIdFromExternalId(mainNodeId) match {
-        case Some(id) => updateConcept(concept, id, forceUpdate)
+        case Some(id) => updateConcept(concept, id)
         case None => Failure(NotFoundException(s"No concept with external id $mainNodeId found"))
       }
     }
 
-    def updateConcept(concept: Concept, mainNodeId: String, forceUpdate: Boolean): Try[api.Concept] = {
+    def updateConcept(concept: Concept, mainNodeId: String): Try[api.Concept] = {
       val updateCons = concept.supportedLanguages.map(l => converterService.toUpdateApiConcept(concept, l))
-      val (failed, updated) = updateCons.map(u => updateConcept(u, mainNodeId, forceUpdate)).partition(_.isFailure)
+      val (failed, updated) = updateCons.map(u => updateConcept(u, mainNodeId)).partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
         Failure(ImportException(s"Failed to update one or more article: $failedMsg"))
