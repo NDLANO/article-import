@@ -14,6 +14,7 @@ import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.ArticleImportProperties.{CorrelationIdHeader, CorrelationIdKey}
 import no.ndla.articleimport.model.api.{AccessDeniedException, Error, ImportException, ImportExceptions, NotFoundException, OptimisticLockException, ValidationError}
 import no.ndla.articleimport.model.domain.{ImportError, emptySomeToNone}
+import no.ndla.network.model.HttpRequestException
 import no.ndla.network.{ApplicationUrl, AuthUser, CorrelationID}
 import no.ndla.validation.{ValidationException, ValidationMessage}
 import org.apache.logging.log4j.ThreadContext
@@ -50,6 +51,13 @@ abstract class NdlaController extends ScalatraServlet with NativeJsonSupport wit
     case o: OptimisticLockException => Conflict(body=Error(Error.RESOURCE_OUTDATED, o.getMessage))
     case i: ImportExceptions => UnprocessableEntity(body=ImportError(i.message, i.errors.map(_.getMessage)))
     case im: ImportException =>  UnprocessableEntity(body=ImportError(messages=Seq(im.message)))
+    case h: HttpRequestException =>
+      h.httpResponse match {
+        case Some(resp) if resp.is4xx => BadRequest(body=resp.body)
+        case _ =>
+          logger.error(s"Problem with remote service: ${h.getMessage}")
+          BadGateway(body=Error.GenericError)
+      }
     case t: Throwable =>
       logger.error(Error.GenericError.toString, t)
       InternalServerError(body=Error.GenericError)

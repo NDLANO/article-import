@@ -23,7 +23,7 @@ class BegrepConverterModuleTest extends UnitSuite with TestEnvironment {
   val content = ContentBrowser(contentString, "nb")
 
   test("begrep should be imported and inserted as an embed tag in the article") {
-    when(extractConvertStoreContent.processNode(nodeId, ImportStatus.empty)).thenReturn(Success((TestData.sampleConcept, ImportStatus.empty)))
+    when(extractConvertStoreContent.processNode(nodeId, ImportStatus.empty)).thenReturn(Success((TestData.sampleApiConcept, ImportStatus.empty)))
 
     val expectedResult = s"""<$ResourceHtmlEmbedTag data-content-id="1" data-link-text="$linkText" data-resource="concept" />"""
     val Success((result, requiredLibs, _)) = BegrepConverter.convert(content, ImportStatus.empty)
@@ -33,7 +33,7 @@ class BegrepConverterModuleTest extends UnitSuite with TestEnvironment {
   }
 
   test("begrepconverter should return a failure if node is not a begrep") {
-    when(extractConvertStoreContent.processNode(nodeId, ImportStatus.empty)).thenReturn(Success((TestData.sampleArticleWithByNcSa, ImportStatus.empty)))
+    when(extractConvertStoreContent.processNode(nodeId, ImportStatus.empty)).thenReturn(Success((TestData.sampleApiArticle, ImportStatus.empty)))
     val result = BegrepConverter.convert(content, ImportStatus.empty)
 
     result.isFailure should be (true)

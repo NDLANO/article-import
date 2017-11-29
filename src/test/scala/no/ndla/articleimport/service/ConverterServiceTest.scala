@@ -39,7 +39,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     val node = sampleNode.copy(contents=List(contentNode))
     val expedtedResult = s"<section>$initialContent</section>"
 
-    when(extractConvertStoreContent.processNode("4321")).thenReturn(Try(TestData.sampleArticleWithPublicDomain, ImportStatus.empty))
+    when(extractConvertStoreContent.processNode("4321")).thenReturn(Try(TestData.sampleApiArticle, ImportStatus.empty))
 
     val Success((result: Article, status)) = service.toDomainArticle(node, ImportStatus.empty)
 

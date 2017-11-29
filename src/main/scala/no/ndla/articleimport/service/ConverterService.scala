@@ -28,7 +28,6 @@ trait ConverterService {
 
   class ConverterService extends LazyLogging {
 
-
     def toDomainArticle(nodeToConvert: NodeToConvert, importStatus: ImportStatus): Try[(Content, ImportStatus)] = {
       val nodeIdsToImport = nodeToConvert.contents.map(_.nid).toSet
 
@@ -105,17 +104,34 @@ trait ConverterService {
       )
     }
 
+    private def toDomainAuthor(author: Author): Author = {
+      val creatorMap = (oldCreatorTypes zip creatorTypes).toMap.withDefaultValue(None)
+      val processorMap = (oldProcessorTypes zip processorTypes).toMap.withDefaultValue(None)
+      val rightsholderMap = (oldRightsholderTypes zip rightsholderTypes).toMap.withDefaultValue(None)
+
+      (creatorMap(author.`type`.toLowerCase), processorMap(author.`type`.toLowerCase), rightsholderMap(author.`type`.toLowerCase)) match {
+        case (t: String, None, None) => Author(t.capitalize, author.name)
+        case (None, t: String, None) => Author(t.capitalize, author.name)
+        case (None, None, t: String) => Author(t.capitalize, author.name)
+        case (_, _, _) => Author(author.`type`, author.name)
+      }
+    }
+
     private def toDomainCopyright(license: String, authors: Seq[Author]): Copyright = {
-      val origin = authors.find(author => author.`type`.toLowerCase == "opphavsmann").map(_.name).getOrElse("")
-      val authorsExcludingOrigin = authors.filterNot(x => x.name != origin && x.`type` == "opphavsmann")
-      Copyright(license, origin, authorsExcludingOrigin)
+      val origin = authors.find(author => author.`type`.toLowerCase == "opphavsmann").map(_.name)
+      val creators = authors.filter(a => oldCreatorTypes.contains(a.`type`.toLowerCase)).map(toDomainAuthor)
+      // Filters out processor authors with old type `redaksjonelt` during import process since `redaksjonelt` exists both in processors and creators.
+      val processors = authors.filter(a => oldProcessorTypes.contains(a.`type`.toLowerCase)).filterNot(a => a.`type`.toLowerCase == "redaksjonelt").map(toDomainAuthor)
+      val rightsholders = authors.filter(a => oldRightsholderTypes.contains(a.`type`.toLowerCase)).map(toDomainAuthor)
+
+      Copyright(license, origin, creators, processors, rightsholders, None, None, None)
     }
 
     def toDomainTitle(articleTitle: api.ArticleTitle): ArticleTitle = {
       ArticleTitle(articleTitle.title, articleTitle.language)
     }
 
-    def toDomainContent(articleContent: api.ArticleContentV2): ArticleContent = {
+    def toDomainContent(articleContent: api.ArticleContent): ArticleContent = {
       ArticleContent(removeUnknownEmbedTagAttributes(articleContent.content), articleContent.language)
     }
 
@@ -167,10 +183,6 @@ trait ConverterService {
       }
     }
 
-   def toDomainCopyright(copyright: api.Copyright): Copyright = {
-      Copyright(copyright.license.license, copyright.origin, copyright.authors.map(toDomainAuthor))
-    }
-
     def toDomainAuthor(author: api.Author): Author = {
       Author(author.`type`, author.name)
     }
@@ -197,8 +209,8 @@ trait ConverterService {
       api.ArticleTitle(title.title, title.language)
     }
 
-    def toApiArticleContentV2(content: ArticleContent): api.ArticleContentV2 = {
-      api.ArticleContentV2(
+    def toApiArticleContent(content: ArticleContent): api.ArticleContent = {
+      api.ArticleContent(
         content.content,
         content.language
       )
@@ -206,9 +218,14 @@ trait ConverterService {
 
     def toApiCopyright(copyright: Copyright): api.Copyright = {
       api.Copyright(
-        toApiLicense(copyright.license),
+        Some(toApiLicense(copyright.license)),
         copyright.origin,
-        copyright.authors.map(toApiAuthor)
+        copyright.creators.map(toApiAuthor),
+        copyright.processors.map(toApiAuthor),
+        copyright.rightsholders.map(toApiAuthor),
+        copyright.agreementId,
+        copyright.validFrom,
+        copyright.validTo
       )
     }
 
@@ -260,9 +277,66 @@ trait ConverterService {
       )
     }
 
+    def toNewApiConcept(concept: Concept, language: String): api.NewConcept = {
+      val title = findByLanguageOrBestEffort(concept.title, language).map(_.title).getOrElse("")
+      val content = findByLanguageOrBestEffort(concept.content, language).map(_.content).getOrElse("")
+
+      api.NewConcept(
+        language,
+        title,
+        content,
+        concept.copyright.map(toApiCopyright)
+      )
+    }
+
+    def toUpdateApiConcept(concept: Concept, language: String): api.UpdateConcept = {
+      val title = findByLanguageOrBestEffort(concept.title, language).map(_.title)
+      val content = findByLanguageOrBestEffort(concept.content, language).map(_.content)
+
+      api.UpdateConcept(
+        language,
+        title,
+        content,
+        concept.copyright.map(toApiCopyright)
+      )
+    }
+
     def toApiConceptTitle(title: ConceptTitle): api.ConceptTitle = api.ConceptTitle(title.title, title.language)
 
     def toApiConceptContent(title: ConceptContent): api.ConceptContent= api.ConceptContent(title.content, title.language)
+
+    def toApiNewArticle(article: Article, lang: String): api.NewArticle = {
+      api.NewArticle(
+        findByLanguageOrBestEffort(article.title, lang).map(_.value).getOrElse(""),
+        findByLanguageOrBestEffort(article.content, lang).map(_.value).getOrElse(""),
+        findByLanguageOrBestEffort(article.tags, lang).map(_.value).getOrElse(Seq.empty),
+        findByLanguageOrBestEffort(article.introduction, lang).map(_.value),
+        findByLanguageOrBestEffort(article.metaDescription, lang).map(_.value),
+        article.metaImageId,
+        findByLanguageOrBestEffort(article.visualElement, lang).map(_.value),
+        toApiCopyright(article.copyright),
+        article.requiredLibraries.map(toApiRequiredLibrary),
+        article.articleType,
+        lang
+      )
+    }
+
+    def toApiUpdateArticle(article: Article, lang: String, revision: Int): api.UpdateArticle = {
+      api.UpdateArticle(
+        revision,
+        lang,
+        findByLanguageOrBestEffort(article.title, lang).map(_.value),
+        findByLanguageOrBestEffort(article.content, lang).map(_.value),
+        findByLanguageOrBestEffort(article.tags, lang).map(_.value).getOrElse(Seq.empty),
+        findByLanguageOrBestEffort(article.introduction, lang).map(_.value),
+        findByLanguageOrBestEffort(article.metaDescription, lang).map(_.value),
+        article.metaImageId,
+        findByLanguageOrBestEffort(article.visualElement, lang).map(_.value),
+        Some(toApiCopyright(article.copyright)),
+        article.requiredLibraries.map(toApiRequiredLibrary),
+        Some(article.articleType)
+      )
+    }
 
   }
 }

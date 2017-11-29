@@ -29,7 +29,10 @@ case class Article(id: Option[Long],
                    created: Date,
                    updated: Date,
                    updatedBy: String,
-                   articleType: String) extends Content
+                   articleType: String) extends Content {
+  lazy val supportedLanguages: Set[String] =
+    (content union title union tags union visualElement union introduction union metaDescription).map(_.language).toSet
+}
 
 
 object ArticleType extends Enumeration {

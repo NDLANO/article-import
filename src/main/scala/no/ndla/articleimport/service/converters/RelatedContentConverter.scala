@@ -11,7 +11,8 @@ import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration.{ConverterModule, DraftApiClient, LanguageContent, MigrationApiClient}
 import no.ndla.articleimport.model.api.ImportException
-import no.ndla.articleimport.model.domain.{Article, Concept, ImportStatus}
+import no.ndla.articleimport.model.api.{Article, Concept}
+import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
 import no.ndla.articleimport.ArticleImportProperties.supportedContentTypes
 
@@ -65,7 +66,7 @@ trait RelatedContentConverter {
     val (importSuccesses, importFailures) = importedArticles.partition(_.isSuccess)
 
     if (importFailures.isEmpty) {
-      val ids = importSuccesses.map(_.get.id.get).toSet
+      val ids = importSuccesses.map(_.get.id).toSet
       Success(HtmlTagGenerator.buildRelatedContent(ids), updatedStatus)
     } else {
       val importErrorMsgs = importFailures.map(_.failed.get.getMessage).mkString(", ")

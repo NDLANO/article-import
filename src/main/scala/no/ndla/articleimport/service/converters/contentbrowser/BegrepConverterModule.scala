@@ -9,8 +9,8 @@
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import com.typesafe.scalalogging.LazyLogging
-import no.ndla.articleimport.model.api.ImportException
-import no.ndla.articleimport.model.domain.{Article, Concept, ImportStatus, RequiredLibrary}
+import no.ndla.articleimport.model.api.{ImportException, Article, Concept}
+import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
 import no.ndla.articleimport.service.ExtractConvertStoreContent
 import no.ndla.articleimport.service.converters.HtmlTagGenerator
 import no.ndla.validation.ValidationException
@@ -27,7 +27,7 @@ trait BegrepConverterModule {
       val nodeId = content.get("nid")
       extractConvertStoreContent.processNode(nodeId, importStatus) match {
         case Success((c: Concept, is)) =>
-          val embedContent = HtmlTagGenerator.buildConceptEmbedContent(c.id.get, content.get("link_text"))
+          val embedContent = HtmlTagGenerator.buildConceptEmbedContent(c.id, content.get("link_text"))
           Success((embedContent, Seq.empty, is.addMessage(s"Imported concept with id ${c.id}")))
 
         case Success((x: Article, _)) =>
