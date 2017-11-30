@@ -10,6 +10,7 @@ package no.ndla.articleimport
 
 import com.amazonaws.services.s3.AmazonS3Client
 import com.typesafe.scalalogging.LazyLogging
+import no.ndla.articleimport.auth.{Role, User}
 import no.ndla.articleimport.controller._
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.service._
@@ -43,7 +44,9 @@ trait TestEnvironment
     with TagsService
     with HtmlTagGenerator
     with HTMLCleaner
-    with Clock {
+    with Clock
+    with User
+    with Role {
 
   val internController = mock[InternController]
 
@@ -82,5 +85,7 @@ trait TestEnvironment
   val draftApiClient = mock[DraftApiClient]
 
   val clock = mock[SystemClock]
+  val authUser = mock[AuthUser]
+  val authRole = new AuthRole
 
 }
