@@ -711,4 +711,12 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
     result.metaDescription should equal("Hei dette er et mindre enn tegn &lt;start&gt; nice")
   }
 
+  test("Comments in style tag should be removed") {
+    val originalContent = """<section><p>Text here</p><style><!-- This is a weird thing to do --></style></section>"""
+    val expectedContent = """<section><p>Text here</p></section>"""
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = originalContent), defaultImportStatus)
+    result.content should equal(expectedContent)
+  }
+
 }
