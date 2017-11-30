@@ -147,7 +147,8 @@ trait HTMLCleaner {
         val caption = el.attr("data-caption")
         el.replaceWith(new TextNode(caption, ""))
       }
-      extractElement(element).replace(NBSP, " ").trim
+      val extracted = extractElement(element)
+      new TextNode(extracted, "").toString.replace("&nbsp;", " ").trim
     }
 
     private def removeAttributes(el: Element): Seq[String] = {
@@ -162,7 +163,7 @@ trait HTMLCleaner {
       while (i < node.childNodes().size()) {
         val child = node.childNode(i)
 
-        child.nodeName() == "#comment" match {
+        child.nodeName() == "#comment"  || child.nodeName() == "#data" match {
           case true => child.remove()
           case false => {
             i += 1
