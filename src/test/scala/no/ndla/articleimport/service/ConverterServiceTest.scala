@@ -13,7 +13,6 @@ import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.service.converters.TableConverter
-import no.ndla.validation.{Attributes, ResourceType}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import org.mockito.Mockito._
