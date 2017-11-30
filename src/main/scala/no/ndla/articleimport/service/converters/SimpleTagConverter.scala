@@ -22,6 +22,7 @@ object SimpleTagConverter extends ConverterModule {
     val element = stringToJsoupDocument(content.content)
     convertDivs(element)
     convertPres(element)
+    convertHeadings(element)
     Success(content.copy(content = jsoupDocumentToString(element)), importStatus)
   }
 
@@ -45,6 +46,15 @@ object SimpleTagConverter extends ConverterModule {
     }
   }
 
+  def convertHeadings(el: Element) {
+    for (el <- el.select("h1, h2, h3, h4, h5, h6").asScala) {
+      el.className() match {
+        case "frame" => replaceTagWithClass(el, "div", "c-bodybox")
+        case _ => el
+      }
+    }
+  }
+
   private def handle_hide(el: Element) {
     replaceTag(el, "details")
     el.select("a.re-collapse").remove()
@@ -53,6 +63,11 @@ object SimpleTagConverter extends ConverterModule {
     val summary = el.text()
     el.html(s"<summary>$summary</summary>")
     el.append(details)
+  }
+
+  private def replaceTagWithClass(el: Element, replacementTag: String, className: String) {
+    replaceTag(el, replacementTag)
+    el.addClass(className)
   }
 
   private def replaceTag(el: Element, replacementTag: String) {
