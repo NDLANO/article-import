@@ -11,7 +11,7 @@ package no.ndla.articleimport.service.converters
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration.{ConverterModule, LanguageContent}
 import no.ndla.articleimport.model.domain.ImportStatus
-import no.ndla.validation.Attributes.XMLNsAttribute
+import no.ndla.validation.TagAttributes.XMLNsAttribute
 import org.jsoup.nodes.Element
 
 import scala.collection.JavaConverters._

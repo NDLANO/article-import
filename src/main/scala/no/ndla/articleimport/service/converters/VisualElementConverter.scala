@@ -7,15 +7,14 @@
 
 package no.ndla.articleimport.service.converters
 
+import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration.{AudioApiClient, ConverterModule, ImageApiClient, LanguageContent}
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
 import no.ndla.articleimport.service.ExtractService
 import no.ndla.articleimport.service.converters.contentbrowser.{AudioConverterModule, H5PConverterModule, ImageConverterModule, VideoConverterModule}
-import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
-import no.ndla.validation.Attributes
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
 trait VisualElementConverter {
