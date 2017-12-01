@@ -7,11 +7,11 @@
 
 package no.ndla.articleimport.service.converters
 
-import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.LanguageIngress
-import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.model.domain.ImportStatus
-import no.ndla.validation.Attributes
+import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
+import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
+import no.ndla.validation.TagAttributes
 
 import scala.util.Success
 
@@ -561,7 +561,7 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
         |</section>""".stripMargin.replace("\n", "")
     val expectedContent =
       s"""<section>
-         |<ol ${Attributes.DataType}="letters">
+         |<ol ${TagAttributes.DataType}="letters">
          |<li>Definer makt</li>
          |</ol>
          |</section>""".stripMargin.replace("\n", "")
@@ -725,6 +725,51 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
 
     val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = originalContent), defaultImportStatus)
     result.content should equal(expectedContent)
+  }
+
+  test("spans with lang attribute is kept as <span> tags") {
+    val content =
+      s"""<section>
+         |<span xml:lang="nb" lang="nb">HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+    val expectedContentResult =
+      s"""<section>
+         |<span lang="nb">HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = content), defaultImportStatus)
+
+    result.content should equal(expectedContentResult)
+  }
+
+  test("spans with xml:lang attribute is kept as <span> tags and lang tag is inserted") {
+    val content =
+      s"""<section>
+         |<span xml:lang="nb">HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+    val expectedContentResult =
+      s"""<section>
+         |<span lang="nb">HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = content), defaultImportStatus)
+
+    result.content should equal(expectedContentResult)
+  }
+
+  test("spans with with no attributes is unwrapped") {
+    val content =
+      s"""<section>
+         |<span>HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+    val expectedContentResult =
+      s"""<section>
+         |<p>HyperText Markup Language</p>
+         |</section>""".stripMargin.replace("\n", "")
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = content), defaultImportStatus)
+
+    result.content should equal(expectedContentResult)
   }
 
   test("HTML characters are escaped in meta description") {
