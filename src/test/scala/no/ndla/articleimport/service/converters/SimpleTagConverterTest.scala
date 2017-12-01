@@ -9,8 +9,8 @@
 package no.ndla.articleimport.service.converters
 
 import no.ndla.articleimport.integration.LanguageContent
-import no.ndla.articleimport.{TestData, UnitSuite}
 import no.ndla.articleimport.model.domain.ImportStatus
+import no.ndla.articleimport.{TestData, UnitSuite}
 
 import scala.util.Success
 
@@ -136,6 +136,30 @@ class SimpleTagConverterTest extends UnitSuite {
     val Success((content, _)) = result
     content.content should equal (expectedResult)
     content.requiredLibraries.size should equal (0)
+  }
+
+  test("That h3s with class 'frame' convertet to div and class c-bodybox") {
+    val initialContent = TestData.sampleContent.copy(content = """<h3 class="frame"><p>De fire friheter</p><p>Fri bevegelse av</p><ul><li>varer</li><li>tjenester</li><li>kapital </li><li>personer</li></ul></h2>""")
+    val expectedResult = """<div class="c-bodybox"><p>De fire friheter</p><p>Fri bevegelse av</p><ul><li>varer</li><li>tjenester</li><li>kapital </li><li>personer</li></ul></div>"""
+    val Success((result, _)) = SimpleTagConverter.convert(initialContent, ImportStatus.empty)
+
+    result.content should equal(expectedResult)
+  }
+
+  test("That h2s with class 'frame' convertet to div and class c-bodybox") {
+    val initialContent = TestData.sampleContent.copy(content = """<h2 class="frame"><p>De fire friheter</p><p>Fri bevegelse av</p><ul><li>varer</li><li>tjenester</li><li>kapital </li><li>personer</li></ul></h2>""")
+    val expectedResult = """<div class="c-bodybox"><p>De fire friheter</p><p>Fri bevegelse av</p><ul><li>varer</li><li>tjenester</li><li>kapital </li><li>personer</li></ul></div>"""
+    val Success((result, _)) = SimpleTagConverter.convert(initialContent, ImportStatus.empty)
+
+    result.content should equal(expectedResult)
+  }
+
+  test("That h2s with no class is untouched") {
+    val initialContent = TestData.sampleContent.copy(content = """<h2>Test</h2>""")
+    val expectedResult = """<h2>Test</h2>"""
+    val Success((result, _)) = SimpleTagConverter.convert(initialContent, ImportStatus.empty)
+
+    result.content should equal(expectedResult)
   }
 
 }
