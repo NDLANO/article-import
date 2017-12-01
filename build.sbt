@@ -34,7 +34,7 @@ lazy val article_import= (project in file(".")).
     scalacOptions := Seq("-target:jvm-1.8", "-unchecked", "-deprecation", "-feature"),
     libraryDependencies ++= Seq(
       "ndla" %% "network" % "0.26",
-      "ndla" %% "mapping" % "0.4",
+      "ndla" %% "mapping" % "0.6",
       "ndla" %% "validation" % "0.3",
       "joda-time" % "joda-time" % "2.8.2",
       "org.scalatra" %% "scalatra" % Scalatraversion,
