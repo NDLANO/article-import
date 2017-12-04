@@ -58,6 +58,7 @@ object ComponentRegistry
   lazy val audioApiClient = new AudioApiClient
   lazy val imageApiClient = new ImageApiClient
   lazy val draftApiClient = new DraftApiClient
+  lazy val h5pApiClient = new H5PApiClient
 
   lazy val extractService = new ExtractService
   lazy val converterService = new ConverterService

@@ -11,6 +11,7 @@ package no.ndla.articleimport.service.converters.contentbrowser
 import no.ndla.articleimport.{TestEnvironment, UnitSuite}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.model.domain.ImportStatus
+import org.mockito.Mockito._
 
 import scala.util.Success
 
@@ -21,11 +22,12 @@ class H5PConverterTest extends UnitSuite with TestEnvironment {
   val content = ContentBrowser(contentString, "nb")
 
   test("That contentbrowser strings of type 'h5p_content' returns an iframe") {
-    val expectedResult = s"""<$ResourceHtmlEmbedTag data-resource="h5p" data-url="//ndla.no/h5p/embed/1234" />"""
+    when(h5pApiClient.getViewFromOldId("1234")).thenReturn(Some(s"//ndla.no/h5p/embed/1234"))
+    val expectedResult = s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="//ndla.no/h5p/embed/1234" />"""
     val Success((result, requiredLibraries, errors)) = H5PConverter.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     errors.messages.length should equal(0)
-    requiredLibraries.length should be > 0
+    requiredLibraries.length should equal(0)
   }
 }

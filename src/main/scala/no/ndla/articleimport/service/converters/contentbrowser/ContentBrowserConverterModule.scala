@@ -36,12 +36,12 @@ trait ContentBrowserConverterModules
   with ImageApiClient
   with LenkeConverterModule
   with H5PConverterModule
-  with JoubelH5PConverterModule
   with OppgaveConverterModule
   with FagstoffConverterModule
   with NonExistentNodeConverterModule
   with AudioConverterModule
   with AudioApiClient
+  with H5PApiClient
   with AktualitetConverterModule
   with VideoConverterModule
   with FilConverterModule
