@@ -7,8 +7,8 @@
 
 package no.ndla.articleimport.service.converters.contentbrowser
 
-import com.netaporter.uri.dsl._
 import com.netaporter.uri.Uri.parse
+import com.netaporter.uri.dsl._
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
@@ -72,6 +72,7 @@ trait LenkeConverterModule {
       val KahootUrlPattern = """(.*\.?play.kahoot.it)""".r
       val vimeoProUrlPattern = """(.*\.?vimeopro.com)""".r
       val khanAcademyUrlPattern = """(.*\.?khanacademy.org)""".r
+      val kunnskapsFilmUrlPattern = """(.*\.?kunnskapsfilm.no)""".r
 
       val (embedTag, requiredLibs) = url.host.getOrElse("") match {
         case NRKUrlPattern(_) => getNrkEmbedTag(embedCode, url)
@@ -81,6 +82,7 @@ trait LenkeConverterModule {
         case KahootUrlPattern(_) => getKahootEmbedTag(embedCode)
         case vimeoProUrlPattern(_) => getVimeoProEmbedTag(embedCode)
         case khanAcademyUrlPattern(_) => getKhanAcademyEmbedTag(embedCode)
+        case kunnskapsFilmUrlPattern(_) => getKunnskapsFilmEmbedTag(embedCode)
         case _ => (HtmlTagGenerator.buildExternalInlineEmbedContent(url), None)
       }
       (embedTag, requiredLibs, message :: Nil)
@@ -135,6 +137,13 @@ trait LenkeConverterModule {
       val (src, width, height) = (doc.attr("src"), doc.attr("width"), doc.attr("height"))
 
       (HtmlTagGenerator.buildKhanAcademyInlineContent(src, width, height), None)
+    }
+
+    def getKunnskapsFilmEmbedTag(embedCode: String): (String, Option[RequiredLibrary]) = {
+      val doc = Jsoup.parseBodyFragment(embedCode).select("iframe").first()
+      val src = doc.attr("src")
+
+      (HtmlTagGenerator.buildExternalInlineEmbedContent(src), None)
     }
 
     private def insertDetailSummary(url: String, embedCode: String, cont: ContentBrowser): (String, Option[RequiredLibrary], Seq[String]) = {
