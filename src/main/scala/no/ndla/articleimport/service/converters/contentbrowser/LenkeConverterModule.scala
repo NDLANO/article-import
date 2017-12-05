@@ -85,6 +85,11 @@ trait LenkeConverterModule {
         case KahootUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Kahoot)
         case vimeoProUrlPattern(_) => getVimeoProEmbedTag(embedCode)
         case khanAcademyUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.KhanAcademy)
+        case tv2SkoleUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Tv2Skole)
+        case vgNoUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.VgNo)
+        case scribdUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Scribd)
+        case vgNoUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.VgNo)
+        case scribdUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Scribd)
         case _ => (HtmlTagGenerator.buildExternalInlineEmbedContent(url), None)
       }
       (embedTag, requiredLibs, message :: Nil)
