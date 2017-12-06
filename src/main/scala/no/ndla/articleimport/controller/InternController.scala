@@ -8,6 +8,7 @@
 
 package no.ndla.articleimport.controller
 
+import no.ndla.articleimport.auth.{Role, User}
 import no.ndla.articleimport.service._
 import org.json4s.{DefaultFormats, Formats}
 
@@ -16,14 +17,19 @@ import scala.util.{Failure, Success}
 trait InternController {
   this: ExtractService
     with ConverterService
-    with ExtractConvertStoreContent =>
+    with ExtractConvertStoreContent
+    with User
+    with Role =>
   val internController: InternController
 
   class InternController extends NdlaController {
 
     protected implicit override val jsonFormats: Formats = DefaultFormats
+    private val RoleDraftWrite = "drafts:write"
 
     post("/import/:external_id") {
+      authUser.assertHasId()
+      authRole.assertHasRole(RoleDraftWrite)
       val externalId = params("external_id")
 
       extractConvertStoreContent.processNode(externalId) match {

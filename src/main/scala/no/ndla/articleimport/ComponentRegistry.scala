@@ -11,6 +11,7 @@ package no.ndla.articleimport
 import com.amazonaws.regions.Regions
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.typesafe.scalalogging.LazyLogging
+import no.ndla.articleimport.auth.{Role, User}
 import no.ndla.articleimport.controller.{HealthController, InternController}
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.service._
@@ -43,6 +44,8 @@ object ComponentRegistry
     with RelatedContentConverter
     with HtmlTagGenerator
     with Clock
+    with Role
+    with User
 {
 
   lazy val extractConvertStoreContent = new ExtractConvertStoreContent
@@ -80,4 +83,6 @@ object ComponentRegistry
   )
 
   lazy val clock = new SystemClock
+  lazy val authRole = new AuthRole
+  lazy val authUser = new AuthUser
 }
