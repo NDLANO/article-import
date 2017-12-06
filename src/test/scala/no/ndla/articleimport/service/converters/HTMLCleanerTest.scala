@@ -7,11 +7,11 @@
 
 package no.ndla.articleimport.service.converters
 
-import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.LanguageIngress
-import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.model.domain.ImportStatus
-import no.ndla.validation.Attributes
+import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
+import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
+import no.ndla.validation.TagAttributes
 
 import scala.util.Success
 
@@ -561,7 +561,7 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
         |</section>""".stripMargin.replace("\n", "")
     val expectedContent =
       s"""<section>
-         |<ol ${Attributes.DataType}="letters">
+         |<ol ${TagAttributes.DataType}="letters">
          |<li>Definer makt</li>
          |</ol>
          |</section>""".stripMargin.replace("\n", "")
@@ -702,6 +702,81 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
 
     val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = originalContent), defaultImportStatus)
     result.content should equal(expectedContent)
+  }
+
+  test("Nested section tags should be converted to divs") {
+    val originalContent = """<section><p>Hey Mister man</p><section><p>We dont need no mister</p></section><p>Yes</p></section>"""
+    val expectedContent = """<section><p>Hey Mister man</p><div><p>We dont need no mister</p></div><p>Yes</p></section>"""
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = originalContent), defaultImportStatus)
+    result.content should equal(expectedContent)
+  }
+
+  test("HTML characters are escaped in meta description even if they are in html tags") {
+    val content = TestData.sampleContent.copy(content = "", metaDescription ="""Hei dette er et mindre enn tegn &lt;start&gt; nice""")
+    val Success((result, _)) = htmlCleaner.convert(content, defaultImportStatus)
+
+    result.metaDescription should equal("Hei dette er et mindre enn tegn &lt;start&gt; nice")
+  }
+
+  test("Comments in style tag should be removed") {
+    val originalContent = """<section><p>Text here</p><style><!-- This is a weird thing to do --></style></section>"""
+    val expectedContent = """<section><p>Text here</p></section>"""
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = originalContent), defaultImportStatus)
+    result.content should equal(expectedContent)
+  }
+
+  test("spans with lang attribute is kept as <span> tags") {
+    val content =
+      s"""<section>
+         |<span xml:lang="nb" lang="nb">HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+    val expectedContentResult =
+      s"""<section>
+         |<span lang="nb">HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = content), defaultImportStatus)
+
+    result.content should equal(expectedContentResult)
+  }
+
+  test("spans with xml:lang attribute is kept as <span> tags and lang tag is inserted") {
+    val content =
+      s"""<section>
+         |<span xml:lang="nb">HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+    val expectedContentResult =
+      s"""<section>
+         |<span lang="nb">HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = content), defaultImportStatus)
+
+    result.content should equal(expectedContentResult)
+  }
+
+  test("spans with with no attributes is unwrapped") {
+    val content =
+      s"""<section>
+         |<span>HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+    val expectedContentResult =
+      s"""<section>
+         |<p>HyperText Markup Language</p>
+         |</section>""".stripMargin.replace("\n", "")
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = content), defaultImportStatus)
+
+    result.content should equal(expectedContentResult)
+  }
+
+  test("HTML characters are escaped in meta description") {
+    val content = TestData.sampleContent.copy(content = "", metaDescription ="""Hei dette er et mindre enn tegn <> nice""")
+    val Success((result, _)) = htmlCleaner.convert(content, defaultImportStatus)
+
+    result.metaDescription should equal("Hei dette er et mindre enn tegn &lt;&gt; nice")
   }
 
 }

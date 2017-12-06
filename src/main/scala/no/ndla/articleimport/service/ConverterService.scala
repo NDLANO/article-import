@@ -17,7 +17,7 @@ import no.ndla.articleimport.model.api
 import no.ndla.articleimport.model.domain.Language._
 import no.ndla.articleimport.model.domain._
 import no.ndla.mapping.License.getLicense
-import no.ndla.validation.{Attributes, EmbedTagRules, HtmlRules, ResourceType}
+import no.ndla.validation.{HtmlTagRules, EmbedTagRules, ResourceType, TagAttributes}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -195,9 +195,9 @@ trait ConverterService {
     private def removeUnknownEmbedTagAttributes(html: String): String = {
       val document = stringToJsoupDocument(html)
       document.select("embed").asScala.map(el => {
-        ResourceType.valueOf(el.attr(Attributes.DataResource.toString))
+        ResourceType.valueOf(el.attr(TagAttributes.DataResource.toString))
           .map(EmbedTagRules.attributesForResourceType)
-          .map(knownAttributes => HtmlRules.removeIllegalAttributes(el, knownAttributes.all.map(_.toString)))
+          .map(knownAttributes => HtmlTagRules.removeIllegalAttributes(el, knownAttributes.all.map(_.toString)))
       })
 
       jsoupDocumentToString(document)

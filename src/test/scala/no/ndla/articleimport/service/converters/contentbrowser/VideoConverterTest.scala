@@ -31,7 +31,7 @@ class VideoConverterTest extends UnitSuite with TestEnvironment {
     val Success((result, requiredLibraries, _)) = VideoConverter.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    requiredLibraries.length should equal(1)
+    requiredLibraries.length should equal(0)
   }
 
   test("Captions are added as video metadata") {
@@ -40,7 +40,7 @@ class VideoConverterTest extends UnitSuite with TestEnvironment {
     val Success((result, requiredLibraries, _)) = VideoConverter.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    requiredLibraries.length should equal(1)
+    requiredLibraries.length should equal(0)
   }
 
   test("the contentbrowser should be converted to a link if insertion method is link") {
