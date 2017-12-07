@@ -62,12 +62,13 @@ class VisualElementConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("visual element of type h5p should be converted to embed tag") {
-    val expectedResult = s"""<$ResourceHtmlEmbedTag data-resource="h5p" data-url="//ndla.no/h5p/embed/1234" />"""
+    when(h5pApiClient.getViewFromOldId("1234")).thenReturn(Some(s"//ndla.no/h5p/embed/1234"))
+    val expectedResult = s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="//ndla.no/h5p/embed/1234" />"""
 
     when(extractService.getNodeType(nodeId)).thenReturn(Some("h5p_content"))
     val Success((res, _)) = VisualElementConverter.convert(sampleArticle, ImportStatus.empty)
     res.visualElement should equal (Some(expectedResult))
-    res.requiredLibraries.size should be (1)
+    res.requiredLibraries.size should be (0)
   }
 
   test("An empty visual element should return Success without any content modifications") {
@@ -94,8 +95,9 @@ class VisualElementConverterTest extends UnitSuite with TestEnvironment {
 
   test("If h5p visual element exists in content, it should be removed") {
     val visId = "6789"
+    when(h5pApiClient.getViewFromOldId("6789")).thenReturn(Some(s"//ndla.no/h5p/embed/$visId"))
     when(extractService.getNodeType(visId)).thenReturn(Some("h5p_content"))
-    val Success((result, _)) = VisualElementConverter.convert(sampleArticle.copy(content=s"""<$ResourceHtmlEmbedTag data-resource="h5p" data-url="//ndla.no/h5p/embed/$visId" />${sampleArticle.content}""", visualElement=Some(visId)), ImportStatus.empty)
+    val Success((result, _)) = VisualElementConverter.convert(sampleArticle.copy(content=s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="//ndla.no/h5p/embed/$visId" />${sampleArticle.content}""", visualElement=Some(visId)), ImportStatus.empty)
     result.content should equal (sampleArticle.content)
   }
 
