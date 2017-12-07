@@ -143,6 +143,7 @@ trait LenkeConverterModule {
       val doc = Jsoup.parseBodyFragment(embedCode).select("iframe").first()
       val src = doc.attr("src")
 
+      // Since all sources seem to be vimeo urls, we simply use data-resource=external to let oembed-proxy handle these
       (HtmlTagGenerator.buildExternalInlineEmbedContent(src), None)
     }
 
