@@ -9,6 +9,7 @@
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import com.typesafe.scalalogging.LazyLogging
+import no.ndla.articleimport.auth.User
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
 import no.ndla.articleimport.service._
@@ -54,3 +55,4 @@ trait ContentBrowserConverterModules
   with DraftApiClient
   with HtmlTagGenerator
   with UnsupportedContentConverter
+  with User

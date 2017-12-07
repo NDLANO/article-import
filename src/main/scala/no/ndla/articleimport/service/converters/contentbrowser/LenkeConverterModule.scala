@@ -7,8 +7,8 @@
 
 package no.ndla.articleimport.service.converters.contentbrowser
 
-import com.netaporter.uri.dsl._
 import com.netaporter.uri.Uri.parse
+import com.netaporter.uri.dsl._
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
@@ -76,6 +76,7 @@ trait LenkeConverterModule {
       val tv2SkoleUrlPattern = """(.*\.?tv2skole.no)""".r
       val vgNoUrlPattern = """(.*\.?vg.no)""".r
       val scribdUrlPattern = """(.*\.?scribd.com)""".r
+      val kunnskapsFilmUrlPattern = """(.*\.?kunnskapsfilm.no)""".r
 
       val (embedTag, requiredLibs) = url.host.getOrElse("") match {
         case NRKUrlPattern(_) => getNrkEmbedTag(embedCode, url)
@@ -90,6 +91,7 @@ trait LenkeConverterModule {
         case scribdUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Scribd)
         case vgNoUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.VgNo)
         case scribdUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Scribd)
+        case kunnskapsFilmUrlPattern(_) => getKunnskapsFilmEmbedTag(embedCode)
         case _ => (HtmlTagGenerator.buildExternalInlineEmbedContent(url), None)
       }
       (embedTag, requiredLibs, message :: Nil)
@@ -114,6 +116,14 @@ trait LenkeConverterModule {
       val doc = Jsoup.parseBodyFragment(embedCode).select("iframe").first()
       val src = doc.attr("src")
 
+      (HtmlTagGenerator.buildExternalInlineEmbedContent(src), None)
+    }
+
+    def getKunnskapsFilmEmbedTag(embedCode: String): (String, Option[RequiredLibrary]) = {
+      val doc = Jsoup.parseBodyFragment(embedCode).select("iframe").first()
+      val src = doc.attr("src")
+
+      // Since all sources seem to be vimeo urls, we simply use data-resource=external to let oembed-proxy handle these
       (HtmlTagGenerator.buildExternalInlineEmbedContent(src), None)
     }
 

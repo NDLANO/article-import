@@ -10,6 +10,7 @@ package no.ndla.articleimport.service
 
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.ArticleImportProperties._
+import no.ndla.articleimport.auth.User
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration.ImageApiClient
 import no.ndla.articleimport.model.api
@@ -23,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
 trait ConverterService {
-  this: ConverterModules with ExtractConvertStoreContent with ImageApiClient with Clock =>
+  this: ConverterModules with ExtractConvertStoreContent with ImageApiClient with Clock with User =>
   val converterService: ConverterService
 
   class ConverterService extends LazyLogging {
@@ -86,7 +87,7 @@ trait ConverterService {
         None,
         nodeToConvert.created,
         nodeToConvert.updated,
-        "content-import-client",
+        authUser.userOrClientid(),
         nodeToConvert.articleType.toString
       )
     }
