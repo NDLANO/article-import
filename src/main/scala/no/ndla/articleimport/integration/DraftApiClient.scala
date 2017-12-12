@@ -43,7 +43,9 @@ trait DraftApiClient {
     }
 
     def newArticle(article: NewArticle, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
-      postWithData[api.Article, NewArticle](s"$DraftApiPublicEndpoint/", article, Seq("externalId" -> mainNodeId))
+      postWithData[api.Article, NewArticle](s"$DraftApiPublicEndpoint/",
+        article,
+        "externalId" -> mainNodeId, "externalSubjectIds" -> subjectIds.mkString(","))
     }
 
     def newArticle(article: Article, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
@@ -103,7 +105,7 @@ trait DraftApiClient {
 
 
     def newConcept(concept: NewConcept, mainNodeId: String): Try[api.Concept] = {
-      postWithData[api.Concept, NewConcept](s"$DraftApiConceptPublicEndpoint/", concept, Seq("externalId" -> mainNodeId))
+      postWithData[api.Concept, NewConcept](s"$DraftApiConceptPublicEndpoint/", concept, "externalId" -> mainNodeId)
     }
 
     def newConcept(concept: Concept, mainNodeId: String): Try[api.Concept] = {
@@ -164,7 +166,7 @@ trait DraftApiClient {
       ndlaClient.fetchWithForwardedAuth[A](Http(endpointUrl).method("POST").params(params.toMap))
     }
 
-    private def postWithData[A, B <: AnyRef](endpointUrl: String, data: B, params: Seq[(String, String)] = Seq.empty)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
+    private def postWithData[A, B <: AnyRef](endpointUrl: String, data: B, params: (String, String)*)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
       ndlaClient.fetchWithForwardedAuth[A](
         Http(endpointUrl)
           .postData(write(data))
