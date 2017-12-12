@@ -8,7 +8,7 @@
 package no.ndla.articleimport.integration
 
 import no.ndla.articleimport.ArticleImportProperties
-import no.ndla.articleimport.model.api.{ImportException, NewArticle, NewConcept, NotFoundException}
+import no.ndla.articleimport.model.api._
 import no.ndla.articleimport.model.domain.{Article, Concept, Language}
 import no.ndla.network.NdlaClient
 import no.ndla.articleimport.model.api
@@ -55,7 +55,7 @@ trait DraftApiClient {
 
       newArticle(newArt, mainNodeId, subjectIds) match {
         case Success(a) =>
-          val (failed, _) = updateArticles.map(u => updateArticle(u, a.id)).partition(_.isFailure)
+          val (failed, _) = updateArticles.map(u => updateArticle(u, a.id, mainNodeId, subjectIds)).partition(_.isFailure)
           if (failed.nonEmpty) {
             val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
             Failure(ImportException(s"Failed to update one or more article: $failedMsgs"))
@@ -66,28 +66,31 @@ trait DraftApiClient {
       }
     }
 
-    def newEmptyArticle(mainNodeId: String, subjectIds: Set[String]): Try[Long] =
-      post(s"$DraftApiInternEndpoint/empty_article",
-        "external-id" -> mainNodeId,
-        "external-subject-ids" -> subjectIds.mkString(","))
+    def newEmptyArticle(mainNodeId: String, subjectIds: Set[String]): Try[ContentId] =
+      post[ContentId](s"$DraftApiInternEndpoint/empty_article",
+        "externalId" -> mainNodeId,
+        "externalSubjectIds" -> subjectIds.mkString(","))
 
-    def updateArticle(article: api.UpdateArticle, id: Long): Try[api.Article] = {
-      patch[api.Article, api.UpdateArticle](s"$DraftApiPublicEndpoint/$id", article)
+    def updateArticle(article: api.UpdateArticle, id: Long, mainNodeId: String, externalSubjectIds: Set[String]): Try[api.Article] = {
+      patch[api.Article, api.UpdateArticle](
+        s"$DraftApiPublicEndpoint/$id",
+        article,
+        "externalId" -> mainNodeId, "externalSubjectIds" -> externalSubjectIds.mkString(","))
     }
 
-    def updateArticle(article: api.UpdateArticle, mainNodeId: String): Try[api.Article] = {
+    def updateArticle(article: api.UpdateArticle, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
       getArticleIdFromExternalId(mainNodeId) match {
-        case Some(id) => updateArticle(article, id)
+        case Some(id) => updateArticle(article, id, mainNodeId, subjectIds)
         case None => Failure(NotFoundException(s"No article with external id $mainNodeId found"))
       }
     }
 
-    def updateArticle(article: Article, mainNodeId: String): Try[api.Article] = {
+    def updateArticle(article: Article, mainNodeId: String, externalSubjectIds: Set[String]): Try[api.Article] = {
       val startRevision = getContentByExternalId(mainNodeId).map(_.revision).getOrElse(1)
       val updateArticles = article.supportedLanguages.zipWithIndex
         .map { case (lang, idx) => converterService.toApiUpdateArticle(article, lang, startRevision + idx)}
 
-      val (failed, updated) = updateArticles.map(u => updateArticle(u, mainNodeId)).partition(_.isFailure)
+      val (failed, updated) = updateArticles.map(u => updateArticle(u, mainNodeId, externalSubjectIds)).partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
         Failure(ImportException(s"Failed to update one or more article: $failedMsg"))
@@ -96,11 +99,11 @@ trait DraftApiClient {
       }
     }
 
-    def publishArticle(id: Long): Try[Long] = {
+    def publishArticle(id: Long): Try[ArticleStatus] = {
       for {
-        _ <- put[ContentId](s"$DraftApiPublicEndpoint/$id/publish")
-        a <- post[ContentId](s"$DraftApiInternEndpoint/article/$id/publish")
-      } yield a.id
+        _ <- put[ArticleStatus](s"$DraftApiPublicEndpoint/$id/publish")
+        status <- post[ArticleStatus](s"$DraftApiInternEndpoint/article/$id/publish")
+      } yield status
     }
 
 
@@ -126,7 +129,7 @@ trait DraftApiClient {
     }
 
     def newEmptyConcept(mainNodeId: String): Try[Long] =
-      post(s"$DraftApiInternEndpoint/empty_concept", "external-id" -> mainNodeId)
+      post(s"$DraftApiInternEndpoint/empty_concept", "externalId" -> mainNodeId)
 
     def updateConcept(concept: api.UpdateConcept, id: Long): Try[api.Concept] = {
       patch(s"$DraftApiInternEndpoint/$id", concept)
@@ -180,12 +183,13 @@ trait DraftApiClient {
       ndlaClient.fetchWithForwardedAuth[A](Http(endpointUrl).method("PUT"))
     }
 
-    private def patch[A, B <: AnyRef](endpointUrl: String, data: B, params: Seq[(String, String)] = Seq.empty)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
+    private def patch[A, B <: AnyRef](endpointUrl: String, data: B, params: (String, String)*)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
       ndlaClient.fetchWithForwardedAuth[A](
         Http(endpointUrl)
           .postData(write(data))
           .method("PATCH")
           .header("content-type", "application/json")
+          .params(params)
       )
     }
 

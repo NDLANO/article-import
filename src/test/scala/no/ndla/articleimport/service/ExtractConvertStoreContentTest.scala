@@ -10,8 +10,8 @@ package no.ndla.articleimport.service
 
 import java.util.Date
 
-import no.ndla.articleimport.integration.{LanguageIngress, MigrationSubjectMeta}
-import no.ndla.articleimport.model.api.OptimisticLockException
+import no.ndla.articleimport.integration.{ContentId, LanguageIngress, MigrationSubjectMeta}
+import no.ndla.articleimport.model.api.{ArticleStatus, OptimisticLockException}
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.network.model.HttpRequestException
@@ -47,7 +47,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(migrationApiClient.getSubjectForNode(nodeId)).thenReturn(Try(Set(MigrationSubjectMeta("52", "helsearbeider vg2"))))
 
     when(draftApiClient.getArticleIdFromExternalId(sampleNode.contents.head.nid)).thenReturn(Some(1: Long))
-    when(draftApiClient.newEmptyArticle(any[String], any[Set[String]])).thenReturn(Success(TestData.sampleArticleWithPublicDomain.id.get))
+    when(draftApiClient.newEmptyArticle(any[String], any[Set[String]])).thenReturn(Success(ContentId(TestData.sampleArticleWithPublicDomain.id.get)))
     when(extractConvertStoreContent.processNode("9876")).thenReturn(Try(TestData.sampleApiArticle, ImportStatus.empty))
 
     when(extractConvertStoreContent.getMainNodeId(any[String])).thenAnswer((invocation: InvocationOnMock) =>
@@ -61,7 +61,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(None)
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(None)
     when(draftApiClient.newArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle))
-    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(1: Long))
+    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
 
     val Success((_, status)) = eCSService.processNode(nodeId)
     status should equal(ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId, nodeId2), Some(sampleArticle.id), false))
@@ -74,7 +74,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(None)
     when(draftApiClient.newArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle))
-    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(1: Long))
+    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
 
     val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus(Seq(), Set("9876")))
     status should equal(ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set("9876", nodeId), Some(sampleArticle.id), false))
@@ -100,12 +100,12 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   }
 
   test("That ETL returns a Failure if failed to persist the converted article") {
-    when(draftApiClient.updateArticle(any[Article], any[String])).thenReturn(Failure(new OptimisticLockException()))
+    when(draftApiClient.updateArticle(any[Article], any[String], any[Set[String]])).thenReturn(Failure(new OptimisticLockException()))
     when(draftApiClient.getArticleIdFromExternalId(sampleNode.contents.head.nid)).thenReturn(Some(1: Long))
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
     when(draftApiClient.newArticle(any[Article], any[String], any[Set[String]])).thenReturn(Failure(new HttpRequestException("store")))
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
-    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(1: Long))
+    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
 
     val result = eCSService.processNode(nodeId, ImportStatus(Seq(), Set("9876")))
     result.isFailure should be (true)
@@ -124,15 +124,15 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     val sampleArticle = TestData.sampleApiArticle
     when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty.addVisitedNode(nodeId))).thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2)))))
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(Some(1: Long))
-    when(draftApiClient.updateArticle(any[Article], any[String])).thenReturn(Success(TestData.sampleApiArticle))
+    when(draftApiClient.updateArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle))
 
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
-    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(1: Long))
+    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
 
     val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty, forceUpdateArticles = true)
     status should equal(ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId), Some(sampleArticle.id), false))
 
-    verify(draftApiClient, times(1)).updateArticle(any[Article], any[String])
+    verify(draftApiClient, times(1)).updateArticle(any[Article], any[String], any[Set[String]])
   }
 
   test("Articles should not be force-updated if flag is not set") {
@@ -140,14 +140,14 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     reset(draftApiClient)
     when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty.addVisitedNode(nodeId))).thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2)))))
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(Some(1: Long))
-    when(draftApiClient.updateArticle(any[Article], any[String])).thenReturn(Success(TestData.sampleApiArticle))
+    when(draftApiClient.updateArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle))
 
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
-    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(1: Long))
+    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
 
     val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty)
     status should equal(ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId), Some(sampleArticle.id), false))
-    verify(draftApiClient, times(1)).updateArticle(any[Article], any[String])
+    verify(draftApiClient, times(1)).updateArticle(any[Article], any[String], any[Set[String]])
   }
 
 }
