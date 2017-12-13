@@ -111,14 +111,14 @@ trait ConverterService {
       val rightsholderMap = (oldRightsholderTypes zip rightsholderTypes).toMap.withDefaultValue(None)
 
       (creatorMap(author.`type`.toLowerCase), processorMap(author.`type`.toLowerCase), rightsholderMap(author.`type`.toLowerCase)) match {
-        case (t: String, None, None) => Author(t.capitalize, author.name)
-        case (None, t: String, None) => Author(t.capitalize, author.name)
-        case (None, None, t: String) => Author(t.capitalize, author.name)
+        case (t: String, _, _) => Author(t.capitalize, author.name)
+        case (_, t: String, _) => Author(t.capitalize, author.name)
+        case (_, _, t: String) => Author(t.capitalize, author.name)
         case (_, _, _) => Author(author.`type`, author.name)
       }
     }
 
-    private def toDomainCopyright(license: String, authors: Seq[Author]): Copyright = {
+    private[service] def toDomainCopyright(license: String, authors: Seq[Author]): Copyright = {
       val origin = authors.find(author => author.`type`.toLowerCase == "opphavsmann").map(_.name)
       val creators = authors.filter(a => oldCreatorTypes.contains(a.`type`.toLowerCase)).map(toDomainAuthor)
       // Filters out processor authors with old type `redaksjonelt` during import process since `redaksjonelt` exists both in processors and creators.
