@@ -42,11 +42,10 @@ trait ExtractConvertStoreContent {
         case Failure(f) => return Failure(f)
       }
 
-      // Generate an ID for the content before converting the node.
-      // This ensures that cyclic dependencies between articles does not cause an infinite recursive import job
-      generateNewIdIfFirstTimeImported(mainNodeId, node.nodeType)
-
       for {
+        // Generate an ID for the content before converting the node.
+        // This ensures that cyclic dependencies between articles does not cause an infinite recursive import job
+        _ <- generateNewIdIfFirstTimeImported(mainNodeId, node.nodeType)
         (convertedContent, updatedImportStatus) <- converterService.toDomainArticle(node, importStatus)
         content <- store(convertedContent, mainNodeId)
       } yield (content, updatedImportStatus.addMessage(s"Successfully imported node $externalId: ${content.id}").setArticleId(content.id))
@@ -77,11 +76,15 @@ trait ExtractConvertStoreContent {
 
     private def storeArticle(article: Article, mainNodeNid: String): Try[ApiContent] = {
       val storedArticle = draftApiClient.getArticleIdFromExternalId(mainNodeNid).isDefined match {
-        case true => draftApiClient.updateArticle(article, mainNodeNid)
+        case true => draftApiClient.updateArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
         case false => draftApiClient.newArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
       }
 
-      storedArticle.flatMap(a => draftApiClient.publishArticle(a.id)).flatMap(_ => storedArticle)
+      storedArticle.flatMap(a => draftApiClient.publishArticle(a.id)) match {
+        case Success(status) if Set("PUBLISHED", "IMPORTED").subsetOf(status.status) => storedArticle
+        case Success(status) => Failure(ImportException(s"Published article does not contain expected statuses PUBLISHED and IMPORTED (${status.status})"))
+        case Failure(ex) => Failure(ex)
+      }
     }
 
     private def storeConcept(concept: Concept, mainNodeNid: String): Try[ApiContent] = {
@@ -99,24 +102,24 @@ trait ExtractConvertStoreContent {
         case Success(subjectMetas) => subjectMetas.map(_.nid)
       }
 
-    private def generateNewIdIfFirstTimeImported(nodeId: String, nodeType: String): Option[Long] = {
+    private def generateNewIdIfFirstTimeImported(nodeId: String, nodeType: String): Try[Long] = {
       nodeType match {
         case `nodeTypeBegrep` => generateNewConceptIdIfExternalIdDoesNotExist(nodeId)
         case _ => generateNewArticleIdIfExternalIdDoesNotExist(nodeId)
       }
     }
 
-    private def generateNewArticleIdIfExternalIdDoesNotExist(nodeId: String): Option[Long] = {
+    private def generateNewArticleIdIfExternalIdDoesNotExist(nodeId: String): Try[Long] = {
       draftApiClient.getArticleIdFromExternalId(nodeId) match {
-        case None => draftApiClient.newEmptyArticle(nodeId, getSubjectIds(nodeId)).toOption
-        case Some(id) => Some(id)
+        case None => draftApiClient.newEmptyArticle(nodeId, getSubjectIds(nodeId)).map(_.id)
+        case Some(id) => Success(id)
       }
     }
 
-    private def generateNewConceptIdIfExternalIdDoesNotExist(externalId: String): Option[Long] = {
+    private def generateNewConceptIdIfExternalIdDoesNotExist(externalId: String): Try[Long] = {
       draftApiClient.getConceptIdFromExternalId(externalId) match {
-        case None => draftApiClient.newEmptyConcept(externalId).toOption
-        case Some(id) => Some(id)
+        case None => draftApiClient.newEmptyConcept(externalId)
+        case Some(id) => Success(id)
       }
     }
 
