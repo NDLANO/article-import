@@ -36,13 +36,10 @@ trait HTMLCleaner {
       removeNbsp(element)
       wrapStandaloneTextInPTag(element)
       replaceNestedSections(element)
-      // Jsoup doesn't support removing elements while iterating the dom-tree.
-      // Thus executes the routine 3 times in order to be sure to remove all tags
-      (1 to 3).foreach(_ => removeEmptyTags(element))
 
       val metaDescription = prepareMetaDescription(content.metaDescription)
-      mergeTwoFirstSectionsIfFeasible(element)
       val ingress = getIngress(content, element)
+      mergeTwoFirstSectionsIfFeasible(element)
 
       moveMisplacedAsideTags(element)
       unwrapDivsAroundDetailSummaryBox(element)
@@ -51,6 +48,9 @@ trait HTMLCleaner {
       convertH3sToH2s(element)
       val finalCleanedDocument = allContentMustBeWrappedInSectionBlocks(element)
 
+      // Jsoup doesn't support removing elements while iterating the dom-tree.
+      // Thus executes the routine 3 times in order to be sure to remove all tags
+      (1 to 3).foreach(_ => removeEmptyTags(element))
       Success((content.copy(content = jsoupDocumentToString(finalCleanedDocument), metaDescription = metaDescription, ingress = ingress),
         importStatus.addMessages(illegalTags ++ illegalAttributes)))
     }
@@ -115,7 +115,7 @@ trait HTMLCleaner {
 
     private def getIngress(content: LanguageContent, element: Element): Option[LanguageIngress] = {
       content.ingress match {
-        case None => extractIngress(element).map(LanguageIngress(_, None))
+        case None => extractIngress2(element).map(LanguageIngress(_, None))
         case Some(ingress) =>
           val imageEmbedHtml = ingress.ingressImage.flatMap(imageApiClient.importOrGetMetaByExternId)
             .map(imageMetaData => HtmlTagGenerator.buildImageEmbedContent(
@@ -275,6 +275,64 @@ trait HTMLCleaner {
           removeEmptyTags(el)
           Some(ingressText)
         case _ => None
+      }
+    }
+
+    private def findElementWithText(els: Seq[Element], tagName: String, text: String): Option[Element] = {
+      for (el <- els)
+        el.select(tagName).asScala.find(t => t.tagName == tagName && t.text == text) match {
+          case Some(e) => return Some(e)
+          case None =>
+        }
+      None
+    }
+
+    def consecutiveNodesOfType(el: Element, tagName: String): Seq[Node] = {
+      def canMerge(n: Node): Boolean = n != null && (n.nodeName() == tagName || n.toString == " ")
+      Seq(el: Node) ++ el.siblingNodes().asScala.drop(el.siblingIndex()).takeWhile(canMerge)
+    }
+
+    private def mergeConsecutiveTags(el: Element, tagName: String): Unit = {
+      for (shit <- consecutiveNodesOfType(el, tagName).drop(1)) {
+        el.appendChild(shit)
+
+        if (shit.nodeName() != "#text")
+          shit.unwrap()
+      }
+    }
+
+    // TODO: make pretty
+    private def extractIngress2(el: Element): Option[String] = {
+      val minimumIngressWordCount = 3
+      val el2 = stringToJsoupDocument(el.html())
+      val tagsToKeep = Set("p", "strong", "body", "embed")
+
+      el2.select("*").asScala
+        .filterNot(e => tagsToKeep.contains(e.tagName))
+        .map(e => e.unwrap())
+
+      removeEmptyTags(el2)
+
+      val firstP = Option(el2.select("body>p:lt(2)>strong").first()).map(_.parent)
+      firstP match {
+        case Some(p) =>
+          mergeConsecutiveTags(p, "p")
+          val strongs = consecutiveNodesOfType(p.select(">strong").first(), "strong")
+          val ingressTexts = strongs.map {
+            case s: Element => s.text
+            case s => s.toString
+          }
+          val ingressText = ingressTexts.mkString(" ").replaceAll(" +", " ")
+
+          val ret = if (ingressText.split(" ").length < minimumIngressWordCount) {
+            None
+          } else {
+            ingressTexts.foreach(t => findElementWithText(el.select("p").asScala, "strong", t).map(_.remove))
+            Some(ingressText)
+          }
+          removeEmptyTags(el)
+          ret
+        case None => None
       }
     }
 
