@@ -287,7 +287,7 @@ trait HTMLCleaner {
       None
     }
 
-    def consecutiveNodesOfType(el: Element, tagName: String): Seq[Node] = {
+    private def consecutiveNodesOfType(el: Element, tagName: String): Seq[Node] = {
       def canMerge(n: Node): Boolean = n != null && (n.nodeName() == tagName || n.toString == " ")
       Seq(el: Node) ++ el.siblingNodes().asScala.drop(el.siblingIndex()).takeWhile(canMerge)
     }
@@ -301,39 +301,34 @@ trait HTMLCleaner {
       }
     }
 
-    // TODO: make pretty
     private def extractIngress2(el: Element): Option[String] = {
       val minimumIngressWordCount = 3
-      val el2 = stringToJsoupDocument(el.html())
+      val strippedDownArticle = stringToJsoupDocument(el.html())
       val tagsToKeep = Set("p", "strong", "body", "embed")
 
-      el2.select("*").asScala
+      strippedDownArticle.select("*").asScala
         .filterNot(e => tagsToKeep.contains(e.tagName))
         .map(e => e.unwrap())
 
-      removeEmptyTags(el2)
+      removeEmptyTags(strippedDownArticle)
 
-      val firstP = Option(el2.select("body>p:lt(2)>strong").first()).map(_.parent)
-      firstP match {
-        case Some(p) =>
-          mergeConsecutiveTags(p, "p")
-          val strongs = consecutiveNodesOfType(p.select(">strong").first(), "strong")
-          val ingressTexts = strongs.map {
-            case s: Element => s.text
-            case s => s.toString
-          }
-          val ingressText = ingressTexts.mkString(" ").replaceAll(" +", " ")
+      val firstP = Option(strippedDownArticle.select("body>p:lt(2)>strong").first()).map(_.parent)
+      firstP.flatMap(p => {
+        mergeConsecutiveTags(p, "p")
+        val ingressTexts = consecutiveNodesOfType(p.select(">strong").first(), "strong").map {
+          case s: Element => s.text
+          case s => s.toString
+        }
+        val ingressText = ingressTexts.mkString(" ").replaceAll(" +", " ")
 
-          val ret = if (ingressText.split(" ").length < minimumIngressWordCount) {
-            None
-          } else {
-            ingressTexts.foreach(t => findElementWithText(el.select("p").asScala, "strong", t).map(_.remove))
-            Some(ingressText)
-          }
+        if (ingressText.split(" ").length < minimumIngressWordCount) {
+          None
+        } else {
+          ingressTexts.foreach(t => findElementWithText(el.select("p").asScala, "strong", t).map(_.remove))
           removeEmptyTags(el)
-          ret
-        case None => None
-      }
+          Some(ingressText)
+        }
+      })
     }
 
     private def extractElement(elementToExtract: Element): String = {
