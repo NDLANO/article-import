@@ -115,7 +115,7 @@ trait HTMLCleaner {
 
     private def getIngress(content: LanguageContent, element: Element): Option[LanguageIngress] = {
       content.ingress match {
-        case None => extractIngress2(element).map(LanguageIngress(_, None))
+        case None => extractIngress(element).map(LanguageIngress(_, None))
         case Some(ingress) =>
           val imageEmbedHtml = ingress.ingressImage.flatMap(imageApiClient.importOrGetMetaByExternId)
             .map(imageMetaData => HtmlTagGenerator.buildImageEmbedContent(
@@ -249,35 +249,6 @@ trait HTMLCleaner {
       }
     }
 
-    private def extractIngress(el: Element): Option[String] = {
-      val minimumIngressWordCount = 3
-      val firstSection = Option(el.select("body>section").first)
-      val firstDivSection = Option(el.select("body>section:eq(0)>div").first)
-      val secondDivSection = Option(el.select("body>section:eq(0)>div:eq(0)>div:nth-child(1)").first)
-
-      // Look for ingress according to the following priorities:
-      //   1. first paragraph in first section, ei. <section><p> HERE </p></section>
-      //   2. first paragraph in first nested div inside first section, ei. <section><div><div><p> HERE </p></div></div></section>
-      //   3. first paragraph in first div inside first section, ei. <section><div><p> HERE </p></div></section>
-      val ingress = (firstSection.flatMap(getIngressText), firstDivSection, secondDivSection) match {
-        case (Some(ing), _, _) => Some(ing)
-        case (None, _, Some(secondDiv)) => getIngressText(secondDiv)
-        case (None, Some(firstDiv), _) => getIngressText(firstDiv)
-        case _ => None
-      }
-
-      def getText(elements: Seq[Element]): String = elements.map(_.text).mkString(" ")
-
-      ingress match {
-        case None => None
-        case Some(ing) if getText(ing).split(" +").length >= minimumIngressWordCount =>
-          val ingressText = ing.map(extractElement).mkString(" ")
-          removeEmptyTags(el)
-          Some(ingressText)
-        case _ => None
-      }
-    }
-
     private def findElementWithText(els: Seq[Element], tagName: String, text: String): Option[Element] = {
       for (el <- els)
         el.select(tagName).asScala.find(t => t.tagName == tagName && t.text == text) match {
@@ -301,7 +272,7 @@ trait HTMLCleaner {
       }
     }
 
-    private def extractIngress2(el: Element): Option[String] = {
+    private def extractIngress(el: Element): Option[String] = {
       val minimumIngressWordCount = 3
       val strippedDownArticle = stringToJsoupDocument(el.html())
       val tagsToKeep = Set("p", "strong", "body", "embed")
