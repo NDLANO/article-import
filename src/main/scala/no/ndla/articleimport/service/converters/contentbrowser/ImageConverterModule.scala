@@ -34,7 +34,23 @@ trait ImageConverterModule {
 
     def getImage(cont: ContentBrowser): Try[String] = {
       val alignment = getImageAlignment(cont)
-      toImageEmbed(cont.get("nid"), cont.get("link_text"), alignment.getOrElse(""), cont.get("imagecache").toLowerCase, cont.get("alt"))
+      toImageEmbed(cont.get("nid"), cont.get("link_text"), alignment.getOrElse(""), getImageSize(cont), cont.get("alt"))
+    }
+
+    private def getImageSize(cont: ContentBrowser): String = {
+      val (xsmall, small, full) = ("xsmall", "small", "full")
+      val imgPixels = cont.getOpt("width").flatMap(w => Try(w.toInt).toOption)
+      imgPixels match {
+        case Some(w) if w < 100 => xsmall
+        case Some(w) if w < 300 => small
+        case Some(_) => full
+        case None =>
+          val imgSize = cont.get("imagecache").toLowerCase
+          Map("fullbredde" -> full,
+              "hoyrespalte" -> small,
+              "liten" -> xsmall)
+          .getOrElse(imgSize, full)
+      }
     }
 
     def toImageEmbed(nodeId: String, caption: String, align: String, size: String, altText: String): Try[String] = {

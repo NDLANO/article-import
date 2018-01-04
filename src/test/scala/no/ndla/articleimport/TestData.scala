@@ -10,6 +10,7 @@ package no.ndla.articleimport
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.model.api
+import no.ndla.articleimport.service.converters.contentbrowser.ContentBrowser
 import org.joda.time.DateTime
 
 object TestData {
@@ -170,6 +171,15 @@ object TestData {
     "standard",
     Seq("nb")
   )
+
+  def contentBrowserWithFields(fields: (String, String)*): ContentBrowser = {
+    new ContentBrowser {
+      val FieldMap = fields.toMap
+      override def getOpt(key: String): Option[String] = FieldMap.get(key)
+      override def get(key: String): String = getOpt(key).getOrElse("")
+      override val language: String = "nb"
+    }
+  }
 
 }
 
