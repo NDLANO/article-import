@@ -71,8 +71,6 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
     val expectedContentResult =
       s"""<section>
          |<$ResourceHtmlEmbedTag data-size="fullbredde" data-url="http://image-api/images/5452" data-align="" data-resource="image" data-alt="Mobiltelefon sender SMS">
-         |</section>
-         |<section>
          |<h2>Mediehverdagen</h2>
          |</section>""".stripMargin.replace("\n", "")
     val expectedIngressResult = LanguageIngress("Medievanene er i endring.", None)
