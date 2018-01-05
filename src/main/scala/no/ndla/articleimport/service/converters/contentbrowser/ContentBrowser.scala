@@ -10,7 +10,13 @@ package no.ndla.articleimport.service.converters.contentbrowser
 
 import scala.util.matching.Regex
 
-case class ContentBrowser(textContainingContentBrowser: String, language: String) {
+trait ContentBrowser {
+  val language: String
+  def get(key: String): String
+  def getOpt(key: String): Option[String]
+}
+
+case class ContentBrowserString(textContainingContentBrowser: String, language: String) extends ContentBrowser {
   // Extract the contentbrowser variables
   private val Pattern: Regex = """(?s).*(\[contentbrowser (.*) ?contentbrowser(?:_margin_left|_margin_right)?\]).*""".r
   val (contentBrowser, contentBrowserData) = textContainingContentBrowser match {
@@ -34,7 +40,7 @@ case class ContentBrowser(textContainingContentBrowser: String, language: String
     (startIndex, startIndex + contentBrowser.length)
   }
 
-  def get(key: String): String = {
-    FieldMap.getOrElse(key, "")
-  }
+  def getOpt(key: String): Option[String] = FieldMap.get(key)
+
+  def get(key: String): String = getOpt(key).getOrElse("")
 }
