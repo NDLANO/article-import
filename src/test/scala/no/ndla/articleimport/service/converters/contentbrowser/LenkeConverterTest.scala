@@ -8,7 +8,7 @@
 
 package no.ndla.articleimport.service.converters.contentbrowser
 
-import no.ndla.articleimport.{TestEnvironment, UnitSuite}
+import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.MigrationEmbedMeta
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.ResourceType
@@ -173,5 +173,15 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
     result should equal(expectedResult)
     errors.messages.length should equal(1)
+  }
+
+  test("LenkeConverter should include an url fragment if defined in contentbrowser") {
+    val anchor = "9a-4"
+    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "insertion" -> "link", "link_anchor" -> anchor)
+
+    val Success((result, _, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
+
+    result should equal(s""" <a href="$linkUrl#$anchor" rel="noopener noreferrer" target="_blank" title=""></a>""")
+    errors.messages.length should equal(0)
   }
 }
