@@ -106,7 +106,6 @@ trait DraftApiClient {
       } yield status
     }
 
-
     def newConcept(concept: NewConcept, mainNodeId: String): Try[api.Concept] = {
       postWithData[api.Concept, NewConcept](s"$DraftApiConceptPublicEndpoint/", concept, "externalId" -> mainNodeId)
     }
@@ -132,7 +131,7 @@ trait DraftApiClient {
       post(s"$DraftApiInternEndpoint/empty_concept", "externalId" -> mainNodeId)
 
     def updateConcept(concept: api.UpdateConcept, id: Long): Try[api.Concept] = {
-      patch(s"$DraftApiInternEndpoint/$id", concept)
+      patch(s"$DraftApiConceptPublicEndpoint/$id", concept)
     }
 
     def updateConcept(concept: api.UpdateConcept, mainNodeId: String): Try[api.Concept] = {
