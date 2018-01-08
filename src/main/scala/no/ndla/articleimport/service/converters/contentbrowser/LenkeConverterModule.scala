@@ -133,7 +133,9 @@ trait LenkeConverterModule {
     }
 
     private def insertAnchor(url: String, cont: ContentBrowser): (String, Option[RequiredLibrary], Seq[String]) = {
-      val htmlTag = HtmlTagGenerator.buildAnchor(url, cont.get("link_text"), cont.get("link_title_text"), true)
+      val urlWithFragment = cont.getOpt("link_anchor").map(anchor => url.withFragment(anchor).toString)
+
+      val htmlTag = HtmlTagGenerator.buildAnchor(urlWithFragment.getOrElse(url), cont.get("link_text"), cont.get("link_title_text"), true)
       (s" $htmlTag", None, Seq())
     }
 
