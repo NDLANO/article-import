@@ -30,8 +30,9 @@ trait DraftApiClient {
     private val DraftApiConceptPublicEndpoint = s"http://${ArticleImportProperties.DraftHost}/draft-api/v1/concepts"
     private val DraftHealthEndpoint = s"http://${ArticleImportProperties.DraftHost}/health"
 
-    def getContentByExternalId(externalId: String): Option[api.Article] = {
+    def getContentByExternalId(externalId: String): Option[api.ApiContent] = {
       getArticleIdFromExternalId(externalId).flatMap(getArticleFromId)
+        .orElse(getConceptIdFromExternalId(externalId).flatMap(getConceptFromId))
     }
 
     private def getArticleFromId(id: Long): Option[api.Article] = {
@@ -86,7 +87,7 @@ trait DraftApiClient {
     }
 
     def updateArticle(article: Article, mainNodeId: String, externalSubjectIds: Set[String]): Try[api.Article] = {
-      val startRevision = getContentByExternalId(mainNodeId).map(_.revision).getOrElse(1)
+      val startRevision = getContentByExternalId(mainNodeId).flatMap(_.revision).getOrElse(1)
       val updateArticles = article.supportedLanguages.zipWithIndex
         .map { case (lang, idx) => converterService.toApiUpdateArticle(article, lang, startRevision + idx)}
 
@@ -104,6 +105,10 @@ trait DraftApiClient {
         _ <- put[ArticleStatus](s"$DraftApiPublicEndpoint/$id/publish")
         status <- post[ArticleStatus](s"$DraftApiInternEndpoint/article/$id/publish")
       } yield status
+    }
+
+    private def getConceptFromId(id: Long): Option[api.Concept] = {
+      get[api.Concept](s"$DraftApiConceptPublicEndpoint/$id").toOption
     }
 
     def newConcept(concept: NewConcept, mainNodeId: String): Try[api.Concept] = {
@@ -131,7 +136,7 @@ trait DraftApiClient {
       post(s"$DraftApiInternEndpoint/empty_concept", "externalId" -> mainNodeId)
 
     def updateConcept(concept: api.UpdateConcept, id: Long): Try[api.Concept] = {
-      patch(s"$DraftApiConceptPublicEndpoint/$id", concept)
+      patch[api.Concept, api.UpdateConcept](s"$DraftApiConceptPublicEndpoint/$id", concept)
     }
 
     def updateConcept(concept: api.UpdateConcept, mainNodeId: String): Try[api.Concept] = {
@@ -153,7 +158,7 @@ trait DraftApiClient {
     }
 
     def publishConcept(id: Long): Try[Long] = {
-      post(s"$DraftApiInternEndpoint/concept/$id/publish")
+      post[ContentId](s"$DraftApiInternEndpoint/concept/$id/publish").map(_.id)
     }
 
     def getConceptIdFromExternalId(externalId: String): Option[Long] = {

@@ -263,21 +263,6 @@ trait ConverterService {
 
     def createLinkToOldNdla(nodeId: String): String = s"//red.ndla.no/node/$nodeId"
 
-    def toApiConcept(concept: Concept, language: String): api.Concept = {
-      val title = findByLanguageOrBestEffort(concept.title, language).map(toApiConceptTitle).getOrElse(api.ConceptTitle("", Language.DefaultLanguage))
-      val content = findByLanguageOrBestEffort(concept.content, language).map(toApiConceptContent).getOrElse(api.ConceptContent("", Language.DefaultLanguage))
-
-      api.Concept(
-        concept.id.get,
-        title,
-        content,
-        concept.copyright.map(toApiCopyright),
-        concept.created,
-        concept.updated,
-        concept.supportedLanguages
-      )
-    }
-
     def toNewApiConcept(concept: Concept, language: String): api.NewConcept = {
       val title = findByLanguageOrBestEffort(concept.title, language).map(_.title).getOrElse("")
       val content = findByLanguageOrBestEffort(concept.content, language).map(_.content).getOrElse("")

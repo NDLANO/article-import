@@ -144,8 +144,9 @@ object TestData {
 
   val sampleApiConcept = api.Concept(
     1,
-    api.ConceptTitle("Tittel for begrep", "nb"),
-    api.ConceptContent("Innhold for begrep", "nb"),
+    None,
+    Some(api.ConceptTitle("Tittel for begrep", "nb")),
+    Some(api.ConceptContent("Innhold for begrep", "nb")),
     Some(api.Copyright(Some(api.License("publicdomain", None, None)), Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None)),
     DateTime.now().minusDays(4).toDate,
     DateTime.now().minusDays(2).toDate,
@@ -155,7 +156,7 @@ object TestData {
   val sampleApiArticle = api.Article(
     articleId,
     None,
-    1,
+    Some(1),
     api.ArticleTitle("tittel", "nb"),
     Some(api.ArticleContent("innhold", "nb")),
     Some(api.Copyright(Some(api.License("by-sa", None, None)), Some("fromSomeWhere"), Seq(api.Author("string", "du")), Seq.empty, Seq.empty, None, None, None)),
