@@ -25,11 +25,10 @@ trait ImageConverterModule {
     override def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val nodeId = content.get("nid")
       logger.info(s"Converting image with nid $nodeId")
-      val a = getImage(content).map(imageHtml => (imageHtml, Seq(), importStatus)) match {
+      getImage(content).map(imageHtml => (imageHtml, Seq(), importStatus)) match {
         case Success(x) => Success(x)
         case Failure(_) => Failure(ImportException(s"Failed to import image with node id $nodeId"))
       }
-      a
     }
 
     def getImage(cont: ContentBrowser): Try[String] = {

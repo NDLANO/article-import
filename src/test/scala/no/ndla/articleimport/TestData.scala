@@ -31,7 +31,7 @@ object TestData {
     Seq(VisualElement("image", "en")),
     Seq(ArticleIntroduction("This is an introduction", "en")),
     Seq(),
-    None,
+    Seq.empty,
     DateTime.now().minusDays(4).toDate,
     DateTime.now().minusDays(2).toDate,
     "ndalId54321",
@@ -48,7 +48,7 @@ object TestData {
     Seq(),
     Seq(),
     Seq(ArticleMetaDescription("meta description", "nb")),
-    Some("11"),
+    Seq(ArticleMetaImage("11", "nb")),
     today,
     today,
     "ndalId54321",
@@ -66,7 +66,7 @@ object TestData {
     Seq(),
     Seq(),
     Seq(),
-    None,
+    Seq.empty,
     today,
     today,
     "ndalId54321",
@@ -120,7 +120,7 @@ object TestData {
 
   val (nodeId, nodeId2) = ("1234", "4321")
   val sampleTitle = ArticleTitle("title", "en")
-  val sampleContent = LanguageContent(nodeId, nodeId, "sample content", "metadescription", "en", None, "fagstoff", Some("title"), Seq.empty)
+  val sampleContent = LanguageContent(nodeId, nodeId, "sample content", "metadescription", "en", None, "fagstoff", Some("title"), Seq.empty, None)
   val sampleTranslationContent = sampleContent.copy(tnid=nodeId2)
 
   val sampleImageMetaInformation = ImageMetaInformation(

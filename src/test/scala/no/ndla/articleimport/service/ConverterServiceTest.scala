@@ -294,6 +294,16 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     service.toDomainArticle(node).tags.map(_.language) should equal(Seq("nb"))
   }
 
+  test("toDomainArticle should import ingress images and use as meta images (yes really)") {
+    val (imageId, imageNid) = ("1", "1234")
+    val contents = Seq(TestData.sampleContent.copy(metaImage=Some(imageNid), language="nb"))
+
+    when(imageApiClient.importImage(imageNid)).thenReturn(Some(TestData.sampleImageMetaInformation.copy(id=imageId)))
+    val node = sampleNode.copy(contents=contents)
+
+    service.toDomainArticle(node).metaImageId should equal(Seq(ArticleMetaImage(imageId, "nb")))
+  }
+
   test("Leaf node converter should create an article from a pure h5p node") {
     when(h5pApiClient.getViewFromOldId("1234")).thenReturn(Some(s"//ndla.no/h5p/embed/1234"))
     val sampleLanguageContent = TestData.sampleContent.copy(content="<div><h1>hi</h1></div>", nodeType="h5p_content")

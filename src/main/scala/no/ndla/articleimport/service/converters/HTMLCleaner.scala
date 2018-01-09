@@ -126,8 +126,7 @@ trait HTMLCleaner {
               altText = imageMetaData.alttexts.find(_.language == content.language).map(_.alttext).getOrElse("")))
 
           imageEmbedHtml.map(element.prepend)
-
-          Some(LanguageIngress(extractElement(stringToJsoupDocument(ingress.content)), None))
+          Some(ingress.copy(content = extractElement(stringToJsoupDocument(ingress.content))))
       }
     }
 
