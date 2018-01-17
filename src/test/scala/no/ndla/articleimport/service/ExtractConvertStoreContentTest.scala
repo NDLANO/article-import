@@ -34,7 +34,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   val sampleContent = TestData.sampleContent.copy(content=contentString)
   val author = Author("forfatter", "Henrik")
 
-  val sampleNode = NodeToConvert(List(sampleTitle), List(sampleContent), "by-sa", Seq(author), List(ArticleTag(List("tag"), "en")), "fagstoff", "fagstoff", new Date(0), new Date(1), ArticleType.Standard)
+  val sampleNode = NodeToConvert(List(sampleTitle), List(sampleContent), "by-sa", Seq(author), List(ArticleTag(List("tag"), "en")), "fagstoff", "fagstoff", new Date(0), new Date(1), ArticleType.Standard, Seq.empty)
 
   val eCSService = new ExtractConvertStoreContent
 

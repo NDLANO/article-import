@@ -18,4 +18,5 @@ case class UpdateArticle(revision: Int,
                          visualElement: Option[String],
                          copyright: Option[Copyright],
                          requiredLibraries: Seq[RequiredLibrary],
+                         notes: Seq[String],
                          articleType: Option[String])

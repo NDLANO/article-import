@@ -72,14 +72,14 @@ trait DraftApiClient {
         "externalId" -> mainNodeId,
         "externalSubjectIds" -> subjectIds.mkString(","))
 
-    def updateArticle(article: api.UpdateArticle, id: Long, mainNodeId: String, externalSubjectIds: Set[String]): Try[api.Article] = {
+    private def updateArticle(article: api.UpdateArticle, id: Long, mainNodeId: String, externalSubjectIds: Set[String]): Try[api.Article] = {
       patch[api.Article, api.UpdateArticle](
         s"$DraftApiPublicEndpoint/$id",
         article,
         "externalId" -> mainNodeId, "externalSubjectIds" -> externalSubjectIds.mkString(","))
     }
 
-    def updateArticle(article: api.UpdateArticle, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
+    private def updateArticle(article: api.UpdateArticle, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
       getArticleIdFromExternalId(mainNodeId) match {
         case Some(id) => updateArticle(article, id, mainNodeId, subjectIds)
         case None => Failure(NotFoundException(s"No article with external id $mainNodeId found"))

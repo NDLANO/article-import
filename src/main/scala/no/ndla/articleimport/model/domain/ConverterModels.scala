@@ -10,9 +10,10 @@ package no.ndla.articleimport.model.domain
 
 import java.net.URL
 import java.util.Date
+
 import scala.language.implicitConversions
 import com.netaporter.uri.dsl._
-import no.ndla.articleimport.integration.LanguageContent
+import no.ndla.articleimport.integration.{LanguageContent, MigrationEditorialKeywords}
 
 case class NodeGeneralContent(nid: String, tnid: String, title: String, content: String, language: String) {
   def isTranslation = !isMainNode
@@ -31,8 +32,8 @@ case class NodeToConvert(titles: Seq[ArticleTitle],
                          contentType: String,
                          created: Date,
                          updated: Date,
-                         articleType: ArticleType.Value
-                        )
+                         articleType: ArticleType.Value,
+                         editorialKeywords: Seq[MigrationEditorialKeywords])
 
 case class ContentFilMeta(nid: String, tnid: String, title: String, fileName: String, url: URL, mimeType: String, fileSize: String)
 
