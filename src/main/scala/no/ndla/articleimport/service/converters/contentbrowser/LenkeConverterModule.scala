@@ -82,14 +82,14 @@ trait LenkeConverterModule {
         case NRKUrlPattern(_) => getNrkEmbedTag(embedCode, url)
         case vimeoProUrlPattern(_) => getVimeoProEmbedTag(embedCode)
         case kunnskapsFilmUrlPattern(_) => getKunnskapsFilmEmbedTag(embedCode)
-        case PreziUrlPattern(_)
-             | CommonCraftUrlPattern(_)
-             | NdlaFilmIundervisningUrlPattern(_)
-             | KahootUrlPattern(_)
-             | khanAcademyUrlPattern(_)
-             | tv2SkoleUrlPattern(_)
-             | scribdUrlPattern(_)
-             | vgNoUrlPattern(_) =>
+        case PreziUrlPattern(_) |
+             CommonCraftUrlPattern(_) |
+             NdlaFilmIundervisningUrlPattern(_) |
+             KahootUrlPattern(_) |
+             khanAcademyUrlPattern(_) |
+             tv2SkoleUrlPattern(_) |
+             scribdUrlPattern(_) |
+             vgNoUrlPattern(_) =>
           getRegularEmbedTag(embedCode)
         case _ => (HtmlTagGenerator.buildExternalInlineEmbedContent(url), None)
       }
