@@ -115,7 +115,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     val insertion = "inline"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
     val content = ContentBrowserString(contentString, "nb")
-    val expectedResult = s"""<$ResourceHtmlEmbedTag data-height="451" data-resource="${ResourceType.Prezi}" data-url="$preziSrc" data-width="620" />"""
+    val expectedResult = s"""<$ResourceHtmlEmbedTag data-height="451" data-resource="${ResourceType.IframeContent}" data-url="$preziSrc" data-width="620" />"""
 
     when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(Some(preziUrl), Some(preziEmbedCode))))
     val Success((result, _, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
