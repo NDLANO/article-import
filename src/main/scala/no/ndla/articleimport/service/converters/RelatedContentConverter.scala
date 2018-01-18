@@ -38,10 +38,11 @@ trait RelatedContentConverter {
         val handlerFunc = if (importStatus.importRelatedArticles) importRelatedContent _ else getRelatedContentFromDb _
 
         handlerFunc(nids, importStatus) match {
-          case Success((relatedEmbed, status)) =>
+          case Success((ids, status)) if ids.nonEmpty =>
             val element = stringToJsoupDocument(content.content)
-            element.append(s"<section>$relatedEmbed</section>")
+            element.append(s"<section>${HtmlTagGenerator.buildRelatedContent(ids)}</section>")
             Success(content.copy(content = jsoupDocumentToString(element)), status)
+          case Success((_, status)) => Success(content, status)
           case Failure(ex) => Failure(ex)
         }
       }
@@ -49,7 +50,7 @@ trait RelatedContentConverter {
     }
   }
 
-  private def importRelatedContent(relatedNids: Set[String], importStatus: ImportStatus): Try[(String, ImportStatus)] = {
+  private def importRelatedContent(relatedNids: Set[String], importStatus: ImportStatus): Try[(Set[Long], ImportStatus)] = {
     val (importedArticles, updatedStatus) = relatedNids.foldLeft((Seq[Try[Article]](), importStatus.copy(importRelatedArticles = false)))((result, nid) => {
       val (articles, status) = result
 
@@ -67,7 +68,7 @@ trait RelatedContentConverter {
 
     if (importFailures.isEmpty) {
       val ids = importSuccesses.map(_.get.id).toSet
-      Success(HtmlTagGenerator.buildRelatedContent(ids), updatedStatus)
+      Success(ids, updatedStatus)
     } else {
       val importErrorMsgs = importFailures.map(_.failed.get.getMessage).mkString(", ")
       val exceptionMsg = s"Failed to import one or more related contents: $importErrorMsgs"
@@ -77,9 +78,9 @@ trait RelatedContentConverter {
     }
   }
 
-  private def getRelatedContentFromDb(nids: Set[String], importStatus: ImportStatus): Try[(String, ImportStatus)] = {
+  private def getRelatedContentFromDb(nids: Set[String], importStatus: ImportStatus): Try[(Set[Long], ImportStatus)] = {
     val ids = nids.flatMap(draftApiClient.getArticleIdFromExternalId)
-    Success((HtmlTagGenerator.buildRelatedContent(ids), importStatus))
+    Success((ids, importStatus))
   }
 
 }

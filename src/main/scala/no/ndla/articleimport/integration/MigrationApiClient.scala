@@ -105,6 +105,7 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle], ingresses
         nodeType.getOrElse("unknown"),
         titles.find(_.language == content.language).map(_.title),
         relatedContent,
+        getMetaImage(content.language),
         ingress = getIngress(content.language))
     })
   }
@@ -125,7 +126,10 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle], ingresses
     }
   }
 
-  private def getEmneArtikkel(language   : Option[String]) = emneartikkelData.find(_.language == language)
+  private def getMetaImage(language: Option[String]): Option[String] =
+    ingresses.find(ing => ing.language == language).flatMap(_.imageNid)
+
+  private def getEmneArtikkel(language: Option[String]) = emneartikkelData.find(_.language == language)
 }
 
 case class MigrationNodeGeneralContent(nid: String, tnid: String, title: String, content: String, language: String) {

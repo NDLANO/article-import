@@ -36,13 +36,10 @@ trait HTMLCleaner {
       removeNbsp(element)
       wrapStandaloneTextInPTag(element)
       replaceNestedSections(element)
-      // Jsoup doesn't support removing elements while iterating the dom-tree.
-      // Thus executes the routine 3 times in order to be sure to remove all tags
-      (1 to 3).foreach(_ => removeEmptyTags(element))
 
       val metaDescription = prepareMetaDescription(content.metaDescription)
-      mergeTwoFirstSectionsIfFeasible(element)
       val ingress = getIngress(content, element)
+      mergeTwoFirstSectionsIfFeasible(element)
 
       moveMisplacedAsideTags(element)
       unwrapDivsAroundDetailSummaryBox(element)
@@ -51,6 +48,9 @@ trait HTMLCleaner {
       convertH3sToH2s(element)
       val finalCleanedDocument = allContentMustBeWrappedInSectionBlocks(element)
 
+      // Jsoup doesn't support removing elements while iterating the dom-tree.
+      // Thus executes the routine 3 times in order to be sure to remove all tags
+      (1 to 3).foreach(_ => removeEmptyTags(element))
       Success((content.copy(content = jsoupDocumentToString(finalCleanedDocument), metaDescription = metaDescription, ingress = ingress),
         importStatus.addMessages(illegalTags ++ illegalAttributes)))
     }
@@ -126,8 +126,7 @@ trait HTMLCleaner {
               altText = imageMetaData.alttexts.find(_.language == content.language).map(_.alttext).getOrElse("")))
 
           imageEmbedHtml.map(element.prepend)
-
-          Some(LanguageIngress(extractElement(stringToJsoupDocument(ingress.content)), None))
+          Some(ingress.copy(content = extractElement(stringToJsoupDocument(ingress.content))))
       }
     }
 
@@ -249,33 +248,57 @@ trait HTMLCleaner {
       }
     }
 
+    private def findElementWithText(els: Seq[Element], tagName: String, text: String): Option[Element] = {
+      for (el <- els)
+        el.select(tagName).asScala.find(t => t.tagName == tagName && t.text == text) match {
+          case Some(e) => return Some(e)
+          case None =>
+        }
+      None
+    }
+
+    private def consecutiveNodesOfType(el: Element, tagName: String): Seq[Node] = {
+      def canMerge(n: Node): Boolean = n != null && (n.nodeName() == tagName || n.toString == " ")
+      Seq(el: Node) ++ el.siblingNodes().asScala.drop(el.siblingIndex()).takeWhile(canMerge)
+    }
+
+    private def mergeConsecutiveTags(el: Element, tagName: String): Unit = {
+      for (shit <- consecutiveNodesOfType(el, tagName).drop(1)) {
+        el.appendChild(shit)
+
+        if (shit.nodeName() != "#text")
+          shit.unwrap()
+      }
+    }
+
     private def extractIngress(el: Element): Option[String] = {
       val minimumIngressWordCount = 3
-      val firstSection = Option(el.select("body>section").first)
-      val firstDivSection = Option(el.select("body>section:eq(0)>div").first)
-      val secondDivSection = Option(el.select("body>section:eq(0)>div:eq(0)>div:nth-child(1)").first)
+      val strippedDownArticle = stringToJsoupDocument(el.html())
+      val tagsToKeep = Set("p", "strong", "body", "embed")
 
-      // Look for ingress according to the following priorities:
-      //   1. first paragraph in first section, ei. <section><p> HERE </p></section>
-      //   2. first paragraph in first nested div inside first section, ei. <section><div><div><p> HERE </p></div></div></section>
-      //   3. first paragraph in first div inside first section, ei. <section><div><p> HERE </p></div></section>
-      val ingress = (firstSection.flatMap(getIngressText), firstDivSection, secondDivSection) match {
-        case (Some(ing), _, _) => Some(ing)
-        case (None, _, Some(secondDiv)) => getIngressText(secondDiv)
-        case (None, Some(firstDiv), _) => getIngressText(firstDiv)
-        case _ => None
-      }
+      strippedDownArticle.select("*").asScala
+        .filterNot(e => tagsToKeep.contains(e.tagName))
+        .map(e => e.unwrap())
 
-      def getText(elements: Seq[Element]): String = elements.map(_.text).mkString(" ")
+      removeEmptyTags(strippedDownArticle)
 
-      ingress match {
-        case None => None
-        case Some(ing) if getText(ing).split(" +").length >= minimumIngressWordCount =>
-          val ingressText = ing.map(extractElement).mkString(" ")
+      val firstP = Option(strippedDownArticle.select("body>p:lt(2)>strong").first()).map(_.parent)
+      firstP.flatMap(p => {
+        mergeConsecutiveTags(p, "p")
+        val ingressTexts = consecutiveNodesOfType(p.select(">strong").first(), "strong").map {
+          case s: Element => s.text
+          case s => s.toString
+        }
+        val ingressText = ingressTexts.mkString(" ").replaceAll(" +", " ")
+
+        if (ingressText.split(" ").length < minimumIngressWordCount) {
+          None
+        } else {
+          ingressTexts.foreach(t => findElementWithText(el.select("p").asScala, "strong", t).map(_.remove))
           removeEmptyTags(el)
           Some(ingressText)
-        case _ => None
-      }
+        }
+      })
     }
 
     private def extractElement(elementToExtract: Element): String = {

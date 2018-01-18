@@ -161,7 +161,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     val imageMeta = ImageMetaInformation(newId, List(), List(), imageUrl, 256, "", ImageCopyright(ImageLicense("", "", Some("")), "", List()), ImageTag(List(), None))
     val expectedResult =
       s"""|<section>
-          |<$ResourceHtmlEmbedTag data-align="" data-alt="$sampleAlt" data-caption="" data-resource="image" data-resource_id="1" data-size="fullbredde">
+          |<$ResourceHtmlEmbedTag data-align="" data-alt="$sampleAlt" data-caption="" data-resource="image" data-resource_id="1" data-size="full">
           |</section>""".stripMargin.replace("\n", "")
 
     when(extractService.getNodeType(nodeId)).thenReturn(Some("image"))
@@ -292,6 +292,16 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
 
     val node = sampleNode.copy(titles=titles, contents=contents, tags=tags)
     service.toDomainArticle(node).tags.map(_.language) should equal(Seq("nb"))
+  }
+
+  test("toDomainArticle should import ingress images and use as meta images (yes really)") {
+    val (imageId, imageNid) = ("1", "1234")
+    val contents = Seq(TestData.sampleContent.copy(metaImage=Some(imageNid), language="nb"))
+
+    when(imageApiClient.importImage(imageNid)).thenReturn(Some(TestData.sampleImageMetaInformation.copy(id=imageId)))
+    val node = sampleNode.copy(contents=contents)
+
+    service.toDomainArticle(node).metaImageId should equal(Seq(ArticleMetaImage(imageId, "nb")))
   }
 
   test("Leaf node converter should create an article from a pure h5p node") {

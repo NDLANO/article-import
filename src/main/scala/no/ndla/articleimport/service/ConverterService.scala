@@ -12,12 +12,12 @@ import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.ArticleImportProperties._
 import no.ndla.articleimport.auth.User
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
-import no.ndla.articleimport.integration.ImageApiClient
+import no.ndla.articleimport.integration.{ImageApiClient, LanguageIngress}
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.model.domain.Language._
 import no.ndla.articleimport.model.domain._
 import no.ndla.mapping.License.getLicense
-import no.ndla.validation.{HtmlTagRules, EmbedTagRules, ResourceType, TagAttributes}
+import no.ndla.validation.{EmbedTagRules, HtmlTagRules, ResourceType, TagAttributes}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -64,7 +64,6 @@ trait ConverterService {
     private def postProcess(nodeToConvert: NodeToConvert, importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] =
       executePostprocessorModules(nodeToConvert, importStatus)
 
-
     private[service] def toDomainArticle(nodeToConvert: NodeToConvert): Article = {
       val requiredLibraries = nodeToConvert.contents.flatMap(_.requiredLibraries).distinct
       val ingresses = nodeToConvert.contents.flatMap(content => content.asArticleIntroduction)
@@ -74,7 +73,17 @@ trait ConverterService {
         nodeToConvert.contents.map(_.language) ++
         ingresses.map(_.language)).toSet
 
-      Article(None,
+      val metaImages = nodeToConvert.contents.flatMap(c => c.metaImage.map(imageNid =>
+        imageApiClient.importImage(imageNid) match {
+          case Some(image) =>
+            Some(ArticleMetaImage(image.id, c.language))
+          case None =>
+            logger.warn(s"Failed to import meta image with node id $imageNid")
+            None
+        })).flatten
+
+
+        Article(None,
         None,
         nodeToConvert.titles,
         nodeToConvert.contents.map(_.asContent),
@@ -84,7 +93,7 @@ trait ConverterService {
         visualElements,
         ingresses,
         nodeToConvert.contents.map(_.asArticleMetaDescription),
-        None,
+        metaImages,
         nodeToConvert.created,
         nodeToConvert.updated,
         authUser.userOrClientid(),
@@ -263,21 +272,6 @@ trait ConverterService {
 
     def createLinkToOldNdla(nodeId: String): String = s"//red.ndla.no/node/$nodeId"
 
-    def toApiConcept(concept: Concept, language: String): api.Concept = {
-      val title = findByLanguageOrBestEffort(concept.title, language).map(toApiConceptTitle).getOrElse(api.ConceptTitle("", Language.DefaultLanguage))
-      val content = findByLanguageOrBestEffort(concept.content, language).map(toApiConceptContent).getOrElse(api.ConceptContent("", Language.DefaultLanguage))
-
-      api.Concept(
-        concept.id.get,
-        title,
-        content,
-        concept.copyright.map(toApiCopyright),
-        concept.created,
-        concept.updated,
-        concept.supportedLanguages
-      )
-    }
-
     def toNewApiConcept(concept: Concept, language: String): api.NewConcept = {
       val title = findByLanguageOrBestEffort(concept.title, language).map(_.title).getOrElse("")
       val content = findByLanguageOrBestEffort(concept.content, language).map(_.content).getOrElse("")
@@ -313,7 +307,7 @@ trait ConverterService {
         findByLanguageOrBestEffort(article.tags, lang).map(_.value).getOrElse(Seq.empty),
         findByLanguageOrBestEffort(article.introduction, lang).map(_.value),
         findByLanguageOrBestEffort(article.metaDescription, lang).map(_.value),
-        article.metaImageId,
+        findByLanguageOrBestEffort(article.metaImageId, lang).map(_.value),
         findByLanguageOrBestEffort(article.visualElement, lang).map(_.value),
         toApiCopyright(article.copyright),
         article.requiredLibraries.map(toApiRequiredLibrary),
@@ -331,7 +325,7 @@ trait ConverterService {
         findByLanguageOrBestEffort(article.tags, lang).map(_.value).getOrElse(Seq.empty),
         findByLanguageOrBestEffort(article.introduction, lang).map(_.value),
         findByLanguageOrBestEffort(article.metaDescription, lang).map(_.value),
-        article.metaImageId,
+        findByLanguageOrBestEffort(article.metaImageId, lang).map(_.value),
         findByLanguageOrBestEffort(article.visualElement, lang).map(_.value),
         Some(toApiCopyright(article.copyright)),
         article.requiredLibraries.map(toApiRequiredLibrary),

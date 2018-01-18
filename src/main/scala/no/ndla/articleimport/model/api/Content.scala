@@ -15,21 +15,22 @@ import scala.annotation.meta.field
 
 sealed trait ApiContent {
   def id: Long
+  def revision: Option[Int]
 }
 
 @ApiModel(description = "Information about the article")
 case class Article(@(ApiModelProperty@field)(description = "The unique id of the article") id: Long,
                    @(ApiModelProperty@field)(description = "Link to article on old platform") oldNdlaUrl: Option[String],
-                   @(ApiModelProperty@field)(description = "The revision number for the article") revision: Int,
+                   @(ApiModelProperty@field)(description = "The revision number for the article") revision: Option[Int],
                    @(ApiModelProperty@field)(description = "Available titles for the article") title: ArticleTitle,
-                   @(ApiModelProperty@field)(description = "The content of the article in available languages") content: ArticleContent,
-                   @(ApiModelProperty@field)(description = "Describes the copyright information for the article") copyright: Copyright,
-                   @(ApiModelProperty@field)(description = "Searchable tags for the article") tags: ArticleTag,
+                   @(ApiModelProperty@field)(description = "The content of the article in available languages") content: Option[ArticleContent],
+                   @(ApiModelProperty@field)(description = "Describes the copyright information for the article") copyright: Option[Copyright],
+                   @(ApiModelProperty@field)(description = "Searchable tags for the article") tags: Option[ArticleTag],
                    @(ApiModelProperty@field)(description = "Required libraries in order to render the article") requiredLibraries: Seq[RequiredLibrary],
                    @(ApiModelProperty@field)(description = "A visual element article") visualElement: Option[VisualElement],
                    @(ApiModelProperty@field)(description = "A meta image for the article") metaImage: Option[String],
                    @(ApiModelProperty@field)(description = "An introduction for the article") introduction: Option[ArticleIntroduction],
-                   @(ApiModelProperty@field)(description = "Meta description for the article") metaDescription: ArticleMetaDescription,
+                   @(ApiModelProperty@field)(description = "Meta description for the article") metaDescription: Option[ArticleMetaDescription],
                    @(ApiModelProperty@field)(description = "When the article was created") created: Date,
                    @(ApiModelProperty@field)(description = "When the article was last updated") updated: Date,
                    @(ApiModelProperty@field)(description = "By whom the article was last updated") updatedBy: String,
@@ -39,8 +40,9 @@ case class Article(@(ApiModelProperty@field)(description = "The unique id of the
 
 @ApiModel(description = "Information about the concept")
 case class Concept(@(ApiModelProperty@field)(description = "The unique id of the concept") id: Long,
-                   @(ApiModelProperty@field)(description = "Available titles for the concept") title: ConceptTitle,
-                   @(ApiModelProperty@field)(description = "The content of the concept") content: ConceptContent,
+                   @(ApiModelProperty@field)(description = "The revision number for the concept") revision: Option[Int],
+                   @(ApiModelProperty@field)(description = "Available titles for the concept") title: Option[ConceptTitle],
+                   @(ApiModelProperty@field)(description = "The content of the concept") content: Option[ConceptContent],
                    @(ApiModelProperty@field)(description = "Describes the copyright information for the concept") copyright: Option[Copyright],
                    @(ApiModelProperty@field)(description = "When the concept was created") created: Date,
                    @(ApiModelProperty@field)(description = "When the concept was last updated") updated: Date,

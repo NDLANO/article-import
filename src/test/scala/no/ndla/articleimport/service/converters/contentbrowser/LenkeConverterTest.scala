@@ -8,7 +8,7 @@
 
 package no.ndla.articleimport.service.converters.contentbrowser
 
-import no.ndla.articleimport.{TestEnvironment, UnitSuite}
+import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.MigrationEmbedMeta
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.ResourceType
@@ -35,7 +35,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   test("That LenkeConverter returns an embed code if insertion method is 'inline'") {
     val insertion = "inline"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowser(contentString, "nb")
+    val content = ContentBrowserString(contentString, "nb")
 
     val Success((result, requiredLibraries, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
     result should equal(linkEmbedCode)
@@ -46,7 +46,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   test("That LenkeConverter returns an a-tag if insertion method is 'link'") {
     val insertion = "link"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowser(contentString, "nb")
+    val content = ContentBrowserString(contentString, "nb")
     val expectedResult = """ <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
     val Success((result, requiredLibraries, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
@@ -58,7 +58,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   test("That LenkeConverter defaults to 'link' if insertion method is not handled") {
     val insertion = "unhandledinsertion"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowser(contentString, "nb")
+    val content = ContentBrowserString(contentString, "nb")
     val expectedResult = """ <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
     val Success((result, requiredLibraries, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
@@ -70,7 +70,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   test("That LenkeConverter returns an a-tag if insertion method is 'lightbox_large'") {
     val insertion = "lightbox_large"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowser(contentString, "nb")
+    val content = ContentBrowserString(contentString, "nb")
     val expectedResult = """ <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
     val Success((result, requiredLibraries, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
@@ -82,7 +82,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   test("That LenkeConverter returns an a-tag if insertion method is 'collapsed_body'") {
     val insertion = "collapsed_body"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowser(contentString, "nb")
+    val content = ContentBrowserString(contentString, "nb")
     val expectedResult = s""" <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
     val Success((result, requiredLibraries, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
@@ -95,7 +95,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   test("That LenkeConverter returns inline content with nrk video id") {
     val insertion = "inline"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowser(contentString, "nb")
+    val content = ContentBrowserString(contentString, "nb")
     val expectedResult = s"""<$ResourceHtmlEmbedTag data-nrk-video-id="$nrkVideoId" data-resource="nrk" data-url="$nrkLinkUrl" />"""
 
     when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(Some(nrkLinkUrl), Some(nrkEmbedScript))))
@@ -114,8 +114,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
     val insertion = "inline"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowser(contentString, "nb")
-    val expectedResult = s"""<$ResourceHtmlEmbedTag data-height="451" data-resource="${ResourceType.IframeContent}" data-url="$preziSrc" data-width="620" />"""
+    val content = ContentBrowserString(contentString, "nb")
+    val expectedResult = s"""<$ResourceHtmlEmbedTag data-height="451" data-resource="${ResourceType.Prezi}" data-url="$preziSrc" data-width="620" />"""
 
     when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(Some(preziUrl), Some(preziEmbedCode))))
     val Success((result, _, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
@@ -131,7 +131,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
     val insertion = "inline"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowser(contentString, "nb")
+    val content = ContentBrowserString(contentString, "nb")
     val expectedResult = s"""<$ResourceHtmlEmbedTag data-height="451" data-resource="${ResourceType.IframeContent}" data-url="$CcraftSrc" data-width="620" />"""
 
     when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(Some(CcraftUrl), Some(CcraftEmbedCode))))
@@ -148,7 +148,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
     val insertion = "inline"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowser(contentString, "nb")
+    val content = ContentBrowserString(contentString, "nb")
     val expectedResult = s"""<$ResourceHtmlEmbedTag data-height="337px" data-resource="${ResourceType.IframeContent}" data-url="$NdlaFilmSrc" data-width="632px" />"""
 
     when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(Some(NdlaFilmUrl), Some(NdlaFilmEmbedCode))))
@@ -165,7 +165,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
     val insertion = "inline"
     val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowser(contentString, "nb")
+    val content = ContentBrowserString(contentString, "nb")
     val expectedResult = s"""<$ResourceHtmlEmbedTag data-height="350px" data-resource="${ResourceType.IframeContent}" data-url="$KahootSrc" data-width="620px" />"""
 
     when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(Some(KahootUrl), Some(KahootEmbedCode))))
@@ -173,5 +173,15 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
     result should equal(expectedResult)
     errors.messages.length should equal(1)
+  }
+
+  test("LenkeConverter should include an url fragment if defined in contentbrowser") {
+    val anchor = "9a-4"
+    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "insertion" -> "link", "link_anchor" -> anchor)
+
+    val Success((result, _, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
+
+    result should equal(s""" <a href="$linkUrl#$anchor" rel="noopener noreferrer" target="_blank" title=""></a>""")
+    errors.messages.length should equal(0)
   }
 }

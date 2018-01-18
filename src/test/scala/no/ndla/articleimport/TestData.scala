@@ -10,6 +10,7 @@ package no.ndla.articleimport
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.model.api
+import no.ndla.articleimport.service.converters.contentbrowser.ContentBrowser
 import org.joda.time.DateTime
 
 object TestData {
@@ -30,7 +31,7 @@ object TestData {
     Seq(VisualElement("image", "en")),
     Seq(ArticleIntroduction("This is an introduction", "en")),
     Seq(),
-    None,
+    Seq.empty,
     DateTime.now().minusDays(4).toDate,
     DateTime.now().minusDays(2).toDate,
     "ndalId54321",
@@ -47,7 +48,7 @@ object TestData {
     Seq(),
     Seq(),
     Seq(ArticleMetaDescription("meta description", "nb")),
-    Some("11"),
+    Seq(ArticleMetaImage("11", "nb")),
     today,
     today,
     "ndalId54321",
@@ -65,7 +66,7 @@ object TestData {
     Seq(),
     Seq(),
     Seq(),
-    None,
+    Seq.empty,
     today,
     today,
     "ndalId54321",
@@ -119,7 +120,7 @@ object TestData {
 
   val (nodeId, nodeId2) = ("1234", "4321")
   val sampleTitle = ArticleTitle("title", "en")
-  val sampleContent = LanguageContent(nodeId, nodeId, "sample content", "metadescription", "en", None, "fagstoff", Some("title"), Seq.empty)
+  val sampleContent = LanguageContent(nodeId, nodeId, "sample content", "metadescription", "en", None, "fagstoff", Some("title"), Seq.empty, None)
   val sampleTranslationContent = sampleContent.copy(tnid=nodeId2)
 
   val sampleImageMetaInformation = ImageMetaInformation(
@@ -143,8 +144,9 @@ object TestData {
 
   val sampleApiConcept = api.Concept(
     1,
-    api.ConceptTitle("Tittel for begrep", "nb"),
-    api.ConceptContent("Innhold for begrep", "nb"),
+    None,
+    Some(api.ConceptTitle("Tittel for begrep", "nb")),
+    Some(api.ConceptContent("Innhold for begrep", "nb")),
     Some(api.Copyright(Some(api.License("publicdomain", None, None)), Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None)),
     DateTime.now().minusDays(4).toDate,
     DateTime.now().minusDays(2).toDate,
@@ -154,22 +156,31 @@ object TestData {
   val sampleApiArticle = api.Article(
     articleId,
     None,
-    1,
+    Some(1),
     api.ArticleTitle("tittel", "nb"),
-    api.ArticleContent("innhold", "nb"),
-    api.Copyright(Some(api.License("by-sa", None, None)), Some("fromSomeWhere"), Seq(api.Author("string", "du")), Seq.empty, Seq.empty, None, None, None),
-    api.ArticleTag(Seq.empty, "nb"),
+    Some(api.ArticleContent("innhold", "nb")),
+    Some(api.Copyright(Some(api.License("by-sa", None, None)), Some("fromSomeWhere"), Seq(api.Author("string", "du")), Seq.empty, Seq.empty, None, None, None)),
+    Some(api.ArticleTag(Seq.empty, "nb")),
     Seq.empty,
     None,
     None,
     None,
-    api.ArticleMetaDescription("metabeskrivelse", "nb"),
+    Some(api.ArticleMetaDescription("metabeskrivelse", "nb")),
     today,
     today,
     "me",
     "standard",
     Seq("nb")
   )
+
+  def contentBrowserWithFields(fields: (String, String)*): ContentBrowser = {
+    new ContentBrowser {
+      val FieldMap = fields.toMap
+      override def getOpt(key: String): Option[String] = FieldMap.get(key)
+      override def get(key: String): String = getOpt(key).getOrElse("")
+      override val language: String = "nb"
+    }
+  }
 
 }
 

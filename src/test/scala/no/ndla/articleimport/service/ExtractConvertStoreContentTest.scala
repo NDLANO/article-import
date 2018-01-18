@@ -52,7 +52,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
     when(extractConvertStoreContent.getMainNodeId(any[String])).thenAnswer((invocation: InvocationOnMock) =>
       Some(invocation.getArgumentAt(0, classOf[String]))
-   )
+    )
   }
 
   test("That ETL extracts, translates and loads a node correctly") {
