@@ -80,18 +80,17 @@ trait LenkeConverterModule {
 
       val (embedTag, requiredLibs) = url.host.getOrElse("") match {
         case NRKUrlPattern(_) => getNrkEmbedTag(embedCode, url)
-        case PreziUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Prezi)
-        case CommonCraftUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Commoncraft)
-        case NdlaFilmIundervisningUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.NdlaFilmIundervisning)
-        case KahootUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Kahoot)
         case vimeoProUrlPattern(_) => getVimeoProEmbedTag(embedCode)
-        case khanAcademyUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.KhanAcademy)
-        case tv2SkoleUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Tv2Skole)
-        case vgNoUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.VgNo)
-        case scribdUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Scribd)
-        case vgNoUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.VgNo)
-        case scribdUrlPattern(_) => getRegularEmbedTag(embedCode, ResourceType.Scribd)
         case kunnskapsFilmUrlPattern(_) => getKunnskapsFilmEmbedTag(embedCode)
+        case PreziUrlPattern(_)
+             | CommonCraftUrlPattern(_)
+             | NdlaFilmIundervisningUrlPattern(_)
+             | KahootUrlPattern(_)
+             | khanAcademyUrlPattern(_)
+             | tv2SkoleUrlPattern(_)
+             | scribdUrlPattern(_)
+             | vgNoUrlPattern(_) =>
+          getRegularEmbedTag(embedCode)
         case _ => (HtmlTagGenerator.buildExternalInlineEmbedContent(url), None)
       }
       (embedTag, requiredLibs, message :: Nil)
@@ -105,11 +104,11 @@ trait LenkeConverterModule {
       (HtmlTagGenerator.buildNRKInlineVideoContent(videoId, url), Some(requiredLibrary))
     }
 
-    def getRegularEmbedTag(embedCode: String, resourceType: ResourceType.Value): (String, Option[RequiredLibrary]) = {
+    def getRegularEmbedTag(embedCode: String): (String, Option[RequiredLibrary]) = {
       val doc = Jsoup.parseBodyFragment(embedCode).select("iframe").first()
       val (src, width, height) = (doc.attr("src"), doc.attr("width"), doc.attr("height"))
 
-      (HtmlTagGenerator.buildRegularInlineContent(src, width, height, resourceType), None)
+      (HtmlTagGenerator.buildRegularInlineContent(src, width, height, ResourceType.IframeContent), None)
     }
 
     def getVimeoProEmbedTag(embedCode: String): (String, Option[RequiredLibrary]) = {
