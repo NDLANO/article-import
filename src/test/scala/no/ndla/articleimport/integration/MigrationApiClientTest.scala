@@ -25,11 +25,11 @@ class MigrationApiClientTest extends UnitSuite with TestEnvironment {
     migrationMainNodeImport.copy(emneartikkelData=Seq()).asLanguageContents.head.ingress.get should equal (LanguageIngress(migrationIngress.content.get, migrationIngress.imageNid))
   }
 
-  test("asLanguageContents uses metadescription from emneartikkel if present") {
-    migrationMainNodeImport.asLanguageContents.head.metaDescription should equal (emneArtikkelData.metaDescription)
+  test("asLanguageContents uses ingress as metadescription from emneartikkel if present") {
+    migrationMainNodeImport.asLanguageContents.head.metaDescription should equal (emneArtikkelData.ingress)
   }
 
-  test("asLanguageContents uses metadescription from content if emneartikkel is not present") {
-    migrationMainNodeImport.asLanguageContents.head.metaDescription should equal (emneArtikkelData.metaDescription)
+  test("asLanguageContents uses ingress as metadescription from content if emneartikkel is not present") {
+    migrationMainNodeImport.asLanguageContents.head.metaDescription should equal (emneArtikkelData.ingress)
   }
 }
