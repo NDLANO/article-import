@@ -34,7 +34,7 @@ trait LeafNodeConverter {
         case `nodeTypeH5P` =>
           H5PConverter.toH5PEmbed(content.nid) match {
             case Success(html) =>
-              element.prepend(s"<section>$html</section>")
+              element.append(s"<section>$html</section>")
               Success(content.requiredLibraries)
             case Failure(ex) => Failure(ex)
           }
