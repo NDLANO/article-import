@@ -35,7 +35,8 @@ object TestData {
     DateTime.now().minusDays(4).toDate,
     DateTime.now().minusDays(2).toDate,
     "ndalId54321",
-    ArticleType.Standard.toString)
+    ArticleType.Standard.toString,
+    Seq.empty)
 
   val sampleDomainArticle = Article(
     Option(articleId),
@@ -52,7 +53,8 @@ object TestData {
     today,
     today,
     "ndalId54321",
-    ArticleType.Standard.toString
+    ArticleType.Standard.toString,
+    Seq.empty
   )
 
   val sampleDomainArticle2 = Article(
@@ -70,7 +72,8 @@ object TestData {
     today,
     today,
     "ndalId54321",
-    ArticleType.Standard.toString
+    ArticleType.Standard.toString,
+      Seq.empty
   )
 
   val newArticleV2 = api.NewArticle(
@@ -84,6 +87,7 @@ object TestData {
     api.Copyright(Some(api.License("publicdomain", None, None)), Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None),
     Seq.empty,
     "standard",
+    Seq.empty,
     "en"
   )
 
@@ -98,6 +102,7 @@ object TestData {
     api.Copyright(Some(api.License("by-sa", None, None)), Some("fromSomeWhere"), Seq(api.Author("string", "du")), Seq.empty, Seq.empty, None, None, None),
     Seq.empty,
     "standard",
+    Seq.empty,
     "nb"
   )
 
@@ -112,6 +117,7 @@ object TestData {
     None,
     None,
     None,
+    Seq.empty,
     Seq.empty,
     None
   )

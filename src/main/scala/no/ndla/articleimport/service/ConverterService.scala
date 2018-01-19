@@ -84,20 +84,21 @@ trait ConverterService {
 
 
         Article(None,
-        None,
-        nodeToConvert.titles,
-        nodeToConvert.contents.map(_.asContent),
-        toDomainCopyright(nodeToConvert.license, nodeToConvert.authors),
-        nodeToConvert.tags.filter(tag => languagesInNode.contains(tag.language)),
-        requiredLibraries,
-        visualElements,
-        ingresses,
-        nodeToConvert.contents.map(_.asArticleMetaDescription),
-        metaImages,
-        nodeToConvert.created,
-        nodeToConvert.updated,
-        authUser.userOrClientid(),
-        nodeToConvert.articleType.toString
+          None,
+          nodeToConvert.titles,
+          nodeToConvert.contents.map(_.asContent),
+          toDomainCopyright(nodeToConvert.license, nodeToConvert.authors),
+          nodeToConvert.tags.filter(tag => languagesInNode.contains(tag.language)),
+          requiredLibraries,
+          visualElements,
+          ingresses,
+          nodeToConvert.contents.map(_.asArticleMetaDescription),
+          metaImages,
+          nodeToConvert.created,
+          nodeToConvert.updated,
+          authUser.userOrClientid(),
+          nodeToConvert.articleType.toString,
+          nodeToConvert.editorialKeywords.flatMap(_.keywords)
       )
     }
 
@@ -312,6 +313,7 @@ trait ConverterService {
         toApiCopyright(article.copyright),
         article.requiredLibraries.map(toApiRequiredLibrary),
         article.articleType,
+        article.editorialKeywords,
         lang
       )
     }
@@ -329,6 +331,7 @@ trait ConverterService {
         findByLanguageOrBestEffort(article.visualElement, lang).map(_.value),
         Some(toApiCopyright(article.copyright)),
         article.requiredLibraries.map(toApiRequiredLibrary),
+        article.editorialKeywords,
         Some(article.articleType)
       )
     }

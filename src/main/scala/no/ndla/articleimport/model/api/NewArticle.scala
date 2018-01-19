@@ -17,5 +17,6 @@ case class NewArticle(title: String,
                       copyright: Copyright,
                       requiredLibraries: Seq[RequiredLibrary],
                       articleType: String,
+                      notes: Seq[String],
                       language: String)
 

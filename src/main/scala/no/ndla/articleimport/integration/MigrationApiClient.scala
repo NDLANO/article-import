@@ -88,7 +88,8 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle], ingresses
       contentType.headOption.map(_.`type`).getOrElse("unknown"),
       contents.minBy(_.created).created,
       contents.maxBy(_.changed).changed,
-      articleType.getOrElse(ArticleType.Standard)
+      articleType.getOrElse(ArticleType.Standard),
+      editorialKeywords
     )
   }
 
