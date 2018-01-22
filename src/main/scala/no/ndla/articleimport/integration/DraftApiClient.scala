@@ -111,7 +111,7 @@ trait DraftApiClient {
       get[api.Concept](s"$DraftApiConceptPublicEndpoint/$id").toOption
     }
 
-    def newConcept(concept: NewConcept, mainNodeId: String): Try[api.Concept] = {
+    private def newConcept(concept: NewConcept, mainNodeId: String): Try[api.Concept] = {
       postWithData[api.Concept, NewConcept](s"$DraftApiConceptPublicEndpoint/", concept, "externalId" -> mainNodeId)
     }
 
