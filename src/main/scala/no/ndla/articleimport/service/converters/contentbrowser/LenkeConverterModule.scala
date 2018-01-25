@@ -35,13 +35,13 @@ trait LenkeConverterModule {
     }
 
     def convertLink(cont: ContentBrowser): Try[(String, Seq[RequiredLibrary], Seq[String])] = {
+      val LightboxPattern = "(lightbox_.*)".r
+
       extractService.getNodeEmbedMeta(cont.get("nid")).map(meta => {
         val (url, embedCode) = (meta.url.getOrElse(""), meta.embedCode.getOrElse(""))
         val (htmlTag, requiredLibrary, errors) = cont.get("insertion") match {
-          case "link" => insertAnchor(url, cont)
           case "inline" => insertInline(url, embedCode, cont)
-          case "lightbox_large" => insertAnchor(url, cont)
-          case "collapsed_body" => insertAnchor(url, cont)
+          case "link" | "collapsed_body" | LightboxPattern(_) => insertAnchor(url, cont)
           case _ => insertUnhandled(url, cont)
         }
 

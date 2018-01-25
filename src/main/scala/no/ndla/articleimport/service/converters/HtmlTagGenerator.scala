@@ -53,16 +53,19 @@ trait HtmlTagGenerator {
       buildEmbedContent(dataAttributes)
     }
 
-    def buildContentLinkEmbedContent(contentId: Long, linkText: String, linkContext: Option[String] = None): String = {
+    def buildContentLinkEmbedContent(contentId: Long, linkText: String, openInNewWindow: Boolean): String = {
       val attributes = Map(
         TagAttributes.DataResource -> ResourceType.ContentLink.toString,
         TagAttributes.DataContentId -> s"$contentId",
         TagAttributes.DataLinkText -> linkText)
 
-      val dataAttributes = linkContext.map(c => attributes.updated(TagAttributes.DataOpenIn, c))
-        .getOrElse(attributes)
+      val openInNewWindowAttr =
+        if (openInNewWindow)
+          Seq(TagAttributes.DataOpenIn -> "new-context")
+        else
+          Seq.empty
 
-      buildEmbedContent(dataAttributes)
+      buildEmbedContent(attributes ++ openInNewWindowAttr)
     }
 
     def buildConceptEmbedContent(conceptId: Long, linkText: String) = {
