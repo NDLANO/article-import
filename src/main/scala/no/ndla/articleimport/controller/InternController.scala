@@ -32,7 +32,7 @@ trait InternController {
       authUser.assertHasId()
       authRole.assertHasRole(RoleDraftWrite)
       val externalId = params("external_id")
-      val forceUpdate = booleanOrDefault("force_update", default = false)
+      val forceUpdate = booleanOrDefault("forceUpdate", default = false)
 
       extractConvertStoreContent.processNode(externalId, ImportStatus.empty(forceUpdate)) match {
         case Success((content, status)) => status.addMessage(s"Successfully imported node $externalId: ${content.id}")

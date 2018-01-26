@@ -14,10 +14,11 @@ import no.ndla.articleimport.TestData._
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import org.json4s.native.Serialization._
-import org.mockito.Mockito._
 import org.scalatra.test.scalatest.ScalatraFunSuite
+import org.mockito.Matchers.{eq => eqTo, _}
+import org.mockito.Mockito._
 
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 class InternControllerTest extends UnitSuite with TestEnvironment with ScalatraFunSuite {
   implicit val formats = org.json4s.DefaultFormats
@@ -41,7 +42,7 @@ class InternControllerTest extends UnitSuite with TestEnvironment with ScalatraF
   test("That POST /import/:node_id returns a json status-object on success") {
     val newNodeId: Long = 4444
     val newArticle = TestData.sampleApiArticle.copy(id=newNodeId)
-    when(extractConvertStoreContent.processNode(nodeId)).thenReturn(Try((newArticle, ImportStatus.empty)))
+    when(extractConvertStoreContent.processNode(nodeId, ImportStatus.empty)).thenReturn(Success((newArticle, ImportStatus.empty)))
 
     post(s"/import/$nodeId", params = Map("forceUpdate" -> "false"), headers = Map("Authorization" -> authHeaderWithDraftsWriteRole)) {
       status should equal(200)
@@ -51,7 +52,7 @@ class InternControllerTest extends UnitSuite with TestEnvironment with ScalatraF
   }
 
   test("That POST /import/:node_id status code is 500 with a message if processNode fails") {
-    when(extractConvertStoreContent.processNode(nodeId)).thenReturn(Failure(new RuntimeException("processNode failed")))
+    when(extractConvertStoreContent.processNode(nodeId, ImportStatus.empty)).thenReturn(Failure(new RuntimeException("processNode failed")))
 
     post(s"/import/$nodeId", params = Map("forceUpdate" -> "false"), headers = Map("Authorization" -> authHeaderWithDraftsWriteRole)) {
       status should equal(500)
