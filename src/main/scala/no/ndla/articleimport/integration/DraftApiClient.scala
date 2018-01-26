@@ -35,7 +35,7 @@ trait DraftApiClient {
         .orElse(getConceptIdFromExternalId(externalId).flatMap(getConceptFromId))
     }
 
-    private def getArticleFromId(id: Long): Option[api.Article] = {
+    def getArticleFromId(id: Long): Option[api.Article] = {
       get[api.Article](s"$DraftApiPublicEndpoint/$id").toOption
     }
 

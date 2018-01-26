@@ -124,6 +124,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     val sampleArticle = TestData.sampleApiArticle
     when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty.addVisitedNode(nodeId))).thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2)))))
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(Some(1: Long))
+    when(draftApiClient.getContentByExternalId(any[String])).thenReturn(Some(sampleArticle))
     when(draftApiClient.updateArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle))
 
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
@@ -141,6 +142,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty.addVisitedNode(nodeId))).thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2)))))
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(Some(1: Long))
     when(draftApiClient.updateArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle))
+    when(draftApiClient.getContentByExternalId(any[String])).thenReturn(Some(sampleArticle))
 
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
     when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
