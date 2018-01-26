@@ -9,6 +9,7 @@
 package no.ndla.articleimport.controller
 
 import no.ndla.articleimport.auth.{Role, User}
+import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.service._
 import org.json4s.{DefaultFormats, Formats}
 
@@ -31,8 +32,9 @@ trait InternController {
       authUser.assertHasId()
       authRole.assertHasRole(RoleDraftWrite)
       val externalId = params("external_id")
+      val forceUpdate = booleanOrDefault("force_update", default = false)
 
-      extractConvertStoreContent.processNode(externalId) match {
+      extractConvertStoreContent.processNode(externalId, ImportStatus.empty(forceUpdate)) match {
         case Success((content, status)) => status.addMessage(s"Successfully imported node $externalId: ${content.id}")
         case Failure(exc) => errorHandler(exc)
       }

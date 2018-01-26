@@ -130,7 +130,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
     when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
 
-    val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty, forceUpdateArticles = true)
+    val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty)
     status should equal(ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId), Some(sampleArticle.id), false))
 
     verify(draftApiClient, times(1)).updateArticle(any[Article], any[String], any[Set[String]])

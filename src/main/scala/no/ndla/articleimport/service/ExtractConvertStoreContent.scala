@@ -30,7 +30,7 @@ trait ExtractConvertStoreContent {
     def processNode(externalId: String): Try[(ApiContent, ImportStatus)] =
       processNode(externalId, ImportStatus.empty)
 
-    def processNode(externalId: String, importStatus: ImportStatus = ImportStatus.empty, forceUpdateArticles: Boolean = false): Try[(ApiContent, ImportStatus)] = {
+    def processNode(externalId: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
       if (importStatus.visitedNodes.contains(externalId)) {
         return getMainNodeId(externalId).flatMap(draftApiClient.getContentByExternalId) match {
           case Some(content) => Success(content, importStatus)
@@ -79,16 +79,23 @@ trait ExtractConvertStoreContent {
     }
 
     private def storeArticle(article: Article, mainNodeNid: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
-
       draftApiClient.getArticleIdFromExternalId(mainNodeNid) match {
         case Some(id) => draftApiClient.getArticleFromId(id) match {
           case Some(content) if content.revision.getOrElse(1) > 1 =>
-            logger.info("Article has been updated since import, refusing to import...")
-            val storeImportStatus = importStatus.addMessage(s"$mainNodeNid has been updated since import, refusing to import.")
 
             content match {
-              case article: api.Article =>
-                Success(article, storeImportStatus)
+              case storedArticle: api.Article =>
+                if (importStatus.forceUpdateArticles) {
+                  logger.info("forceUpdateArticles is set, updating anyway...")
+                  val storedArticle = draftApiClient.updateArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
+                  val storeImportStatus = importStatus.addMessage(s"$mainNodeNid has been updated since import, but forceUpdateArticles is set, updating anyway")
+                  publishArticle(storedArticle, storeImportStatus)
+                }
+                else {
+                  logger.info("Article has been updated since import, refusing to import...")
+                  val storeImportStatus = importStatus.addMessage(s"$mainNodeNid has been updated since import, refusing to import.")
+                  Success(storedArticle, storeImportStatus)
+                }
               case _ =>
                 logger.error("ApiContent of storeArticle was not an article. This is a bug.")
                 Failure(ImportException(s"Remote type of $mainNodeNid was not article, yet was imported as one. This is a bug."))
@@ -151,4 +158,5 @@ trait ExtractConvertStoreContent {
     }
 
   }
+
 }
