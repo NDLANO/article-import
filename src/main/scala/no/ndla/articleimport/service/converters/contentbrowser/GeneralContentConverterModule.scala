@@ -37,28 +37,31 @@ trait GeneralContentConverterModule {
     }
 
     def insertContent(content: String, contentBrowser: ContentBrowser, importStatus: ImportStatus): Try[(String, ImportStatus)] = {
+      val LightboxPattern = "(lightbox_.*)".r
       val insertionMethod = contentBrowser.get("insertion")
+
       insertionMethod match {
         case "inline" => Success(content, importStatus)
         case "collapsed_body" =>
           Success(HtmlTagGenerator.buildDetailsSummaryContent(contentBrowser.get("link_text"), content), importStatus)
-        case "link" => insertLink(contentBrowser, importStatus)
+        case "link" => insertLink(contentBrowser, importStatus, openInNewWindow = false)
+        case LightboxPattern(_) => insertLink(contentBrowser, importStatus, openInNewWindow = true)
         case _ =>
           val warnMessage = s"""Unhandled insertion method '$insertionMethod' on '${contentBrowser.get("link_text")}'. Defaulting to link."""
           logger.warn(warnMessage)
-          insertLink(contentBrowser, importStatus) map {
+          insertLink(contentBrowser, importStatus, openInNewWindow = false) map {
             case (insertString, is) =>
               (insertString, is.addMessage(warnMessage))
           }
       }
     }
 
-    def insertLink(contentBrowser: ContentBrowser, importStatus: ImportStatus): Try[(String, ImportStatus)] = {
+    def insertLink(contentBrowser: ContentBrowser, importStatus: ImportStatus, openInNewWindow: Boolean): Try[(String, ImportStatus)] = {
       val externalId = contentBrowser.get("nid")
 
       getContentId(externalId, importStatus) match {
         case Success((Some(articleId), _, is)) =>
-          val embedContent = HtmlTagGenerator.buildContentLinkEmbedContent(articleId, contentBrowser.get("link_text"))
+          val embedContent = HtmlTagGenerator.buildContentLinkEmbedContent(articleId, contentBrowser.get("link_text"), openInNewWindow)
           Success(s" $embedContent", is)
         case Success((_, Some(conceptId), is)) =>
           val embedContent = HtmlTagGenerator.buildConceptEmbedContent(conceptId, contentBrowser.get("link_text"))
