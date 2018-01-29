@@ -153,4 +153,36 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     verify(draftApiClient, times(0)).updateArticle(any[Article], any[String], any[Set[String]])
   }
 
+  test("storeArticle should update if id exists, but no body") {
+    val id = 1234
+    val sampleArticle = TestData.sampleArticleWithPublicDomain.copy(id = Some(id))
+    reset(draftApiClient)
+
+    when(draftApiClient.getArticleIdFromExternalId(id.toString)).thenReturn(Some(10: Long))
+    when(draftApiClient.getArticleFromId(10)).thenReturn(None)
+    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+    when(draftApiClient.updateArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle.copy(id = id)))
+
+    eCSService.storeArticle(sampleArticle, id.toString, ImportStatus.empty)
+
+    verify(draftApiClient, times(1)).updateArticle(any[Article], any[String], any[Set[String]])
+    verify(draftApiClient, times(0)).newArticle(any[Article], any[String], any[Set[String]])
+  }
+
+  test("storeArticle should create new if id does not exist at all") {
+    val id = 1234
+    val sampleArticle = TestData.sampleArticleWithPublicDomain.copy(id = Some(id))
+    reset(draftApiClient)
+
+    when(draftApiClient.getArticleIdFromExternalId(id.toString)).thenReturn(None)
+    when(draftApiClient.getArticleFromId(10)).thenReturn(None)
+    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+    when(draftApiClient.newArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle.copy(id = id)))
+
+    eCSService.storeArticle(sampleArticle, id.toString, ImportStatus.empty)
+
+    verify(draftApiClient, times(0)).updateArticle(any[Article], any[String], any[Set[String]])
+    verify(draftApiClient, times(1)).newArticle(any[Article], any[String], any[Set[String]])
+  }
+
 }

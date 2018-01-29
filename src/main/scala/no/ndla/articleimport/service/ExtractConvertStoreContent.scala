@@ -78,7 +78,7 @@ trait ExtractConvertStoreContent {
       }
     }
 
-    private def storeArticle(article: Article, mainNodeNid: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
+    private[service] def storeArticle(article: Article, mainNodeNid: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
       draftApiClient.getArticleIdFromExternalId(mainNodeNid) match {
         case Some(id) => draftApiClient.getArticleFromId(id) match {
           case Some(content) if content.revision.getOrElse(1) > 1 =>
