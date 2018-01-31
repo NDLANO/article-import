@@ -176,7 +176,8 @@ object TestData {
     today,
     "me",
     "standard",
-    Seq("nb")
+    Seq("nb"),
+    None
   )
 
   def contentBrowserWithFields(fields: (String, String)*): ContentBrowser = {

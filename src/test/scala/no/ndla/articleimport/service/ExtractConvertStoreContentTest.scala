@@ -121,33 +121,68 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
   test("Articles should be force-updated if flag is set") {
     reset(draftApiClient)
-    val sampleArticle = TestData.sampleApiArticle
-    when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty.addVisitedNode(nodeId))).thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2)))))
+    val sampleArticle = TestData.sampleApiArticle.copy(revision = Some(10))
+    when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty(forceUpdate = true).addVisitedNode(nodeId))).thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2), Some(1), false, true))))
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(Some(1: Long))
+    when(draftApiClient.getContentByExternalId(any[String])).thenReturn(Some(sampleArticle))
     when(draftApiClient.updateArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle))
 
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
     when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
 
-    val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty, forceUpdateArticles = true)
-    status should equal(ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId), Some(sampleArticle.id), false))
+    val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty(forceUpdate = true))
+    status should equal(ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId), Some(sampleArticle.id), false, true))
 
     verify(draftApiClient, times(1)).updateArticle(any[Article], any[String], any[Set[String]])
   }
 
   test("Articles should not be force-updated if flag is not set") {
-    val sampleArticle = TestData.sampleApiArticle
+    val sampleArticle = TestData.sampleApiArticle.copy(revision = Some(10))
     reset(draftApiClient)
-    when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty.addVisitedNode(nodeId))).thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2)))))
+    when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty(forceUpdate = false).addVisitedNode(nodeId))).thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2), Some(1), false, false))))
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(Some(1: Long))
+    when(draftApiClient.getContentByExternalId(any[String])).thenReturn(Some(sampleArticle))
+    when(draftApiClient.getArticleFromId(any[Long])).thenReturn(Some(sampleArticle))
     when(draftApiClient.updateArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle))
 
     when(draftApiClient.getConceptIdFromExternalId(any[String])).thenReturn(Some(1: Long))
     when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
 
-    val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty)
-    status should equal(ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId), Some(sampleArticle.id), false))
+    val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty(forceUpdate = false))
+    status should equal(ImportStatus(List(s"$nodeId has been updated since import, refusing to import.", s"Successfully imported node $nodeId: 1"), Set(nodeId), Some(sampleArticle.id), false, false))
+    verify(draftApiClient, times(0)).updateArticle(any[Article], any[String], any[Set[String]])
+  }
+
+  test("storeArticle should update if id exists, but no body") {
+    val id = 1234
+    val sampleArticle = TestData.sampleArticleWithPublicDomain.copy(id = Some(id))
+    reset(draftApiClient)
+
+    when(draftApiClient.getArticleIdFromExternalId(id.toString)).thenReturn(Some(10: Long))
+    when(draftApiClient.getArticleFromId(10)).thenReturn(None)
+    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+    when(draftApiClient.updateArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle.copy(id = id)))
+
+    eCSService.storeArticle(sampleArticle, id.toString, ImportStatus.empty)
+
     verify(draftApiClient, times(1)).updateArticle(any[Article], any[String], any[Set[String]])
+    verify(draftApiClient, times(0)).newArticle(any[Article], any[String], any[Set[String]])
+  }
+
+  test("storeArticle should create new if id does not exist at all") {
+    val id = 1234
+    val sampleArticle = TestData.sampleArticleWithPublicDomain.copy(id = Some(id))
+    reset(draftApiClient)
+
+    when(draftApiClient.getArticleIdFromExternalId(id.toString)).thenReturn(None)
+    when(draftApiClient.getArticleFromId(10)).thenReturn(None)
+    when(draftApiClient.publishArticle(any[Long])).thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+    when(draftApiClient.newArticle(any[Article], any[String], any[Set[String]])).thenReturn(Success(TestData.sampleApiArticle.copy(id = id)))
+
+    eCSService.storeArticle(sampleArticle, id.toString, ImportStatus.empty)
+
+    verify(draftApiClient, times(0)).updateArticle(any[Article], any[String], any[Set[String]])
+    verify(draftApiClient, times(1)).newArticle(any[Article], any[String], any[Set[String]])
   }
 
 }

@@ -11,6 +11,7 @@ package no.ndla.articleimport.service
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.{DraftApiClient, MigrationApiClient}
 import no.ndla.articleimport.model.api.{ApiContent, ImportException, NotFoundException}
+import no.ndla.articleimport.model.api
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.ArticleImportProperties.{nodeTypeBegrep, supportedContentTypes}
 
@@ -29,7 +30,7 @@ trait ExtractConvertStoreContent {
     def processNode(externalId: String): Try[(ApiContent, ImportStatus)] =
       processNode(externalId, ImportStatus.empty)
 
-    def processNode(externalId: String, importStatus: ImportStatus = ImportStatus.empty, forceUpdateArticles: Boolean = false): Try[(ApiContent, ImportStatus)] = {
+    def processNode(externalId: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
       if (importStatus.visitedNodes.contains(externalId)) {
         return getMainNodeId(externalId).flatMap(draftApiClient.getContentByExternalId) match {
           case Some(content) => Success(content, importStatus)
@@ -47,8 +48,8 @@ trait ExtractConvertStoreContent {
         // This ensures that cyclic dependencies between articles does not cause an infinite recursive import job
         _ <- generateNewIdIfFirstTimeImported(mainNodeId, node.nodeType)
         (convertedContent, updatedImportStatus) <- converterService.toDomainArticle(node, importStatus)
-        content <- store(convertedContent, mainNodeId)
-      } yield (content, updatedImportStatus.addMessage(s"Successfully imported node $externalId: ${content.id}").setArticleId(content.id))
+        (content, storeImportStatus) <- store(convertedContent, mainNodeId, updatedImportStatus)
+      } yield (content, storeImportStatus.addMessage(s"Successfully imported node $externalId: ${content.id}").setArticleId(content.id))
     }
 
     def getMainNodeId(externalId: String): Option[String] = {
@@ -67,21 +68,54 @@ trait ExtractConvertStoreContent {
       }
     }
 
-    private def store(content: Content, mainNodeId: String): Try[ApiContent] = {
+    private def store(content: Content, mainNodeId: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
       content match {
-        case article: Article => storeArticle(article, mainNodeId)
-        case concept: Concept => storeConcept(concept, mainNodeId)
+        case article: Article => storeArticle(article, mainNodeId, importStatus)
+        case concept: Concept => storeConcept(concept, mainNodeId) match {
+          case Success(con) => Success((con, importStatus))
+          case Failure(ex) => Failure(ex)
+        }
       }
     }
 
-    private def storeArticle(article: Article, mainNodeNid: String): Try[ApiContent] = {
-      val storedArticle = draftApiClient.getArticleIdFromExternalId(mainNodeNid).isDefined match {
-        case true => draftApiClient.updateArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
-        case false => draftApiClient.newArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
-      }
+    private[service] def storeArticle(article: Article, mainNodeNid: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
+      draftApiClient.getArticleIdFromExternalId(mainNodeNid) match {
+        case Some(id) => draftApiClient.getArticleFromId(id) match {
+          case Some(content) if content.revision.getOrElse(1) > 1 =>
 
+            content match {
+              case storedArticle: api.Article =>
+                if (importStatus.forceUpdateArticles) {
+                  logger.info("forceUpdateArticles is set, updating anyway...")
+                  val storedArticle = draftApiClient.updateArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
+                  val storeImportStatus = importStatus.addMessage(s"$mainNodeNid has been updated since import, but forceUpdateArticles is set, updating anyway")
+                  publishArticle(storedArticle, storeImportStatus)
+                }
+                else {
+                  logger.info("Article has been updated since import, refusing to import...")
+                  val storeImportStatus = importStatus.addMessage(s"$mainNodeNid has been updated since import, refusing to import.")
+                  Success(storedArticle, storeImportStatus)
+                }
+              case _ =>
+                logger.error("ApiContent of storeArticle was not an article. This is a bug.")
+                Failure(ImportException(s"Remote type of $mainNodeNid was not article, yet was imported as one. This is a bug."))
+            }
+          case _ =>
+            val storedArticle = draftApiClient.updateArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
+            publishArticle(storedArticle, importStatus)
+        }
+        case _ =>
+          val storedArticle = draftApiClient.newArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
+          publishArticle(storedArticle, importStatus)
+      }
+    }
+
+    private def publishArticle(storedArticle: Try[ApiContent], importStatus: ImportStatus) = {
       storedArticle.flatMap(a => draftApiClient.publishArticle(a.id)) match {
-        case Success(status) if Set("PUBLISHED", "IMPORTED").subsetOf(status.status) => storedArticle
+        case Success(status) if Set("PUBLISHED", "IMPORTED").subsetOf(status.status) => storedArticle match {
+          case Success(successArticle) => Success(successArticle, importStatus)
+          case Failure(ex) => Failure(ex)
+        }
         case Success(status) => Failure(ImportException(s"Published article does not contain expected statuses PUBLISHED and IMPORTED (${status.status})"))
         case Failure(ex) => Failure(ex)
       }
@@ -124,4 +158,5 @@ trait ExtractConvertStoreContent {
     }
 
   }
+
 }

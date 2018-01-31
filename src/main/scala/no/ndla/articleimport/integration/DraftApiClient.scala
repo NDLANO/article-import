@@ -35,7 +35,7 @@ trait DraftApiClient {
         .orElse(getConceptIdFromExternalId(externalId).flatMap(getConceptFromId))
     }
 
-    private def getArticleFromId(id: Long): Option[api.Article] = {
+    def getArticleFromId(id: Long): Option[api.Article] = {
       get[api.Article](s"$DraftApiPublicEndpoint/$id").toOption
     }
 
@@ -102,8 +102,8 @@ trait DraftApiClient {
 
     def publishArticle(id: Long): Try[ArticleStatus] = {
       for {
-        _ <- put[ArticleStatus](s"$DraftApiPublicEndpoint/$id/publish")
-        status <- post[ArticleStatus](s"$DraftApiInternEndpoint/article/$id/publish")
+        _ <- put[ArticleStatus](s"$DraftApiPublicEndpoint/$id/publish?import_publish=true")
+        status <- post[ArticleStatus](s"$DraftApiInternEndpoint/article/$id/publish?import_publish=true")
       } yield status
     }
 
