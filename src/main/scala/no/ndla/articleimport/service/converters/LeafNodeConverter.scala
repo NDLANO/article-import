@@ -26,7 +26,7 @@ trait LeafNodeConverter {
 
     def convert(content: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
       val element = stringToJsoupDocument(content.content)
-      val defaltMetaDescription = "standard metatekst"
+      val defaltMetaDescription = "Beskrivelse mangler"
 
       val newContent = content.nodeType match {
         case `nodeTypeVideo` => doVideo(element, content.nid)
