@@ -24,6 +24,7 @@ class LeafNodeConverterTest extends UnitSuite with TestEnvironment {
     val Success((result, _)) = LeafNodeConverter.convert(sampleLanguageContent, ImportStatus.empty)
 
     result.content should equal (expectedResult)
+    result.metaDescription should equal("Beskrivelse mangler")
     result.requiredLibraries.size should equal (0)
   }
 
@@ -34,6 +35,7 @@ class LeafNodeConverterTest extends UnitSuite with TestEnvironment {
     val Success((result, _)) = LeafNodeConverter.convert(sampleLanguageContent, ImportStatus.empty)
 
     result.content should equal (expectedResult)
+    result.metaDescription should equal("Beskrivelse mangler")
     result.requiredLibraries.size should equal (0)
   }
 
