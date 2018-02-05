@@ -42,7 +42,7 @@ trait MigrationApiClient {
 
     private def get[A](endpointUrl: String, nodeId: String)(implicit mf: Manifest[A]): Try[A] = {
       ndlaClient.fetchWithBasicAuth[A](
-        Http(endpointUrl.replace(":node_id", nodeId)),
+        Http(endpointUrl.replace(":node_id", nodeId)).timeout(1000 * 30, 1000 * 30),
         MigrationUser, MigrationPassword)
     }
 
