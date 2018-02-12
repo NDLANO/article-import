@@ -160,7 +160,7 @@ trait HTMLCleaner {
     private def removeComments(node: Node) {
       var i = 0
 
-      while (i < node.childNodes().size()) {
+      while (i < node.childNodeSize()) {
         val child = node.childNode(i)
 
         child.nodeName() == "#comment"  || child.nodeName() == "#data" match {
