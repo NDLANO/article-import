@@ -35,7 +35,7 @@ lazy val article_import= (project in file(".")).
     libraryDependencies ++= Seq(
       "ndla" %% "network" % "0.28",
       "ndla" %% "mapping" % "0.6",
-      "ndla" %% "validation" % "0.11",
+      "ndla" %% "validation" % "0.12-SNAPSHOT",
       "joda-time" % "joda-time" % "2.8.2",
       "org.scalatra" %% "scalatra" % Scalatraversion,
       "org.scalatra" %% "scalatra-json" % Scalatraversion,

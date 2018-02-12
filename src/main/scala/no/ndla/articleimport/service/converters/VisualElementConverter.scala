@@ -73,7 +73,7 @@ trait VisualElementConverter {
     private def toVideo(nodeId: String): Option[(String, Seq[RequiredLibrary])] = Some((VideoConverter.toInlineVideo("", nodeId), Seq.empty))
 
     private def toAudio(nodeId: String): Option[(String, Seq[RequiredLibrary])] =
-      AudioConverter.toAudio(nodeId).map(audioEmbed => (audioEmbed, Seq.empty)).toOption
+      AudioConverter.toAudio(nodeId, "").map(audioEmbed => (audioEmbed, Seq.empty)).toOption
 
   }
 }

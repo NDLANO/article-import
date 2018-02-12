@@ -30,7 +30,9 @@ trait ExtractService {
 
       migrationApiClient.getContentNodeData(nodeId) match {
         case Success(data) => data.asNodeToConvert(nodeId, tagsForNode)
-        case Failure(ex) => throw ex
+        case Failure(ex) =>
+          logger.error(s"Getting content from migration-api failed with error: ${ex.getMessage}")
+          throw ex
       }
     }
 

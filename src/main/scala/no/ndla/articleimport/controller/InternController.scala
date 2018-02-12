@@ -36,7 +36,9 @@ trait InternController {
 
       extractConvertStoreContent.processNode(externalId, ImportStatus.empty(forceUpdate)) match {
         case Success((content, status)) => status.addMessage(s"Successfully imported node $externalId: ${content.id}")
-        case Failure(exc) => errorHandler(exc)
+        case Failure(exc) =>
+          logger.error(exc.getMessage)
+          errorHandler(exc)
       }
     }
 

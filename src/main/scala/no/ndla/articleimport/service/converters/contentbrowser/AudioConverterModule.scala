@@ -25,17 +25,20 @@ trait AudioConverterModule  {
 
     override def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val nodeId = content.get("nid")
+      val caption = content.get("link_text")
+
       logger.info(s"Converting audio with nid $nodeId")
 
-      toAudio(nodeId) match {
-        case Success(audioHtml) => Success((audioHtml, Seq.empty, importStatus))
+      toAudio(nodeId, caption) match {
+        case Success(audioHtml) =>
+          Success((audioHtml, Seq.empty, importStatus))
         case Failure(_) => Failure(ImportException(s"Failed to import audio with node id $nodeId"))
       }
     }
 
-    def toAudio(nodeId: String): Try[String] = {
+    def toAudio(nodeId: String, caption: String): Try[String] = {
       audioApiClient.getOrImportAudio(nodeId).map(audioId => {
-        HtmlTagGenerator.buildAudioEmbedContent(audioId.toString)
+        HtmlTagGenerator.buildAudioEmbedContent(audioId.toString, caption)
       })
     }
 
