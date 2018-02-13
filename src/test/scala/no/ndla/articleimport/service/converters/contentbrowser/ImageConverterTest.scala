@@ -13,6 +13,7 @@ import no.ndla.articleimport.integration._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import org.mockito.Mockito._
+import org.apache.commons.lang.StringEscapeUtils.escapeHtml
 
 import scala.util.Success
 
@@ -20,6 +21,9 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
   val caption = "sample image caption"
+  val escapedAltText = escapeHtml(altText)
+  val escapedCaption = escapeHtml(caption)
+
   val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text=$caption==text_align===css_class=contentbrowser contentbrowser]"
   val contentStringWithLeftMargin = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text=$caption==text_align===css_class=contentbrowser contentbrowser_margin_left contentbrowser]"
   val contentStringEmptyCaption = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text===text_align===css_class=contentbrowser contentbrowser]"
@@ -31,7 +35,7 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
   val image = ImageMetaInformation("1234", List(ImageTitle("", Some("nb"))), List(ImageAltText("", Some("nb"))), "full.jpg", 1024, "", copyright, ImageTag(List(""), Some("")))
 
   test("That a contentbrowser string of type 'image' returns an HTML img-tag with path to image") {
-    val expectedResult = s"""<$ResourceHtmlEmbedTag data-align="" data-alt="$altText" data-caption="$caption" data-resource="image" data-resource_id="1234" data-size="full" />"""
+    val expectedResult = s"""<$ResourceHtmlEmbedTag data-align="" data-alt="$escapedAltText" data-caption="$escapedCaption" data-resource="image" data-resource_id="1234" data-size="full" />"""
 
     when(imageApiClient.importImage(nodeId)).thenReturn(Some(image))
 
@@ -42,7 +46,7 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That the the data-captions attribute is empty if no captions exist") {
-    val expectedResult = s"""<$ResourceHtmlEmbedTag data-align="" data-alt="$altText" data-caption="" data-resource="image" data-resource_id="1234" data-size="full" />"""
+    val expectedResult = s"""<$ResourceHtmlEmbedTag data-align="" data-alt="$escapedAltText" data-caption="" data-resource="image" data-resource_id="1234" data-size="full" />"""
 
     when(imageApiClient.importImage(nodeId)).thenReturn(Some(image))
     val Success((result, requiredLibraries, errors)) = ImageConverter.convert(ContentBrowserString(contentStringEmptyCaption, "nb"), ImportStatus.empty)
@@ -60,7 +64,7 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That a the html tag contains an alignment attribute with the correct value") {
-    val expectedResult = s"""<$ResourceHtmlEmbedTag data-align="right" data-alt="$altText" data-caption="$caption" data-resource="image" data-resource_id="1234" data-size="full" />"""
+    val expectedResult = s"""<$ResourceHtmlEmbedTag data-align="right" data-alt="$escapedAltText" data-caption="$escapedCaption" data-resource="image" data-resource_id="1234" data-size="full" />"""
 
     when(imageApiClient.importImage(nodeId)).thenReturn(Some(image))
     val Success((result, requiredLibraries, errors)) = ImageConverter.convert(ContentBrowserString(contentStringWithLeftMargin, "nb"), ImportStatus.empty)

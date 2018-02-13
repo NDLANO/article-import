@@ -14,6 +14,7 @@ import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.validation.{HtmlTagRules, ResourceType, TagAttributes}
 import org.jsoup.nodes.{Element, Node, TextNode}
+import org.apache.commons.lang.StringEscapeUtils.escapeHtml
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -145,10 +146,10 @@ trait HTMLCleaner {
       val element = stringToJsoupDocument(metaDescription)
       for (el <- element.select("embed").asScala) {
         val caption = el.attr("data-caption")
-        el.replaceWith(new TextNode(caption, ""))
+        el.replaceWith(new TextNode(caption))
       }
       val extracted = extractElement(element)
-      new TextNode(extracted, "").toString.replace("&nbsp;", " ").trim
+      escapeHtml(extracted).replace("&nbsp;", " ").trim
     }
 
     private def removeAttributes(el: Element): Seq[String] = {
@@ -160,7 +161,7 @@ trait HTMLCleaner {
     private def removeComments(node: Node) {
       var i = 0
 
-      while (i < node.childNodes().size()) {
+      while (i < node.childNodeSize()) {
         val child = node.childNode(i)
 
         child.nodeName() == "#comment"  || child.nodeName() == "#data" match {

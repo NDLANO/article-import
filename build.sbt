@@ -35,7 +35,7 @@ lazy val article_import= (project in file(".")).
     libraryDependencies ++= Seq(
       "ndla" %% "network" % "0.28",
       "ndla" %% "mapping" % "0.6",
-      "ndla" %% "validation" % "0.11",
+      "ndla" %% "validation" % "0.12",
       "joda-time" % "joda-time" % "2.8.2",
       "org.scalatra" %% "scalatra" % Scalatraversion,
       "org.scalatra" %% "scalatra-json" % Scalatraversion,
@@ -54,7 +54,8 @@ lazy val article_import= (project in file(".")).
       "org.scalaj" %% "scalaj-http" % "2.3.0",
       "org.apache.lucene" % "lucene-test-framework" % "6.4.1" % "test",
       "vc.inreach.aws" % "aws-signing-request-interceptor" % "0.0.16",
-      "org.jsoup" % "jsoup" % "1.10.3",
+      "org.jsoup" % "jsoup" % "1.11.2",
+      "commons-lang" % "commons-lang" % "2.6",
       "com.netaporter" %% "scala-uri" % "0.4.16",
       "org.scalatra" %% "scalatra-scalatest" % Scalatraversion % "test",
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",

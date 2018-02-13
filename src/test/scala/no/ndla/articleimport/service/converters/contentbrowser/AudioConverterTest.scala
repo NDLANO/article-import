@@ -18,12 +18,12 @@ import scala.util.{Failure, Success}
 class AudioConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
-  val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
+  val contentString = s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text=This is caption==text_align===css_class=contentbrowser contentbrowser]"
   val content = ContentBrowserString(contentString, "nb")
 
   test("That AudioConverter returns a embed resource string if the audio was imported") {
     val audioId: Long = 123
-    val expectedResult = s"""<$ResourceHtmlEmbedTag data-resource="audio" data-resource_id="123" />"""
+    val expectedResult = s"""<$ResourceHtmlEmbedTag data-caption="This is caption" data-resource="audio" data-resource_id="123" />"""
 
     when(audioApiClient.getOrImportAudio(nodeId)).thenReturn(Success(audioId))
 
