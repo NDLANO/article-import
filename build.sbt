@@ -55,6 +55,7 @@ lazy val article_import= (project in file(".")).
       "org.apache.lucene" % "lucene-test-framework" % "6.4.1" % "test",
       "vc.inreach.aws" % "aws-signing-request-interceptor" % "0.0.16",
       "org.jsoup" % "jsoup" % "1.11.2",
+      "commons-lang" % "commons-lang" % "2.6",
       "com.netaporter" %% "scala-uri" % "0.4.16",
       "org.scalatra" %% "scalatra-scalatest" % Scalatraversion % "test",
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",

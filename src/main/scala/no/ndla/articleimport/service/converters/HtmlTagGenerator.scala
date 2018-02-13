@@ -9,6 +9,7 @@ package no.ndla.articleimport.service.converters
 
 import no.ndla.validation.{TagAttributes, ResourceType}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
+import org.apache.commons.lang.StringEscapeUtils.escapeHtml
 
 trait HtmlTagGenerator {
 
@@ -142,7 +143,7 @@ trait HtmlTagGenerator {
     }
 
     private def buildAttributesString(figureDataAttributeMap: Map[TagAttributes.Value, String]): String =
-      figureDataAttributeMap.toList.sortBy(_._1.toString).map { case (key, value) => s"""$key="${value.trim.replace("\"", "\\\"")}"""" }.mkString(" ")
+      figureDataAttributeMap.toList.sortBy(_._1.toString).map { case (key, value) => s"""$key="${escapeHtml(value.trim)}"""" }.mkString(" ")
 
   }
 
