@@ -290,8 +290,12 @@ trait HTMLCleaner {
           case s => s.toString
         }
         val ingressText = ingressTexts.mkString(" ").replaceAll(" +", " ")
+        val articleStartsWithIngress = firstP match {
+          case Some(firstParagraph) => firstParagraph.text().startsWith(ingressTexts.mkString(""))
+          case _ => false
+        }
 
-        if (ingressText.split(" ").length < minimumIngressWordCount) {
+        if (ingressText.split(" ").length < minimumIngressWordCount || !articleStartsWithIngress) {
           None
         } else {
           ingressTexts.foreach(t => findElementWithText(el.select("p").asScala, "strong", t).map(_.remove))
