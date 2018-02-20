@@ -624,6 +624,30 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
     result.ingress should equal(Some(LanguageIngress(expectedIngress, None)))
   }
 
+  /*
+  test("Bold text should not be extracted as introduction in cases where it is not") {
+    val originalContent = """<section><h2>Tregangerregelen</h2><p>Er du <strong>500 meter under toppen av et fjell</strong> hvor det er fare for snøskred, må du være tre ganger så langt unna, dvs. <strong>1500 m fra toppen</strong> for å være helt trygg.</p></section>"""
+    val expectedContent = """<section><h2>Tregangerregelen</h2><p>Er du <strong>500 meter under toppen av et fjell</strong> hvor det er fare for snøskred, må du være tre ganger så langt unna, dvs. <strong>1500 m fra toppen</strong> for å være helt trygg.</p></section>"""
+
+    val expectedIntroduction = None
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = originalContent), defaultImportStatus)
+    result.content should be(expectedContent)
+    result.ingress should be(expectedIntroduction)
+  }
+
+  test("Bold text should not be extracted as introduction in cases where it is not even when whitespace") {
+    val originalContent = """<section><h2>Tregangerregelen</h2><p>  <strong>500 meter under toppen av et fjell</strong> hvor det er fare for snøskred, må du være tre ganger så langt unna, dvs. <strong>1500 m fra toppen</strong> for å være helt trygg.</p></section>"""
+    val expectedContent = """<section><h2>Tregangerregelen</h2><p><strong>500 meter under toppen av et fjell</strong> hvor det er fare for snøskred, må du være tre ganger så langt unna, dvs. <strong>1500 m fra toppen</strong> for å være helt trygg.</p></section>"""
+
+    val expectedIntroduction = None
+
+    val Success((result, _)) = htmlCleaner.convert(TestData.sampleContent.copy(content = originalContent), defaultImportStatus)
+    result.content should be(expectedContent)
+    result.ingress should be(expectedIntroduction)
+  }
+  */
+
   test("Divs with no siblings in asides should be unwrapped") {
     val originalContent =
       """<section><embed data-resource="image" /></section>""" +
@@ -710,13 +734,6 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
     result.content should equal(expectedContent)
   }
 
-  test("HTML characters are escaped in meta description even if they are in html tags") {
-    val content = TestData.sampleContent.copy(content = "", metaDescription ="""Hei dette er et mindre enn tegn &lt;start&gt; nice""")
-    val Success((result, _)) = htmlCleaner.convert(content, defaultImportStatus)
-
-    result.metaDescription should equal("Hei dette er et mindre enn tegn &lt;start&gt; nice")
-  }
-
   test("Comments in style tag should be removed") {
     val originalContent = """<section><p>Text here</p><style><!-- This is a weird thing to do --></style></section>"""
     val expectedContent = """<section><p>Text here</p></section>"""
@@ -770,11 +787,11 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
     result.content should equal(expectedContentResult)
   }
 
-  test("HTML characters are escaped in meta description") {
-    val content = TestData.sampleContent.copy(content = "", metaDescription ="""Hei dette er et mindre enn tegn <> nice""")
+  test("HTML characters are not escaped in meta description") {
+    val content = TestData.sampleContent.copy(content = "", metaDescription ="""<p>Hei dette er et mindre enn tegn <> nice</p>""")
     val Success((result, _)) = htmlCleaner.convert(content, defaultImportStatus)
 
-    result.metaDescription should equal("Hei dette er et mindre enn tegn &lt;&gt; nice")
+    result.metaDescription should equal("Hei dette er et mindre enn tegn <> nice")
   }
 
 }
