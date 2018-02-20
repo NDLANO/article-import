@@ -10,13 +10,14 @@ package no.ndla.articleimport.service.converters.contentbrowser
 
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.MigrationEmbedMeta
+import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.ResourceType
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import org.mockito.Mockito._
 import org.apache.commons.lang.StringEscapeUtils.escapeHtml
 
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class LenkeConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
@@ -186,5 +187,30 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
     result should equal(s""" <a href="$linkUrl#$anchor" rel="noopener noreferrer" target="_blank" title=""></a>""")
     errors.messages.length should equal(0)
+  }
+
+  test("LenkeConverter should return an error if embedmeta does not contain embedcode or url") {
+    val content = TestData.contentBrowserWithFields("nid" -> nodeId)
+
+    when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(None, None)))
+    val Failure(x: ImportException) = LenkeConverter.convert(content, ImportStatus.empty)
+    x.message.contains("External embed meta is missing url or embed code") should be (true)
+  }
+
+  test("LenkeConverter should return an error if embedmeta does not contain url and a src attr cant be found in embed code") {
+    val content = TestData.contentBrowserWithFields("nid" -> nodeId)
+
+    when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(None, Some("<h1>this makes no sense</h1>"))))
+    val Failure(x: ImportException) = LenkeConverter.convert(content, ImportStatus.empty)
+    x.message.contains("External embed meta is missing url or embed code") should be (true)
+  }
+
+  test("LenkeConverter should use url from embedCode if url is undefined") {
+    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "insertion" -> "inline")
+
+    when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(None, Some("<script src='http://infogr.am'></script>"))))
+    val Success((result, _, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
+
+    result should equal(s"""<$ResourceHtmlEmbedTag data-resource="${ResourceType.ExternalContent}" data-url="http://infogr.am" />""")
   }
 }
