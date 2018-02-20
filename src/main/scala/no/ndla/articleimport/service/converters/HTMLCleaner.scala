@@ -148,8 +148,7 @@ trait HTMLCleaner {
         val caption = el.attr("data-caption")
         el.replaceWith(new TextNode(caption))
       }
-      val extracted = extractElement(element)
-      escapeHtml(extracted).replace("&nbsp;", " ").trim
+      extractElement(element).trim
     }
 
     private def removeAttributes(el: Element): Seq[String] = {
@@ -264,11 +263,11 @@ trait HTMLCleaner {
     }
 
     private def mergeConsecutiveTags(el: Element, tagName: String): Unit = {
-      for (shit <- consecutiveNodesOfType(el, tagName).drop(1)) {
-        el.appendChild(shit)
+      for (nodes <- consecutiveNodesOfType(el, tagName).drop(1)) {
+        el.appendChild(nodes)
 
-        if (shit.nodeName() != "#text")
-          shit.unwrap()
+        if (nodes.nodeName() != "#text")
+          nodes.unwrap()
       }
     }
 
