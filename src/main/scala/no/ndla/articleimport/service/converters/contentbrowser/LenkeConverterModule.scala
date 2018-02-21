@@ -16,6 +16,8 @@ import no.ndla.articleimport.service.ExtractService
 import no.ndla.articleimport.service.converters.HtmlTagGenerator
 import no.ndla.validation.ResourceType
 import org.jsoup.Jsoup
+import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
+import no.ndla.articleimport.integration.MigrationEmbedMeta
 
 import scala.util.{Failure, Success, Try}
 
@@ -37,32 +39,39 @@ trait LenkeConverterModule {
     def convertLink(cont: ContentBrowser): Try[(String, Seq[RequiredLibrary], Seq[String])] = {
       val LightboxPattern = "(lightbox_.*)".r
 
-      extractService.getNodeEmbedMeta(cont.get("nid")).map(meta => {
-        val (url, embedCode) = (meta.url.getOrElse(""), meta.embedCode.getOrElse(""))
-        val (htmlTag, requiredLibrary, errors) = cont.get("insertion") match {
-          case "inline" => insertInline(url, embedCode, cont)
-          case "link" | "collapsed_body" | LightboxPattern(_) => insertAnchor(url, cont)
-          case _ => insertUnhandled(url, cont)
-        }
+      val embedMeta = extractService.getNodeEmbedMeta(cont.get("nid"))
+        .map(meta => meta.copy(url = meta.url.orElse(tryFetchSrcAttributeFromTag(meta.embedCode.getOrElse("")))))
 
-        val NDLAPattern = """.*(ndla.no).*""".r
-        val warnings =  Try(parse(url)) match {
-          case Success(uri) => uri.host.getOrElse("") match {
-            case NDLAPattern(_) => Seq(s"Link to NDLA old resource: '$url'")
-            case _ => Seq()
+      embedMeta match {
+        case Success(MigrationEmbedMeta(Some(url), Some(embedCode))) =>
+          val (htmlTag, requiredLibrary, errors) = cont.get("insertion") match {
+            case "inline" => insertInline(url, embedCode)
+            case "link" | "collapsed_body" | LightboxPattern(_) => insertAnchor(url, cont)
+            case _ => insertUnhandled(url, cont)
           }
-          case Failure(_) => Seq(s"Link in article is invalid: '$url'")
-        }
 
-        warnings.foreach(msg => logger.warn(msg))
-        (htmlTag, requiredLibrary.toList, errors ++ warnings)
-      }) match {
-        case Success(x) => Success(x)
+          val NDLAPattern = """.*(ndla.no).*""".r
+          val warnings =  Try(parse(url)) match {
+            case Success(uri) => uri.host.getOrElse("") match {
+              case NDLAPattern(_) => Seq(s"Link to NDLA old resource: '$url'")
+              case _ => Seq()
+            }
+            case Failure(_) => Seq(s"Link in article is invalid: '$url'")
+          }
+
+          warnings.foreach(msg => logger.warn(msg))
+          Success((htmlTag, requiredLibrary.toList, errors ++ warnings))
+        case Success(MigrationEmbedMeta(url, embedCode)) => Failure(ImportException(s"External embed meta is missing url or embed code (url='$url', embedCode='$embedCode')"))
         case Failure(_) => Failure(ImportException(s"Failed to import embed metadata for node id ${cont.get("nid")}"))
       }
     }
 
-    private def insertInline(url: String, embedCode: String, cont: ContentBrowser): (String, Option[RequiredLibrary], Seq[String]) = {
+    private def tryFetchSrcAttributeFromTag(tag: String): Option[String] = {
+      Option(stringToJsoupDocument(tag).select("[src]").attr("src"))
+        .filter(_.trim.nonEmpty)
+    }
+
+    private def insertInline(url: String, embedCode: String): (String, Option[RequiredLibrary], Seq[String]) = {
       val message = s"External resource to be embedded: $url"
       logger.info(message)
 
@@ -127,7 +136,7 @@ trait LenkeConverterModule {
     }
 
     private def insertDetailSummary(url: String, embedCode: String, cont: ContentBrowser): (String, Option[RequiredLibrary], Seq[String]) = {
-      val (elementToInsert, requiredLib, figureErrors) = insertInline(url, embedCode, cont)
+      val (elementToInsert, requiredLib, figureErrors) = insertInline(url, embedCode)
       (s"<details><summary>${cont.get("link_text")}</summary>$elementToInsert</details>", requiredLib, figureErrors)
     }
 
