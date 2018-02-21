@@ -14,7 +14,6 @@ import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.validation.{HtmlTagRules, ResourceType, TagAttributes}
 import org.jsoup.nodes.{Element, Node, TextNode}
-import org.apache.commons.lang.StringEscapeUtils.escapeHtml
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
