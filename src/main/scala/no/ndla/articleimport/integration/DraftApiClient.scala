@@ -68,7 +68,7 @@ trait DraftApiClient {
     }
 
     def newEmptyArticle(mainNodeId: String, subjectIds: Set[String]): Try[ContentId] =
-      post[ContentId](s"$DraftApiInternEndpoint/empty_article",
+      post[ContentId](s"$DraftApiInternEndpoint/empty_article/",
         "externalId" -> mainNodeId,
         "externalSubjectIds" -> subjectIds.mkString(","))
 
@@ -102,8 +102,8 @@ trait DraftApiClient {
 
     def publishArticle(id: Long): Try[ArticleStatus] = {
       for {
-        _ <- put[ArticleStatus](s"$DraftApiPublicEndpoint/$id/publish?import_publish=true")
-        status <- post[ArticleStatus](s"$DraftApiInternEndpoint/article/$id/publish?import_publish=true")
+        _ <- put[ArticleStatus](s"$DraftApiPublicEndpoint/$id/publish/?import_publish=true")
+        status <- post[ArticleStatus](s"$DraftApiInternEndpoint/article/$id/publish/?import_publish=true")
       } yield status
     }
 
@@ -133,7 +133,7 @@ trait DraftApiClient {
     }
 
     def newEmptyConcept(mainNodeId: String): Try[Long] =
-      post(s"$DraftApiInternEndpoint/empty_concept", "externalId" -> mainNodeId)
+      post(s"$DraftApiInternEndpoint/empty_concept/", "externalId" -> mainNodeId)
 
     def updateConcept(concept: api.UpdateConcept, id: Long): Try[api.Concept] = {
       patch[api.Concept, api.UpdateConcept](s"$DraftApiConceptPublicEndpoint/$id", concept)
@@ -158,7 +158,7 @@ trait DraftApiClient {
     }
 
     def publishConcept(id: Long): Try[Long] = {
-      post[ContentId](s"$DraftApiInternEndpoint/concept/$id/publish").map(_.id)
+      post[ContentId](s"$DraftApiInternEndpoint/concept/$id/publish/").map(_.id)
     }
 
     def getConceptIdFromExternalId(externalId: String): Option[Long] = {
