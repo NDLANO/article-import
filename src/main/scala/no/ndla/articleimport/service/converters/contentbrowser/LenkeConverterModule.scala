@@ -43,9 +43,9 @@ trait LenkeConverterModule {
         .map(meta => meta.copy(url = meta.url.orElse(tryFetchSrcAttributeFromTag(meta.embedCode.getOrElse("")))))
 
       embedMeta match {
-        case Success(MigrationEmbedMeta(Some(url), Some(embedCode))) =>
+        case Success(MigrationEmbedMeta(Some(url), embedCode)) =>
           val (htmlTag, requiredLibrary, errors) = cont.get("insertion") match {
-            case "inline" => insertInline(url, embedCode)
+            case "inline" => insertInline(url, embedCode.getOrElse(""))
             case "link" | "collapsed_body" | LightboxPattern(_) => insertAnchor(url, cont)
             case _ => insertUnhandled(url, cont)
           }
