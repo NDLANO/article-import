@@ -274,10 +274,15 @@ trait HTMLCleaner {
       val minimumIngressWordCount = 3
       val strippedDownArticle = stringToJsoupDocument(el.html())
       val tagsToKeep = Set("p", "strong", "body", "embed")
+      val tagsToRemove = Set("aside")
+
+      strippedDownArticle.select("*").asScala
+        .filter(e => tagsToRemove.contains(e.tagName))
+        .foreach(_.remove())
 
       strippedDownArticle.select("*").asScala
         .filterNot(e => tagsToKeep.contains(e.tagName))
-        .map(e => e.unwrap())
+        .foreach(_.unwrap())
 
       removeEmptyTags(strippedDownArticle)
 
