@@ -10,8 +10,7 @@ package no.ndla.articleimport.service.converters
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration.{ConverterModule, DraftApiClient, LanguageContent, MigrationApiClient}
-import no.ndla.articleimport.model.api.ImportException
-import no.ndla.articleimport.model.api.{Article, Concept}
+import no.ndla.articleimport.model.api.{Article, Concept, ImportException, ImportExceptions}
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
 import no.ndla.articleimport.ArticleImportProperties.supportedContentTypes
@@ -71,6 +70,13 @@ trait RelatedContentConverter {
       Success(ids, updatedStatus)
     } else {
       val importErrorMsgs = importFailures.map(_.failed.get.getMessage).mkString(", ")
+
+      val errors = importFailures.map {
+        case Failure(ex: ImportExceptions) => ex.errors.map(_.getMessage)
+        case Failure(ex) => ex.getMessage
+      }
+
+
       val exceptionMsg = s"Failed to import one or more related contents: $importErrorMsgs"
 
       logger.info(exceptionMsg)
