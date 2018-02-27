@@ -34,7 +34,8 @@ trait RelatedContentConverter {
       if (nids.isEmpty) {
         Success(content, importStatus.copy(importRelatedArticles = false))
       } else {
-        val handlerFunc = if (importStatus.importRelatedArticles) importRelatedContent _ else getRelatedContentFromDb _
+        val a: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] = importRelatedContent(content.nid, _, _)
+        val handlerFunc = if (importStatus.importRelatedArticles) a else getRelatedContentFromDb _
 
         handlerFunc(nids, importStatus) match {
           case Success((ids, status)) if ids.nonEmpty =>
@@ -49,7 +50,7 @@ trait RelatedContentConverter {
     }
   }
 
-  private def importRelatedContent(relatedNids: Set[String], importStatus: ImportStatus): Try[(Set[Long], ImportStatus)] = {
+  private def importRelatedContent(mainNodeId: String, relatedNids: Set[String], importStatus: ImportStatus): Try[(Set[Long], ImportStatus)] = {
     val (importedArticles, updatedStatus) = relatedNids.foldLeft((Seq[Try[Article]](), importStatus.copy(importRelatedArticles = false)))((result, nid) => {
       val (articles, status) = result
 
@@ -57,30 +58,21 @@ trait RelatedContentConverter {
         case Success((content: Article, st)) =>
           (articles :+ Success(content), st)
         case Success((_: Concept, _)) =>
-          (articles :+ Failure(ImportException("Related content points to a concept. This should not be legal, no?")), status)
+          (articles :+ Failure(ImportException(mainNodeId, s"Related content with nid $nid points to a concept. This should not be legal, no?")), status)
         case Failure(ex) =>
-          (articles :+ Failure(ex), status)
+          val fail = ImportException(nid, ex.getMessage)
+          (articles :+ Failure(ImportException(mainNodeId, s"Failed to import related content with nid $nid", Some(fail))), status)
       }
     })
 
     val (importSuccesses, importFailures) = importedArticles.partition(_.isSuccess)
-
     if (importFailures.isEmpty) {
       val ids = importSuccesses.map(_.get.id).toSet
       Success(ids, updatedStatus)
     } else {
-      val importErrorMsgs = importFailures.map(_.failed.get.getMessage).mkString(", ")
-
-      val errors = importFailures.map {
-        case Failure(ex: ImportExceptions) => ex.errors.map(_.getMessage)
-        case Failure(ex) => ex.getMessage
-      }
-
-
-      val exceptionMsg = s"Failed to import one or more related contents: $importErrorMsgs"
-
-      logger.info(exceptionMsg)
-      Failure(ImportException(exceptionMsg))
+      val nodeIds = migrationApiClient.getAllTranslationNids(mainNodeId).getOrElse(Set(mainNodeId))
+      logger.info(s"Failed to import one or more related contents for node(s) ${nodeIds.mkString(",")}")
+      Failure(ImportExceptions(nodeIds, importFailures.map(_.failed.get)))
     }
   }
 

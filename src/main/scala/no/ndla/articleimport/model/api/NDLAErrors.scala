@@ -38,9 +38,9 @@ object Error {
 }
 
 case class NotFoundException(message: String) extends RuntimeException(message)
-case class ImportException(message: String) extends RuntimeException(message)
+case class ImportException(nid: String, message: String, ex: Option[Throwable] = None) extends RuntimeException(message)
+case class ImportExceptions(failedNodeIds: Set[String], errors: Seq[Throwable]) extends RuntimeException(s"Failed to import node(s) with id(s) ${failedNodeIds.mkString(",")}")
 
 class AccessDeniedException(message: String) extends RuntimeException(message)
-class ImportExceptions(val message: String, val errors: Seq[Throwable]) extends RuntimeException(message)
 class OptimisticLockException(message: String = Error.RESOURCE_OUTDATED_DESCRIPTION) extends RuntimeException(message)
 class ConfigurationException(message: String) extends RuntimeException(message)

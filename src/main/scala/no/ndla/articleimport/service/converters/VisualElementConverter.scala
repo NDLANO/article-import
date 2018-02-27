@@ -35,7 +35,7 @@ trait VisualElementConverter {
         case Some((visual, requiredLibs)) =>
           val requiredLibraries = content.requiredLibraries ++ requiredLibs
           Success(content.copy(content = removeVisualElementFromContent(content.content, visual), visualElement=Some(visual), requiredLibraries=requiredLibraries), importStatus)
-        case None => Failure(ImportException(s"Failed to convert node id ${content.visualElement.get}"))
+        case None => Failure(ImportException(content.nid, s"Failed to convert node id ${content.visualElement.get}"))
       }
     }
 

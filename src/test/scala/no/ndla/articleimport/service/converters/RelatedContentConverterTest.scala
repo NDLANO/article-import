@@ -7,13 +7,14 @@
 
 package no.ndla.articleimport.service.converters
 
+import no.ndla.articleimport.caching.Memoize
 import no.ndla.articleimport.integration.MigrationRelatedContent
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.validation.TagAttributes._
 import no.ndla.validation.ResourceType._
-import no.ndla.articleimport.model.api.ImportException
+import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
 import org.mockito.Mockito._
 import org.mockito.Matchers._
 
@@ -47,8 +48,11 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Success((TestData.sampleApiConcept.copy(id=1), ImportStatus.empty)))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id=2), ImportStatus.empty)))
 
-    val result = RelatedContentConverter.convert(languageContent, ImportStatus.empty)
-    result should equal (Failure(ImportException("Failed to import one or more related contents: Related content points to a concept. This should not be legal, no?")))
+    when(migrationApiClient.getAllTranslationNids(languageContent.nid)).thenReturn(Success(Set(languageContent.nid)))
+
+    val Failure(result: ImportExceptions) = RelatedContentConverter.convert(languageContent, ImportStatus.empty)
+    result.getMessage should equal(s"Failed to import node(s) with id(s) ${languageContent.nid}")
+    result.errors should equal(List(ImportException(languageContent.nid, s"Related content with nid ${languageContent.nid} points to a concept. This should not be legal, no?")))
   }
 
   test("convert should not add a new section if thre are no related contents") {

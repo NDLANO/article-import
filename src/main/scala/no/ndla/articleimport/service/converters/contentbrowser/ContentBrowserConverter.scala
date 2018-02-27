@@ -82,7 +82,7 @@ trait ContentBrowserConverter {
       converterExceptions.headOption match {
         case Some(_) =>
           val exceptionMessages = converterExceptions.map(_.getMessage)
-          Failure(ImportException(s"Error(s) in ContentBrowserConverter: ${exceptionMessages.mkString(",")}"))
+          Failure(ImportException(languageContent.nid, s"Error(s) in ContentBrowserConverter: ${exceptionMessages.mkString(",")}"))
         case None =>
           Success(finalLanguageContent.copy(content=jsoupDocumentToString(contentElement), metaDescription=jsoupDocumentToString(metaDescriptionElement)),
             finalImportStatus)

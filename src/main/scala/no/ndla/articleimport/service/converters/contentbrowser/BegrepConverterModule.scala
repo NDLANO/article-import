@@ -33,7 +33,7 @@ trait BegrepConverterModule {
         case Success((x: Article, _)) =>
           val msg = s"THIS IS A BUG: Imported begrep node with nid $nodeId but is marked as an article (id ${x.id})"
           logger.error(msg)
-          Failure(ImportException(msg))
+          Failure(ImportException(nodeId, msg))
         case Failure(x) =>
           val exceptionMessage = x match {
             case ex: ValidationException => s"${ex.getMessage}: ${ex.errors.mkString(",")}"
@@ -41,7 +41,7 @@ trait BegrepConverterModule {
           }
           val msg = s"Failed to import begrep with node id $nodeId: $exceptionMessage"
           logger.error(msg)
-          Failure(ImportException(msg))
+          Failure(ImportException(nodeId, msg))
       }
 
     }

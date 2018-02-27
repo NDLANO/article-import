@@ -31,7 +31,7 @@ trait FilConverterModule {
 
       importedFile match {
         case Success(x) => Success(x)
-        case Failure(x) => Failure(ImportException(s"Failed to import file with node id $nodeId: ${x.getMessage}"))
+        case Failure(x) => Failure(ImportException(nodeId, s"Failed to import file with node id $nodeId: ${x.getMessage}"))
       }
     }
 

@@ -38,8 +38,9 @@ trait LenkeConverterModule {
 
     def convertLink(cont: ContentBrowser): Try[(String, Seq[RequiredLibrary], Seq[String])] = {
       val LightboxPattern = "(lightbox_.*)".r
+      val externalId = cont.get("nid")
 
-      val embedMeta = extractService.getNodeEmbedMeta(cont.get("nid"))
+      val embedMeta = extractService.getNodeEmbedMeta(externalId)
         .map(meta => meta.copy(url = meta.url.orElse(tryFetchSrcAttributeFromTag(meta.embedCode.getOrElse("")))))
 
       embedMeta match {
@@ -61,8 +62,8 @@ trait LenkeConverterModule {
 
           warnings.foreach(msg => logger.warn(msg))
           Success((htmlTag, requiredLibrary.toList, errors ++ warnings))
-        case Success(MigrationEmbedMeta(url, embedCode)) => Failure(ImportException(s"External embed meta is missing url or embed code (url='$url', embedCode='$embedCode')"))
-        case Failure(_) => Failure(ImportException(s"Failed to import embed metadata for node id ${cont.get("nid")}"))
+        case Success(MigrationEmbedMeta(url, embedCode)) => Failure(ImportException(externalId, s"External embed meta is missing url or embed code (url='$url', embedCode='$embedCode')"))
+        case Failure(_) => Failure(ImportException(externalId, s"Failed to import embed metadata for node id ${cont.get("nid")}"))
       }
     }
 

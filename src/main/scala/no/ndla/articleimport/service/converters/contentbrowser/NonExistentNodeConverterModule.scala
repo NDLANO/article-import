@@ -20,7 +20,8 @@ trait NonExistentNodeConverterModule {
     override val typeName: String = "NodeDoesNotExist"
 
     override def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
-      Failure(ImportException(s"Found nonexistant node with id ${content.get("nid")}"))
+      val nodeId = content.get("nid")
+      Failure(ImportException(nodeId, s"Found nonexistant node with id $nodeId"))
     }
   }
 }

@@ -64,7 +64,7 @@ trait ExtractConvertStoreContent {
           if (supportedContentTypes.contains(node.nodeType.toLowerCase) || supportedContentTypes.contains(node.contentType.toLowerCase))
             Success(node, mainNode.nid)
           else
-            Failure(ImportException(s"Tried to import node of unsupported type '${node.nodeType.toLowerCase}/${node.contentType.toLowerCase()}'"))
+            Failure(ImportException(externalId, s"Tried to import node of unsupported type '${node.nodeType.toLowerCase}/${node.contentType.toLowerCase()}'"))
       }
     }
 
@@ -87,9 +87,9 @@ trait ExtractConvertStoreContent {
               case storedArticle: api.Article =>
                 if (importStatus.forceUpdateArticles) {
                   logger.info("forceUpdateArticles is set, updating anyway...")
-                  val storedArticle = draftApiClient.updateArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
                   val storeImportStatus = importStatus.addMessage(s"$mainNodeNid has been updated since import, but forceUpdateArticles is set, updating anyway")
-                  publishArticle(storedArticle, storeImportStatus)
+                  draftApiClient.updateArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
+                    .flatMap(publishArticle(_, storeImportStatus))
                 }
                 else {
                   logger.info("Article has been updated since import, refusing to import...")
@@ -98,25 +98,23 @@ trait ExtractConvertStoreContent {
                 }
               case _ =>
                 logger.error("ApiContent of storeArticle was not an article. This is a bug.")
-                Failure(ImportException(s"Remote type of $mainNodeNid was not article, yet was imported as one. This is a bug."))
+                Failure(ImportException(mainNodeNid, s"Remote type of $mainNodeNid was not article, yet was imported as one. This is a bug."))
             }
           case _ =>
-            val storedArticle = draftApiClient.updateArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
-            publishArticle(storedArticle, importStatus)
+            draftApiClient.updateArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
+              .flatMap(publishArticle(_, importStatus))
         }
         case _ =>
-          val storedArticle = draftApiClient.newArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
-          publishArticle(storedArticle, importStatus)
+          draftApiClient.newArticle(article, mainNodeNid, getSubjectIds(mainNodeNid))
+            .flatMap(publishArticle(_, importStatus))
+
       }
     }
 
-    private def publishArticle(storedArticle: Try[ApiContent], importStatus: ImportStatus) = {
-      storedArticle.flatMap(a => draftApiClient.publishArticle(a.id)) match {
-        case Success(status) if Set("PUBLISHED", "IMPORTED").subsetOf(status.status) => storedArticle match {
-          case Success(successArticle) => Success(successArticle, importStatus)
-          case Failure(ex) => Failure(ex)
-        }
-        case Success(status) => Failure(ImportException(s"Published article does not contain expected statuses PUBLISHED and IMPORTED (${status.status})"))
+    private def publishArticle(storedArticle: ApiContent, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
+      draftApiClient.publishArticle(storedArticle.id) match {
+        case Success(status) if Set("PUBLISHED", "IMPORTED").subsetOf(status.status) => Success(storedArticle, importStatus)
+        case Success(status) => Failure(ImportException(s"${storedArticle.id}", s"Published article does not contain expected statuses PUBLISHED and IMPORTED (${status.status})"))
         case Failure(ex) => Failure(ex)
       }
     }

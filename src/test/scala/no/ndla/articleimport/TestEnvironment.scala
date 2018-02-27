@@ -23,6 +23,7 @@ trait TestEnvironment
   extends LazyLogging
     with InternController
     with HealthController
+    with NdlaController
     with MockitoSugar
     with ExtractService
     with ConverterModules

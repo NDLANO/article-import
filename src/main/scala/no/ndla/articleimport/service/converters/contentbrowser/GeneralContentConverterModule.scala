@@ -32,7 +32,7 @@ trait GeneralContentConverterModule {
               (finalContent, Seq.empty, status)
           }
         case None =>
-          Failure(ImportException(s"Failed to retrieve '$typeName' with language '${contentBrowser.language}' ($externalId)"))
+          Failure(ImportException(externalId, s"Failed to retrieve '$typeName' with language '${contentBrowser.language}' ($externalId)"))
       }
     }
 
@@ -66,7 +66,7 @@ trait GeneralContentConverterModule {
         case Success((_, Some(conceptId), is)) =>
           val embedContent = HtmlTagGenerator.buildConceptEmbedContent(conceptId, contentBrowser.get("link_text"))
           Success(s" $embedContent", is)
-        case Success((None, None, _)) => Failure(ImportException(s"Failed to retrieve or import article with external id $externalId"))
+        case Success((None, None, _)) => Failure(ImportException(externalId, s"Failed to retrieve or import article with external id $externalId"))
         case Failure(e) => Failure(e)
       }
     }

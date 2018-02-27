@@ -20,6 +20,7 @@ trait InternController {
     with ConverterService
     with ExtractConvertStoreContent
     with User
+    with NdlaController
     with Role =>
   val internController: InternController
 
@@ -41,6 +42,5 @@ trait InternController {
           errorHandler(exc)
       }
     }
-
   }
 }
