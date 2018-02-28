@@ -34,8 +34,8 @@ trait RelatedContentConverter {
       if (nids.isEmpty) {
         Success(content, importStatus.copy(importRelatedArticles = false))
       } else {
-        val a: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] = importRelatedContent(content.nid, _, _)
-        val handlerFunc = if (importStatus.importRelatedArticles) a else getRelatedContentFromDb _
+        val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] = importRelatedContent(content.nid, _, _)
+        val handlerFunc = if (importStatus.importRelatedArticles) importRelatedContentCb else getRelatedContentFromDb _
 
         handlerFunc(nids, importStatus) match {
           case Success((ids, status)) if ids.nonEmpty =>
@@ -60,8 +60,7 @@ trait RelatedContentConverter {
         case Success((_: Concept, _)) =>
           (articles :+ Failure(ImportException(mainNodeId, s"Related content with nid $nid points to a concept. This should not be legal, no?")), status)
         case Failure(ex) =>
-          val fail = ImportException(nid, ex.getMessage)
-          (articles :+ Failure(ImportException(mainNodeId, s"Failed to import related content with nid $nid", Some(fail))), status)
+          (articles :+ Failure(ImportException(mainNodeId, s"Failed to import related content with nid $nid", Some(ex))), status)
       }
     })
 

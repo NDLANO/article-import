@@ -44,5 +44,6 @@ trait H5PConverterModule {
         case None => Failure(ImportException(nodeId, s"Failed to import H5P with id $nodeId: Not yet exported to new H5P service"))
       }
     }
+
   }
 }
