@@ -45,8 +45,8 @@ trait ConverterModules {
     })
 
     if (exceptions.nonEmpty) {
-      val failedNodeIds = nodeToConvert.contents.map(_.nid).mkString(",")
-      return Failure(new ImportExceptions(s"Error importing node(s) with id(s) $failedNodeIds", errors=exceptions))
+      val failedNodeIds = nodeToConvert.contents.map(_.nid)
+      return Failure(ImportExceptions(failedNodeIds.toSet, errors=exceptions))
     }
 
     Success((convertedNode, finalImportStatus))

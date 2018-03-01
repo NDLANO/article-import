@@ -32,7 +32,7 @@ trait AudioConverterModule  {
       toAudio(nodeId, caption) match {
         case Success(audioHtml) =>
           Success((audioHtml, Seq.empty, importStatus))
-        case Failure(_) => Failure(ImportException(s"Failed to import audio with node id $nodeId"))
+        case Failure(_) => Failure(ImportException(nodeId, s"Failed to import audio with node id $nodeId"))
       }
     }
 

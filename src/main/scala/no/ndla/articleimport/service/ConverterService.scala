@@ -12,8 +12,9 @@ import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.ArticleImportProperties._
 import no.ndla.articleimport.auth.User
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
-import no.ndla.articleimport.integration.{ImageApiClient, LanguageIngress}
+import no.ndla.articleimport.integration.{ImageApiClient, LanguageIngress, MigrationApiClient}
 import no.ndla.articleimport.model.api
+import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
 import no.ndla.articleimport.model.domain.Language._
 import no.ndla.articleimport.model.domain._
 import no.ndla.mapping.License.getLicense
@@ -24,7 +25,7 @@ import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
 trait ConverterService {
-  this: ConverterModules with ExtractConvertStoreContent with ImageApiClient with Clock with User =>
+  this: ConverterModules with ExtractConvertStoreContent with ImageApiClient with Clock with User with MigrationApiClient =>
   val converterService: ConverterService
 
   class ConverterService extends LazyLogging {
@@ -334,6 +335,38 @@ trait ConverterService {
         article.editorialKeywords,
         Some(article.articleType)
       )
+    }
+
+    def generateImportErrorMessage(ex: ImportExceptions): ImportError = ImportError(messages = getAllErrors(ex))
+
+    def generateImportError(ex: ImportException): ImportError = ImportError(messages = Set(ImportMessages(Set.empty, Set(ex.message))))
+
+    private def getAllErrors(exceptions: ImportExceptions): Set[ImportMessages] = {
+      val mainException = ImportMessages(exceptions.failedNodeIds, exceptions.errors.map(_.getMessage).toSet)
+
+      val importErrors = exceptions.errors.flatMap {
+        case ex: ImportExceptions => getAllErrors(ex)
+        case ex: ImportException => getAllErrors(ex)
+        case ex => Seq(ImportMessages(exceptions.failedNodeIds, Set(ex.getMessage)))
+      } ++ Seq(mainException)
+
+      importErrors.groupBy(_.nids).map {
+        case (nids, errors) => ImportMessages(nids, errors.flatMap(_.messages).toSet)
+      }.toSet
+    }
+
+    private def getAllErrors(exception: ImportException): Set[ImportMessages] = {
+      exception match {
+        case ImportException(nid, msg, Some(ex: ImportExceptions)) =>
+          val nids = migrationApiClient.getAllTranslationNids(nid).getOrElse(Set(nid))
+          Set(ImportMessages(nids, Set(msg))) ++ getAllErrors(ex)
+        case ImportException(nid, msg, Some(ex: ImportException)) =>
+          val nids = migrationApiClient.getAllTranslationNids(nid).getOrElse(Set(nid))
+          Set(ImportMessages(nids, Set(msg))) ++ getAllErrors(ex)
+        case ImportException(nid, msg, exOpt) =>
+          val nids = migrationApiClient.getAllTranslationNids(nid).getOrElse(Set(nid))
+          Set(ImportMessages(nids, exOpt.map(_.getMessage).toSet ++ Set(msg)))
+      }
     }
 
   }

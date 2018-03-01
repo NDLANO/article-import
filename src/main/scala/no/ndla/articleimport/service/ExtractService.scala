@@ -9,6 +9,7 @@
 package no.ndla.articleimport.service
 
 import com.typesafe.scalalogging.LazyLogging
+import no.ndla.articleimport.caching.Memoize
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.domain.{BiblioMeta, ContentFilMeta, NodeGeneralContent, NodeToConvert}
 

@@ -12,7 +12,7 @@ import com.amazonaws.regions.Regions
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.auth.{Role, User}
-import no.ndla.articleimport.controller.{HealthController, InternController}
+import no.ndla.articleimport.controller.{HealthController, InternController, NdlaController}
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.service._
 import no.ndla.articleimport.service.converters._
@@ -22,6 +22,7 @@ import no.ndla.network.NdlaClient
 object ComponentRegistry
   extends InternController
     with HealthController
+    with NdlaController
     with LazyLogging
     with ExtractService
     with ConverterModules

@@ -11,7 +11,7 @@ package no.ndla.articleimport.integration
 import java.net.URL
 import java.util.Date
 
-import no.ndla.articleimport.ArticleImportProperties.{MigrationHost, MigrationPassword, MigrationUser, Environment}
+import no.ndla.articleimport.ArticleImportProperties.{Environment, MigrationHost, MigrationPassword, MigrationUser}
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.service.TagsService
 import no.ndla.network.NdlaClient
@@ -19,12 +19,13 @@ import no.ndla.network.NdlaClient
 import scala.util.Try
 import scalaj.http.Http
 import com.netaporter.uri.dsl._
+import no.ndla.articleimport.caching.Memoize
 
 trait MigrationApiClient {
   this: NdlaClient with TagsService =>
   val migrationApiClient: MigrationApiClient
 
-  class MigrationApiClient {
+  class MigrationApiClient{
     val DBSource = "red"
     private val ContentMigrationBaseEndpoint = s"$MigrationHost/contents"
     private val ContentDataEndpoint = s"$ContentMigrationBaseEndpoint/:node_id" ? (s"db-source" -> s"$DBSource")
@@ -62,15 +63,20 @@ trait MigrationApiClient {
 
     def getSubjectForNode(nodeId: String): Try[Set[MigrationSubjectMeta]] =
       get[Seq[MigrationSubjectMeta]](ContentSubjectMetaEndpoint, nodeId).map(_.toSet)
+
+    private val getAllNodeTranslationNids: Memoize[String, Try[Set[String]]] =
+      Memoize((nodeId: String) => getContentNodeData(nodeId).map(_.contents.map(_.nid).toSet))
+
+    def getAllTranslationNids(nodeId: String): Try[Set[String]] = getAllNodeTranslationNids(nodeId)
   }
 }
 
 case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle], ingresses: Seq[MigrationIngress], contents: Seq[MigrationContent],
-  authors: Seq[MigrationContentAuthor], license: Option[String], nodeType: Option[String],
-  pageTitles: Seq[MigrationPageTitle], visualElements: Seq[MigrationVisualElement], relatedContents: Seq[MigrationRelatedContents],
-  editorialKeywords: Seq[MigrationEditorialKeywords], learningResourceType: Seq[MigrationLearningResourceType],
-  difficulty: Seq[MigrationDifficulty], contentType: Seq[MigrationContentType], innholdAndFag: Seq[MigrationInnholdsKategoriAndFag],
-  fagressurs: Seq[MigrationFagressurs], emneartikkelData: Seq[MigrationEmneArtikkelData]) {
+                                   authors: Seq[MigrationContentAuthor], license: Option[String], nodeType: Option[String],
+                                   pageTitles: Seq[MigrationPageTitle], visualElements: Seq[MigrationVisualElement], relatedContents: Seq[MigrationRelatedContents],
+                                   editorialKeywords: Seq[MigrationEditorialKeywords], learningResourceType: Seq[MigrationLearningResourceType],
+                                   difficulty: Seq[MigrationDifficulty], contentType: Seq[MigrationContentType], innholdAndFag: Seq[MigrationInnholdsKategoriAndFag],
+                                   fagressurs: Seq[MigrationFagressurs], emneartikkelData: Seq[MigrationEmneArtikkelData]) {
 
   def asNodeToConvert(nodeId  : String, tags: List[ArticleTag]): NodeToConvert = {
     val articleType = nodeType.map(nType => if (nType == "emneartikkel") ArticleType.TopicArticle else ArticleType.Standard)

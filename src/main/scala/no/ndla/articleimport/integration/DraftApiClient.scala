@@ -59,7 +59,7 @@ trait DraftApiClient {
           val (failed, _) = updateArticles.map(u => updateArticle(u, a.id, mainNodeId, subjectIds)).partition(_.isFailure)
           if (failed.nonEmpty) {
             val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
-            Failure(ImportException(s"Failed to update one or more article: $failedMsgs"))
+            Failure(ImportException(s"${a.id}", s"Failed to update one or more article: $failedMsgs"))
           } else {
             Success(a)
           }
@@ -94,7 +94,7 @@ trait DraftApiClient {
       val (failed, updated) = updateArticles.map(u => updateArticle(u, mainNodeId, externalSubjectIds)).partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
-        Failure(ImportException(s"Failed to update one or more article: $failedMsg"))
+        Failure(ImportException(s"${article.id}", s"Failed to update one or more article: $failedMsg"))
       } else {
         updated.head
       }
@@ -124,7 +124,7 @@ trait DraftApiClient {
           val (failed, _) = updateCons.map(u => updateConcept(u, c.id)).partition(_.isFailure)
           if (failed.nonEmpty) {
             val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
-            Failure(ImportException(s"Failed to update one or more article: $failedMsgs"))
+            Failure(ImportException(s"${c.id}", s"Failed to update one or more concepts: $failedMsgs"))
           } else {
             Success(c)
           }
@@ -151,7 +151,7 @@ trait DraftApiClient {
       val (failed, updated) = updateCons.map(u => updateConcept(u, mainNodeId)).partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
-        Failure(ImportException(s"Failed to update one or more article: $failedMsg"))
+        Failure(ImportException(s"${concept.id}", s"Failed to update one or more concept: $failedMsg"))
       } else {
         updated.head
       }

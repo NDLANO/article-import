@@ -24,7 +24,7 @@ trait BiblioConverterModule {
     override def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val nodeId = content.get("nid")
       getFootNoteData(nodeId) match {
-        case None => Failure(ImportException(s"Failed to fetch biblio meta data with node id $nodeId"))
+        case None => Failure(ImportException(nodeId, s"Failed to fetch biblio meta data with node id $nodeId"))
         case Some(meta) => Success(HtmlTagGenerator.buildFootNoteItem(
           title = meta.title,
           `type` = meta.`type`,

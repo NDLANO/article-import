@@ -27,7 +27,7 @@ trait ImageConverterModule {
       logger.info(s"Converting image with nid $nodeId")
       getImage(content).map(imageHtml => (imageHtml, Seq(), importStatus)) match {
         case Success(x) => Success(x)
-        case Failure(_) => Failure(ImportException(s"Failed to import image with node id $nodeId"))
+        case Failure(_) => Failure(ImportException(nodeId, s"Failed to import image with node id $nodeId"))
       }
     }
 
@@ -57,7 +57,7 @@ trait ImageConverterModule {
         case Some(image) =>
           Success(HtmlTagGenerator.buildImageEmbedContent(caption, image.id, align, size, altText))
         case None =>
-          Failure(ImportException(s"Failed to import image with ID $nodeId"))
+          Failure(ImportException(nodeId, s"Failed to import image with ID $nodeId"))
       }
     }
 
