@@ -9,7 +9,7 @@ package no.ndla.articleimport.integration
 
 import no.ndla.articleimport.ArticleImportProperties
 import no.ndla.articleimport.model.api._
-import no.ndla.articleimport.model.domain.{Article, Concept, Language}
+import no.ndla.articleimport.model.domain.{Article, ArticleIds, Concept, Language}
 import no.ndla.network.NdlaClient
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.service.ConverterService
@@ -107,6 +107,8 @@ trait DraftApiClient {
       } yield status
     }
 
+    def deleteArticle(id: Long): Try[ContentId] = delete[ContentId](s"$DraftApiInternEndpoint/article/$id/")
+
     private def getConceptFromId(id: Long): Option[api.Concept] = {
       get[api.Concept](s"$DraftApiConceptPublicEndpoint/$id").toOption
     }
@@ -161,6 +163,8 @@ trait DraftApiClient {
       post[ContentId](s"$DraftApiInternEndpoint/concept/$id/publish").map(_.id)
     }
 
+    def deleteConcept(id: Long): Try[ContentId] = delete[ContentId](s"$DraftApiInternEndpoint/article/$id/")
+
     def getConceptIdFromExternalId(externalId: String): Option[Long] = {
       get[ContentId](s"$DraftApiConceptPublicEndpoint/external_id/$externalId").map(_.id).toOption
     }
@@ -195,6 +199,10 @@ trait DraftApiClient {
           .header("content-type", "application/json")
           .params(params)
       )
+    }
+
+    private def delete[A](endpointUrl: String, params: (String, String)*)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
+      ndlaClient.fetchWithForwardedAuth[A](Http(endpointUrl).method("DELETE").params(params.toMap))
     }
 
     def isHealthy: Boolean = {

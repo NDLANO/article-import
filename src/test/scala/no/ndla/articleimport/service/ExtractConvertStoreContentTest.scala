@@ -39,7 +39,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   val eCSService = new ExtractConvertStoreContent
 
   override def beforeEach: Unit = {
-    when(extractService.getNodeData(nodeId)).thenReturn(sampleNode)
+    when(extractService.getNodeData(nodeId)).thenReturn(Success(sampleNode))
     when(extractService.getNodeType(nodeId2)).thenReturn(Some("fagstoff"))
     when(extractService.getNodeGeneralContent(nodeId2)).thenReturn(Seq(NodeGeneralContent(nodeId2, nodeId2, "title", "content", "en")))
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
@@ -81,7 +81,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   }
 
   test("That ETL returns a Failure if the node was not found") {
-    when(extractService.getNodeData(nodeId)).thenReturn(sampleNode.copy(contents=Seq()))
+    when(extractService.getNodeData(nodeId)).thenReturn(Success(sampleNode.copy(contents=Seq())))
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
 
     val result = eCSService.processNode(nodeId, ImportStatus(Seq(), Set("9876")))
@@ -89,14 +89,16 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   }
 
   test("ETL should return a Failure if validation fails") {
-    val validationMessage = ValidationMessage("content.content", "Content can not be empty")
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(Some(1: Long))
     when(draftApiClient.getArticleIdFromExternalId(nodeId2)).thenReturn(Some(2: Long))
     when(draftApiClient.publishArticle(any[Long])).thenReturn(Failure(new HttpRequestException("validation")))
+    when(draftApiClient.deleteArticle(1)).thenReturn(Success(ContentId(1: Long)))
 
     val result = eCSService.processNode(nodeId, ImportStatus.empty)
 
     result.isFailure should be (true)
+    verify(draftApiClient, times(1)).deleteArticle(1)
+    verify(draftApiClient, times(0)).deleteConcept(1)
   }
 
   test("That ETL returns a Failure if failed to persist the converted article") {
@@ -114,9 +116,12 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   test("Articles that fails to import should be deleted from database if it exists") {
     reset(draftApiClient)
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(Some(1: Long))
+    when(draftApiClient.deleteArticle(1)).thenReturn(Success(ContentId(1: Long)))
 
     val result = eCSService.processNode(nodeId, ImportStatus.empty)
     result.isFailure should be (true)
+    verify(draftApiClient, times(1)).deleteArticle(1)
+    verify(draftApiClient, times(0)).deleteConcept(1)
   }
 
   test("Articles should be force-updated if flag is set") {

@@ -43,28 +43,54 @@ trait ExtractConvertStoreContent {
         case Failure(f) => return Failure(f)
       }
 
-      for {
+      val convertedNode = for {
         // Generate an ID for the content before converting the node.
         // This ensures that cyclic dependencies between articles does not cause an infinite recursive import job
         _ <- generateNewIdIfFirstTimeImported(mainNodeId, node.nodeType)
         (convertedContent, updatedImportStatus) <- converterService.toDomainArticle(node, importStatus)
         (content, storeImportStatus) <- store(convertedContent, mainNodeId, updatedImportStatus)
       } yield (content, storeImportStatus.addMessage(s"Successfully imported node $externalId: ${content.id}").setArticleId(content.id))
+
+      convertedNode match {
+        case Success(converted) => Success(converted)
+        case Failure(ex) =>
+          logger.warn(s"Failed to import node with id $externalId. Deleting any previous version")
+          deleteContent(mainNodeId, node.nodeType)
+            .foreach(id => logger.warn(s"Deleted content with id $id with node type ${node.nodeType}"))
+          Failure(ex)
+      }
     }
 
     def getMainNodeId(externalId: String): Option[String] = {
       extract(externalId) map { case (_, mainNodeId) => mainNodeId } toOption
     }
 
+    private def deleteContent(mainNodeId: String, nodeType: String): Option[Long] = {
+      nodeType match {
+        case `nodeTypeBegrep` =>
+          draftApiClient.getConceptIdFromExternalId(mainNodeId)
+            .flatMap(draftApiClient.deleteConcept(_).toOption)
+            .map(_.id)
+        case _ =>
+          draftApiClient.getArticleIdFromExternalId(mainNodeId)
+            .flatMap(draftApiClient.deleteArticle(_).toOption)
+            .map(_.id)
+      }
+    }
+
     private def extract(externalId: String): Try[(NodeToConvert, String)] = {
       val node = extractService.getNodeData(externalId)
-      node.contents.find(_.isMainNode) match {
-        case None => Failure(NotFoundException(s"$externalId is a translation; Could not find main node"))
-        case Some(mainNode) =>
-          if (supportedContentTypes.contains(node.nodeType.toLowerCase) || supportedContentTypes.contains(node.contentType.toLowerCase))
-            Success(node, mainNode.nid)
+      val nodeType = node.map(_.nodeType).getOrElse("")
+      val contentType = node.map(_.contentType).getOrElse("")
+
+      node.map(_.contents.find(_.isMainNode)) match {
+        case Success(None) => Failure(NotFoundException(s"$externalId is a translation; Could not find main node"))
+        case Success(Some(mainNode)) =>
+          if (supportedContentTypes.contains(nodeType.toLowerCase) || supportedContentTypes.contains(contentType.toLowerCase))
+            node.map(n => (n, mainNode.nid))
           else
-            Failure(ImportException(externalId, s"Tried to import node of unsupported type '${node.nodeType.toLowerCase}/${node.contentType.toLowerCase()}'"))
+            Failure(ImportException(externalId, s"Tried to import node of unsupported type '${nodeType.toLowerCase}/${contentType.toLowerCase()}'"))
+        case Failure(ex) => Failure(ex)
       }
     }
 
