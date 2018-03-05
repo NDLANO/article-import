@@ -93,6 +93,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.getArticleIdFromExternalId(nodeId2)).thenReturn(Some(2: Long))
     when(draftApiClient.publishArticle(any[Long])).thenReturn(Failure(new HttpRequestException("validation")))
     when(draftApiClient.deleteArticle(1)).thenReturn(Success(ContentId(1: Long)))
+    when(draftApiClient.getArticleFromId(1)).thenReturn(Some(TestData.sampleApiArticle.copy(revision=Some(1))))
 
     val result = eCSService.processNode(nodeId, ImportStatus.empty)
 
@@ -117,6 +118,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     reset(draftApiClient)
     when(draftApiClient.getArticleIdFromExternalId(any[String])).thenReturn(Some(1: Long))
     when(draftApiClient.deleteArticle(1)).thenReturn(Success(ContentId(1: Long)))
+    when(draftApiClient.getArticleFromId(1)).thenReturn(Some(TestData.sampleApiArticle.copy(revision=Some(1))))
 
     val result = eCSService.processNode(nodeId, ImportStatus.empty)
     result.isFailure should be (true)

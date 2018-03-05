@@ -73,7 +73,9 @@ trait ExtractConvertStoreContent {
             .map(_.id)
         case _ =>
           draftApiClient.getArticleIdFromExternalId(mainNodeId)
-            .flatMap(draftApiClient.deleteArticle(_).toOption)
+            .flatMap(draftApiClient.getArticleFromId)
+            .filter(article => article.revision.getOrElse(1) <= 1) // don't delete article if it has been manually edited
+            .flatMap(article => draftApiClient.deleteArticle(article.id).toOption)
             .map(_.id)
       }
     }
