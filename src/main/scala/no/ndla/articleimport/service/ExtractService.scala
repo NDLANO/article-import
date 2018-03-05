@@ -21,7 +21,7 @@ trait ExtractService {
   val extractService: ExtractService
 
   class ExtractService extends LazyLogging {
-    def getNodeData(nodeId: String): NodeToConvert = {
+    def getNodeData(nodeId: String): Try[NodeToConvert] = {
       val tagsForNode = tagsService.forContent(nodeId) match {
         case Failure(e) =>
           logger.warn(s"Could not import tags for node $nodeId", e)
@@ -30,10 +30,10 @@ trait ExtractService {
       }
 
       migrationApiClient.getContentNodeData(nodeId) match {
-        case Success(data) => data.asNodeToConvert(nodeId, tagsForNode)
+        case Success(data) => Success(data.asNodeToConvert(nodeId, tagsForNode))
         case Failure(ex) =>
           logger.error(s"Getting content from migration-api failed with error: ${ex.getMessage}")
-          throw ex
+          Failure(ex)
       }
     }
 

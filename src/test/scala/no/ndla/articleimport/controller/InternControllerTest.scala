@@ -32,7 +32,7 @@ class InternControllerTest extends UnitSuite with TestEnvironment with ScalatraF
 
   test("That POST /import/:node_id returns 500 if the main node is not found") {
 
-    when(extractService.getNodeData(nodeId2)).thenReturn(sampleNode2)
+    when(extractService.getNodeData(nodeId2)).thenReturn(Success(sampleNode2))
 
     post(s"/import/$nodeId2", headers = Map("Authorization" -> authHeaderWithDraftsWriteRole)) {
       status should equal(500)

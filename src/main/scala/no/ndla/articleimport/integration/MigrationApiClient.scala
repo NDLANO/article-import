@@ -125,7 +125,7 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle], ingresses
 
   private def getMetaDescription(content: MigrationContent): String = {
     getEmneArtikkel(content.language) match {
-      case Some(data) => data.ingress
+      case Some(data) => data.metaDescription
       case None => ingresses.find(_.language == content.language)
         .flatMap(_.content).getOrElse(content.metaDescription)
     }
