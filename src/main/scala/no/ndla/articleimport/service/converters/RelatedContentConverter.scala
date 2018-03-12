@@ -27,22 +27,29 @@ trait RelatedContentConverter {
 
   object RelatedContentConverter extends ConverterModule {
     override def convert(content: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
-      val nids = content.relatedContent
-        .filter(related => supportedContentTypes.contains(extractService.getNodeType(related.nid).getOrElse("unknown")))
-        .map(_.nid).toSet
+      val allRelatedNids = content.relatedContent.map(c => (c.nid, extractService.getNodeType(c.nid).getOrElse("unknown"))).toSet
+      val nidsToImport = allRelatedNids.filter { case (_, nodeType ) => supportedContentTypes.contains(nodeType) }.map{case (nid, _) => nid}
+      val excludedNids = allRelatedNids.filterNot {
+        case (nid, _) => nidsToImport.contains(nid)
+      } map {
+        case (nid, nodeType) => (nid, s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
+      }
 
-      if (nids.isEmpty) {
-        Success(content, importStatus.copy(importRelatedArticles = false))
+      if (nidsToImport.isEmpty) {
+        Success(content, importStatus.copy(importRelatedArticles = false).addMessages(excludedNids.map(_._2).toSeq))
       } else {
         val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] = importRelatedContent(content.nid, _, _)
         val handlerFunc = if (importStatus.importRelatedArticles) importRelatedContentCb else getRelatedContentFromDb _
 
-        handlerFunc(nids, importStatus) match {
+        handlerFunc(nidsToImport, importStatus) match {
           case Success((ids, status)) if ids.nonEmpty =>
             val element = stringToJsoupDocument(content.content)
             element.append(s"<section>${HtmlTagGenerator.buildRelatedContent(ids)}</section>")
-            Success(content.copy(content = jsoupDocumentToString(element)), status)
-          case Success((_, status)) => Success(content, status)
+            Success(content.copy(content = jsoupDocumentToString(element)), status.addMessages(excludedNids.map(_._2).toSeq))
+          case Success((_, status)) => Success(content, status.addMessages(excludedNids.map(_._2).toSeq))
+          case Failure(ex: ImportExceptions) =>
+            val filteredOutNodes = excludedNids.map { case (_, message) => ImportException(content.nid, message, Some(ex)) }
+            Failure(ex.copy(errors=ex.errors ++ filteredOutNodes))
           case Failure(ex) => Failure(ex)
         }
       }
