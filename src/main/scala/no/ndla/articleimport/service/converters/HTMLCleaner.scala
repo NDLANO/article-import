@@ -38,6 +38,7 @@ trait HTMLCleaner {
       replaceNestedSections(element)
 
       val metaDescription = prepareMetaDescription(content.metaDescription)
+      mergeTwoFirstSectionsIfFeasible(element)
       val ingress = getIngress(content, element)
       mergeTwoFirstSectionsIfFeasible(element)
 
@@ -273,7 +274,7 @@ trait HTMLCleaner {
     private def extractIngress(el: Element): Option[String] = {
       val minimumIngressWordCount = 3
       val strippedDownArticle = stringToJsoupDocument(el.html())
-      val tagsToKeep = Set("p", "strong", "body", "embed")
+      val tagsToKeep = Set("p", "strong", "body", "embed", "section")
       val tagsToRemove = Set("aside")
 
       strippedDownArticle.select("*").asScala
@@ -286,7 +287,7 @@ trait HTMLCleaner {
 
       removeEmptyTags(strippedDownArticle)
 
-      val firstP = Option(strippedDownArticle.select("body>p:lt(2)>strong").first()).map(_.parent)
+      val firstP = Option(strippedDownArticle.select("body>section:eq(0)>p:lt(2)>strong").first()).map(_.parent)
       firstP.flatMap(p => {
         mergeConsecutiveTags(p, "p")
         val ingressTexts = consecutiveNodesOfType(p.select(">strong").first(), "strong").map {
