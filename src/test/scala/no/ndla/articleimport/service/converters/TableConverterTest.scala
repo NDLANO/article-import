@@ -224,38 +224,59 @@ class TableConverterTest extends UnitSuite {
   test("Strong tags in table header are unwrapped") {
     val table2x3 =
       s"""<table>
-          |<tbody>
-          |<tr>
-          |<th><strong>heading 1</strong></th>
-          |<th><strong>heading 2</strong></th>
-          |</tr>
-          |<tr>
-          |<td>col 1</td>
-          |<td>col 2</td>
-          |</tr>
-          |</tbody>
+            |<tbody>
+              |<tr>
+                |<th><strong>heading 1</strong></th>
+                |<th><strong>heading 2</strong></th>
+              |</tr>
+              |<tr>
+                |<td>col 1</td>
+                |<td>col 2</td>
+              |</tr>
+            |</tbody>
           |</table>""".stripMargin.replace("\n", "")
 
     val table2x3ExpectedResult =
       s"""<table>
-          |<thead>
-          |<tr>
-          |<th>heading 1</th>
-          |<th>heading 2</th>
-          |</tr>
-          |</thead>
-          |<tbody>
-          |<tr>
-          |<td>col 1</td>
-          |<td>col 2</td>
-          |</tr>
-          |</tbody>
+            |<thead>
+              |<tr>
+              |<th>heading 1</th>
+              |<th>heading 2</th>
+              |</tr>
+            |</thead>
+            |<tbody>
+              |<tr>
+                |<td>col 1</td>
+                |<td>col 2</td>
+              |</tr>
+            |</tbody>
           |</table>""".stripMargin.replace("\n", "")
 
     val initialContent = TestData.sampleContent.copy(content=table2x3)
     val Success((result, _)) = TableConverter.convert(initialContent, ImportStatus.empty)
 
     result.content should equal(table2x3ExpectedResult)
+  }
+
+  test("Tables in which there already exists a row with a header column should not be converted") {
+    val table2x3 =
+      s"""<table>
+           |<tbody>
+             |<tr>
+               |<th><strong>heading 1</strong></th>
+               |<td><strong>heading 2</strong></td>
+             |</tr>
+             |<tr>
+               |<td>col 1</td>
+               |<td>col 2</td>
+             |</tr>
+           |</tbody>
+         |</table>""".stripMargin.replace("\n", "")
+
+    val initialContent = TestData.sampleContent.copy(content=table2x3)
+    val Success((result, _)) = TableConverter.convert(initialContent, ImportStatus.empty)
+
+    result.content should equal(table2x3)
   }
 
 }
