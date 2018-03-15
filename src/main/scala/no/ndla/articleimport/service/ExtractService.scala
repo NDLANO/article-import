@@ -43,8 +43,8 @@ trait ExtractService {
     def getNodeEmbedMeta(nodeId: String): Try[MigrationEmbedMeta] =
       migrationApiClient.getNodeEmbedData(nodeId)
 
-    def getNodeFilMeta(nodeId: String): Try[ContentFilMeta] =
-      migrationApiClient.getFilMeta(nodeId).map(x => x.asContentFilMeta)
+    def getNodeFilMeta(nodeId: String): Try[Seq[ContentFilMeta]] =
+      migrationApiClient.getFilMeta(nodeId).map(_.map(_.asContentFilMeta))
 
     def getNodeGeneralContent(nodeId: String): Seq[NodeGeneralContent] = {
       val content = migrationApiClient.getNodeGeneralContent(nodeId).getOrElse(Seq()).map(x => x.asNodeGeneralContent)

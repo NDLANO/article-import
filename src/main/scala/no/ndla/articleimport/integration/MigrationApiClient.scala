@@ -52,8 +52,8 @@ trait MigrationApiClient {
     def getNodeEmbedData(nodeId: String): Try[MigrationEmbedMeta] =
       get[MigrationEmbedMeta](ContentEmbedEndpoint, nodeId)
 
-    def getFilMeta(nodeId: String): Try[MigrationContentFileMeta] =
-      get[MigrationContentFileMeta](ContentFileEndpoint, nodeId)
+    def getFilMeta(nodeId: String): Try[Seq[MigrationContentFileMeta]] =
+      get[Seq[MigrationContentFileMeta]](ContentFileEndpoint, nodeId)
 
     def getNodeGeneralContent(nodeId: String): Try[Seq[MigrationNodeGeneralContent]] =
       get[Seq[MigrationNodeGeneralContent]](ContentGeneralEndpoint, nodeId)
