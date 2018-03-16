@@ -58,7 +58,8 @@ lazy val article_import= (project in file(".")).
       "com.netaporter" %% "scala-uri" % "0.4.16",
       "org.scalatra" %% "scalatra-scalatest" % Scalatraversion % "test",
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
-      "org.mockito" % "mockito-all" % MockitoVersion % "test"
+      "org.mockito" % "mockito-all" % MockitoVersion % "test",
+      "org.apache.commons" % "commons-text" % "1.2"
     )
   ).enablePlugins(DockerPlugin).enablePlugins(GitVersioning).enablePlugins(JettyPlugin)
 
