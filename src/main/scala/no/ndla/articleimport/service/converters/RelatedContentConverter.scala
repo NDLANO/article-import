@@ -34,6 +34,7 @@ trait RelatedContentConverter {
       } map {
         case (nid, nodeType) => (nid, s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
       }
+      importStatus.importRelatedArticles
 
       if (nidsToImport.isEmpty) {
         Success(content, importStatus.copy(importRelatedArticles = false).addMessages(excludedNids.map(_._2).toSeq))
