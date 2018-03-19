@@ -792,11 +792,11 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
     result.content should equal(expectedContentResult)
   }
 
-  test("HTML characters are not escaped in meta description") {
+  test("HTML characters are escaped in meta description") {
     val content = TestData.sampleContent.copy(content = "", metaDescription ="""<p>Hei dette er et mindre enn tegn <> nice</p>""")
     val Success((result, _)) = htmlCleaner.convert(content, defaultImportStatus)
 
-    result.metaDescription should equal("Hei dette er et mindre enn tegn <> nice")
+    result.metaDescription should equal("Hei dette er et mindre enn tegn &lt;&gt; nice")
   }
 
 }

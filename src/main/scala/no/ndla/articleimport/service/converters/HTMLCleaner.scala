@@ -13,6 +13,7 @@ import no.ndla.articleimport.integration.{ConverterModule, ImageApiClient, Langu
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.validation.{HtmlTagRules, ResourceType, TagAttributes}
+import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jsoup.nodes.{Element, Node, TextNode}
 
 import scala.annotation.tailrec
@@ -148,7 +149,7 @@ trait HTMLCleaner {
         val caption = el.attr("data-caption")
         el.replaceWith(new TextNode(caption))
       }
-      extractElement(element).trim
+      escapeHtml4(extractElement(element).trim)
     }
 
     private def removeAttributes(el: Element): Seq[String] = {
