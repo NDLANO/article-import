@@ -5,12 +5,11 @@ val Scalatraversion = "2.5.1"
 val ScalaLoggingVersion = "3.5.0"
 val Log4JVersion = "2.9.1"
 val Jettyversion = "9.2.10.v20150310"
-val AwsSdkversion = "1.11.46"
 val ScalaTestVersion = "3.0.1"
 val MockitoVersion = "1.10.19"
 val Elastic4sVersion = "5.2.8"
 val ElasticsearchVersion = "5.1.1"
-val JacksonVersion = "2.7.4"
+val JacksonVersion = "2.9.4"
 
 val appProperties = settingKey[Properties]("The application properties")
 
@@ -33,7 +32,7 @@ lazy val article_import= (project in file(".")).
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     scalacOptions := Seq("-target:jvm-1.8", "-unchecked", "-deprecation", "-feature"),
     libraryDependencies ++= Seq(
-      "ndla" %% "network" % "0.28",
+      "ndla" %% "network" % "0.29",
       "ndla" %% "mapping" % "0.6",
       "ndla" %% "validation" % "0.14",
       "joda-time" % "joda-time" % "2.8.2",
@@ -49,11 +48,8 @@ lazy val article_import= (project in file(".")).
       "org.apache.logging.log4j" % "log4j-core" % Log4JVersion,
       "org.apache.logging.log4j" % "log4j-slf4j-impl" % Log4JVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % JacksonVersion,
-      "mysql" % "mysql-connector-java" % "5.1.36",
-      "com.amazonaws" % "aws-java-sdk-s3" % AwsSdkversion,
       "org.scalaj" %% "scalaj-http" % "2.3.0",
       "org.apache.lucene" % "lucene-test-framework" % "6.4.1" % "test",
-      "vc.inreach.aws" % "aws-signing-request-interceptor" % "0.0.16",
       "org.jsoup" % "jsoup" % "1.11.2",
       "com.netaporter" %% "scala-uri" % "0.4.16",
       "org.scalatra" %% "scalatra-scalatest" % Scalatraversion % "test",
