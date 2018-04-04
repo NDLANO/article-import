@@ -15,7 +15,7 @@ import scala.annotation.tailrec
 import no.ndla.articleimport.integration.{ConverterModule, LanguageContent}
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
-import no.ndla.articleimport.model.api.ImportException
+import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
 
 import scala.util.{Failure, Success, Try}
 
@@ -80,9 +80,7 @@ trait ContentBrowserConverter {
 
       val converterExceptions = contentExceptions ++ migrationContentExceptions
       converterExceptions.headOption match {
-        case Some(_) =>
-          val exceptionMessages = converterExceptions.map(_.getMessage)
-          Failure(ImportException(languageContent.nid, s"Error(s) in ContentBrowserConverter: ${exceptionMessages.mkString(",")}"))
+        case Some(_) => Failure(ImportExceptions(Set(languageContent.nid, languageContent.tnid), converterExceptions))
         case None =>
           Success(finalLanguageContent.copy(content=jsoupDocumentToString(contentElement), metaDescription=jsoupDocumentToString(metaDescriptionElement)),
             finalImportStatus)
