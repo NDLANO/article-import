@@ -350,8 +350,9 @@ trait ConverterService {
         case ex => Seq(ImportMessages(exceptions.failedNodeIds, Set(ex.getMessage)))
       } ++ Seq(mainException)
 
-      importErrors.groupBy(_.nids).map {
-        case (nids, errors) => ImportMessages(nids, errors.flatMap(_.messages).toSet)
+      val keys = importErrors.map(_.nids).sortBy(k => -k.size)
+      importErrors.groupBy(k => keys.find(a => k.nids.subsetOf(a))).collect {
+        case (Some(nids), errors) => ImportMessages(nids, errors.flatMap(_.messages).toSet)
       }.toSet
     }
 
