@@ -132,8 +132,7 @@ trait ConverterService {
     private[service] def toDomainCopyright(license: String, authors: Seq[Author]): Copyright = {
       val origin = authors.find(author => author.`type`.toLowerCase == "opphavsmann").map(_.name)
       val creators = authors.filter(a => oldCreatorTypes.contains(a.`type`.toLowerCase)).map(toDomainAuthor)
-      // Filters out processor authors with old type `redaksjonelt` during import process since `redaksjonelt` exists both in processors and creators.
-      val processors = authors.filter(a => oldProcessorTypes.contains(a.`type`.toLowerCase)).filterNot(a => a.`type`.toLowerCase == "redaksjonelt").map(toDomainAuthor)
+      val processors = authors.filter(a => oldProcessorTypes.contains(a.`type`.toLowerCase)).map(toDomainAuthor)
       val rightsholders = authors.filter(a => oldRightsholderTypes.contains(a.`type`.toLowerCase)).map(toDomainAuthor)
 
       Copyright(license, origin, creators, processors, rightsholders, None, None, None)
