@@ -25,13 +25,14 @@ trait BiblioConverterModule {
       val nodeId = content.get("nid")
       getFootNoteData(nodeId) match {
         case None => Failure(ImportException(nodeId, s"Failed to fetch biblio meta data with node id $nodeId"))
-        case Some(meta) => Success(HtmlTagGenerator.buildFootNoteItem(
+        case Some(meta) =>
+          Success(HtmlTagGenerator.buildFootNoteItem(
           title = meta.title,
           `type` = meta.`type`,
           year = meta.year,
           edition = meta.edition,
           publisher = meta.publisher,
-          authors = meta.authors
+          authors = meta.authors.toSet
         ), List[RequiredLibrary](), importStatus)
       }
     }

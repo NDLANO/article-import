@@ -9,7 +9,7 @@
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import no.ndla.articleimport.model.domain.{Biblio, BiblioAuthor, BiblioMeta, ImportStatus}
-import no.ndla.articleimport.{TestEnvironment, UnitSuite}
+import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 
 import scala.util.Success
@@ -35,4 +35,20 @@ class BiblioConverterModuleTest extends UnitSuite with TestEnvironment {
     requiredLibraries.isEmpty should be (true)
     importStatus.messages.isEmpty should be (true)
   }
+
+  test("Authors list should only contain unique names") {
+    val insertion = "inline"
+    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "insertion" -> insertion)
+    val author = BiblioAuthor("Henrik Henriksen", "Henriksen", "Henrik")
+    val biblio = BiblioMeta(Biblio("title", "book", "2009", "1", "me"), Seq(author, author, author, BiblioAuthor("first last", "last", "first")))
+    val expectedResult = s"""<$ResourceHtmlEmbedTag data-authors="${biblio.authors.distinct.map(_.name).mkString(";")}" data-edition="${biblio.biblio.edition}" data-publisher="${biblio.biblio.publisher}" data-resource="footnote" data-title="${biblio.biblio.title}" data-type="${biblio.biblio.bibType}" data-year="${biblio.biblio.year}" />"""
+
+    when(extractService.getBiblioMeta(nodeId)).thenReturn(Some(biblio))
+    val Success((result, requiredLibraries, importStatus)) = BiblioConverter.convert(content, ImportStatus.empty)
+
+    result should equal (expectedResult)
+    requiredLibraries.isEmpty should be (true)
+    importStatus.messages.isEmpty should be (true)
+  }
+
 }
