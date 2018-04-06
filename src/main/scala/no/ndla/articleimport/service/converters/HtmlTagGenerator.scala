@@ -120,7 +120,7 @@ trait HtmlTagGenerator {
       s"<a ${buildAttributesString(attributes)}>$anchorText</a>"
     }
 
-    def buildFootNoteItem(title: String, `type`: String, year: String, edition: String, publisher: String, authors: Seq[String]) = {
+    def buildFootNoteItem(title: String, `type`: String, year: String, edition: String, publisher: String, authors: Set[String]) = {
       val attrs = Map(
         TagAttributes.DataResource -> ResourceType.FootNote.toString,
         TagAttributes.DataTitle -> title,
