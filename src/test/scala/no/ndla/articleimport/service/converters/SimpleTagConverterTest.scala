@@ -162,4 +162,39 @@ class SimpleTagConverterTest extends UnitSuite {
     result.content should equal(expectedResult)
   }
 
+  test("only spans with font-size attribute around chinese text should be replaced with a data-size attribute") {
+    val initialContent = TestData.sampleContent.copy(content = """<span style="font-size: xx-large;">第一课：汉字</span>""")
+    val expectedResult = """<span data-size="xx-large">第一课：汉字</span>"""
+    val Success((result, _)) = SimpleTagConverter.convert(initialContent, ImportStatus.empty)
+
+    result.content should equal(expectedResult)
+
+    val contentWithMultipleStylingElements = TestData.sampleContent.copy(content = """<span style="font-size   :xx-large   ; another-attribute: hmm">第一课：汉字</span>""")
+    val expectedResult2 = """<span data-size="xx-large">第一课：汉字</span>"""
+    val Success((result2, _)) = SimpleTagConverter.convert(contentWithMultipleStylingElements, ImportStatus.empty)
+
+    result2.content should equal(expectedResult2)
+
+    val contentWithoutChinese = TestData.sampleContent.copy(content = """<span style="font-size: xx-large;">hello</span>""")
+    val expectedResult3 = """<span style="font-size: xx-large;">hello</span>"""
+    val Success((result3, _)) = SimpleTagConverter.convert(contentWithoutChinese, ImportStatus.empty)
+
+    result3.content should equal(expectedResult3)
+  }
+
+  test("spans with xml:lang attribute is kept as <span> tags and lang tag is inserted") {
+    val content =
+      s"""<section>
+         |<span xml:lang="nb">HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+    val expectedContentResult =
+      s"""<section>
+         |<span lang="nb">HyperText Markup Language</span>
+         |</section>""".stripMargin.replace("\n", "")
+
+    val Success((result, _)) = SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
+
+    result.content should equal(expectedContentResult)
+  }
+
 }
