@@ -67,6 +67,7 @@ object ArticleImportProperties extends LazyLogging {
   val NDLABrightcoveAccountId = prop("NDLA_BRIGHTCOVE_ACCOUNT_ID")
   val NDLABrightcovePlayerId = prop("NDLA_BRIGHTCOVE_PLAYER_ID")
   val H5PHost = Map(
+    "brukertest" -> "h5p.ndla.no",
     "prod" -> "h5p.ndla.no"
   ).getOrElse(Environment, "h5p-test.ndla.no")
 
