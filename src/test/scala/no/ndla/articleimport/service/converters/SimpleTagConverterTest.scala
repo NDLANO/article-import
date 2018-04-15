@@ -164,13 +164,13 @@ class SimpleTagConverterTest extends UnitSuite {
 
   test("only spans with font-size attribute around chinese text should be replaced with a data-size attribute") {
     val initialContent = TestData.sampleContent.copy(content = """<span style="font-size: xx-large;">第一课：汉字</span>""")
-    val expectedResult = """<span data-size="xx-large">第一课：汉字</span>"""
+    val expectedResult = """<span data-size="large">第一课：汉字</span>"""
     val Success((result, _)) = SimpleTagConverter.convert(initialContent, ImportStatus.empty)
 
     result.content should equal(expectedResult)
 
     val contentWithMultipleStylingElements = TestData.sampleContent.copy(content = """<span style="font-size   :xx-large   ; another-attribute: hmm">第一课：汉字</span>""")
-    val expectedResult2 = """<span data-size="xx-large">第一课：汉字</span>"""
+    val expectedResult2 = """<span data-size="large">第一课：汉字</span>"""
     val Success((result2, _)) = SimpleTagConverter.convert(contentWithMultipleStylingElements, ImportStatus.empty)
 
     result2.content should equal(expectedResult2)

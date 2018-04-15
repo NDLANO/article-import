@@ -71,7 +71,9 @@ object SimpleTagConverter extends ConverterModule {
     element.select("span[style~=font-size]").asScala
       .filter(tag => containsChineseText(tag.text))
       .foreach(el => {
-        val fontSize = parseInlineCss(el.attr("style")).getOrElse("font-size", "xx-large")
+        val cssFontSize = parseInlineCss(el.attr("style")).getOrElse("font-size", "large")
+        val fontSize = if (cssFontSize.contains("large")) "large" else cssFontSize
+
         replaceAttribute(el, "style", DataSize.toString -> fontSize)
       })
   }
