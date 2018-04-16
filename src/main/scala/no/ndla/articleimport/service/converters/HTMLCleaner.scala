@@ -12,7 +12,7 @@ import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString,
 import no.ndla.articleimport.integration.{ConverterModule, ImageApiClient, LanguageContent, LanguageIngress}
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
-import no.ndla.validation.{HtmlTagRules, ResourceType, TagAttributes}
+import no.ndla.validation.{HtmlTagRules, ResourceType, TagAttributes, TagValidator}
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jsoup.nodes.{Element, Node, TextNode}
 
@@ -29,9 +29,9 @@ trait HTMLCleaner {
       val element = stringToJsoupDocument(content.content)
       val illegalTags = unwrapIllegalTags(element).map(x => s"Illegal tag(s) removed: $x").distinct
       convertLists(element)
-      handleSpans(element)
       val illegalAttributes = removeAttributes(element).map(x => s"Illegal attribute(s) removed: $x").distinct
 
+      removeEmptySpansWithoutAttributes(element)
       moveEmbedsOutOfPTags(element)
       removeComments(element)
       removeNbsp(element)
@@ -72,6 +72,16 @@ trait HTMLCleaner {
       }
 
       element.select("details").asScala.foreach(unwrapNestedDivs)
+    }
+
+    private def tagIsValid(el: Element): Boolean = {
+      new TagValidator().validateHtmlTag("content", el).isEmpty
+    }
+
+    private def removeEmptySpansWithoutAttributes(el: Element): Unit = {
+      el.select("span").asScala
+        .filterNot(tag => tagIsValid(tag) && tag.attributes().asScala.nonEmpty)
+        .foreach(_.unwrap)
     }
 
     private def moveEmbedsOutOfPTags(element: Element) {
@@ -208,18 +218,6 @@ trait HTMLCleaner {
         paragraph.select("strong").asScala
       else
         Seq(el)
-    }
-
-    private def handleSpans(element: Element) {
-      element.select("span").asScala.foreach(spanTag => {
-        val langAttribute = spanTag.attr("xml:lang")
-        if (langAttribute.isEmpty) {
-          spanTag.unwrap()
-        } else {
-          spanTag.attr("lang", langAttribute)
-          spanTag.removeAttr("xml:lang")
-        }
-      })
     }
 
     private def getIngressText(el: Element): Option[Seq[Element]] = {

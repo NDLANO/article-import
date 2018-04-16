@@ -5,12 +5,12 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service.converters
 
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration.{ConverterModule, LanguageContent}
 import no.ndla.articleimport.model.domain.ImportStatus
+import no.ndla.validation.TagAttributes.DataSize
 import org.jsoup.nodes.Element
 
 import scala.collection.JavaConverters._
@@ -23,6 +23,7 @@ object SimpleTagConverter extends ConverterModule {
     convertDivs(element)
     convertPres(element)
     convertHeadings(element)
+    convertSpans(element)
     Success(content.copy(content = jsoupDocumentToString(element)), importStatus)
   }
 
@@ -55,6 +56,38 @@ object SimpleTagConverter extends ConverterModule {
     }
   }
 
+  private def convertPres(el: Element) {
+    for (el <- el.select("pre").asScala) {
+      el.html("<code>" + el.html() + "</code>")
+    }
+  }
+
+  private def convertSpans(element: Element): Unit = {
+    setFontSizeForChineseText(element)
+    setLanguageParameterIfPresent(element)
+  }
+
+  private def setFontSizeForChineseText(element: Element): Unit = {
+    element.select("span[style~=font-size]").asScala
+      .filter(tag => containsChineseText(tag.text))
+      .foreach(el => {
+        val cssFontSize = parseInlineCss(el.attr("style")).getOrElse("font-size", "large")
+        val fontSize = if (cssFontSize.contains("large")) "large" else cssFontSize
+
+        replaceAttribute(el, "style", DataSize.toString -> fontSize)
+      })
+  }
+
+  private def setLanguageParameterIfPresent(element: Element) {
+    element.select("span").asScala.foreach(spanTag => {
+      val langAttribute = spanTag.attr("xml:lang")
+      if (langAttribute.nonEmpty) {
+        spanTag.attr("lang", langAttribute)
+        spanTag.removeAttr("xml:lang")
+      }
+    })
+  }
+
   private def handle_hide(el: Element) {
     replaceTag(el, "details")
     el.select("a.re-collapse").remove()
@@ -75,9 +108,23 @@ object SimpleTagConverter extends ConverterModule {
     el.removeAttr("class")
   }
 
-  private def convertPres(el: Element) {
-    for (el <- el.select("pre").asScala) {
-      el.html("<code>" + el.html() + "</code>")
-    }
+  private def containsChineseText(text: String): Boolean = {
+    text.codePoints().anyMatch(codepoint => Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN)
   }
+
+  private def replaceAttribute(el: Element, originalAttrKey: String, attr: (String, String)): Unit = {
+    val (attrKey, attrVal) = attr
+    el.removeAttr(originalAttrKey)
+    el.attr(attrKey, attrVal)
+  }
+
+  def parseInlineCss(str: String): Map[String, String] = {
+    str.split(";").flatMap(s => {
+      s.split(":").toList match {
+        case key :: value => Some(key.trim -> value.mkString(":").trim)
+        case _ => None
+      }
+    }).toMap
+  }
+
 }
