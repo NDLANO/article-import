@@ -5,14 +5,21 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.controller
 
 import javax.servlet.http.HttpServletRequest
 
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.ArticleImportProperties.{CorrelationIdHeader, CorrelationIdKey}
-import no.ndla.articleimport.model.api.{AccessDeniedException, Error, ImportException, ImportExceptions, NotFoundException, OptimisticLockException, ValidationError}
+import no.ndla.articleimport.model.api.{
+  AccessDeniedException,
+  Error,
+  ImportException,
+  ImportExceptions,
+  NotFoundException,
+  OptimisticLockException,
+  ValidationError
+}
 import no.ndla.articleimport.model.domain.{ImportError, emptySomeToNone}
 import no.ndla.articleimport.service.ConverterService
 import no.ndla.network.model.HttpRequestException
@@ -38,7 +45,10 @@ trait NdlaController {
       ThreadContext.put(CorrelationIdKey, CorrelationID.get.getOrElse(""))
       ApplicationUrl.set(request)
       AuthUser.set(request)
-      logger.info("{} {}{}", request.getMethod, request.getRequestURI, Option(request.getQueryString).map(s => s"?$s").getOrElse(""))
+      logger.info("{} {}{}",
+                  request.getMethod,
+                  request.getRequestURI,
+                  Option(request.getQueryString).map(s => s"?$s").getOrElse(""))
     }
 
     after() {
@@ -49,12 +59,18 @@ trait NdlaController {
     }
 
     error {
-      case a: AccessDeniedException => Forbidden(body = Error(Error.ACCESS_DENIED, a.getMessage))
-      case v: ValidationException => BadRequest(body = ValidationError(messages = v.errors))
-      case n: NotFoundException => NotFound(body = Error(Error.NOT_FOUND, n.getMessage))
-      case o: OptimisticLockException => Conflict(body = Error(Error.RESOURCE_OUTDATED, o.getMessage))
-      case i: ImportExceptions => UnprocessableEntity(body = converterService.generateImportErrorMessage(i))
-      case im: ImportException => UnprocessableEntity(body = converterService.generateImportError(im))
+      case a: AccessDeniedException =>
+        Forbidden(body = Error(Error.ACCESS_DENIED, a.getMessage))
+      case v: ValidationException =>
+        BadRequest(body = ValidationError(messages = v.errors))
+      case n: NotFoundException =>
+        NotFound(body = Error(Error.NOT_FOUND, n.getMessage))
+      case o: OptimisticLockException =>
+        Conflict(body = Error(Error.RESOURCE_OUTDATED, o.getMessage))
+      case i: ImportExceptions =>
+        UnprocessableEntity(body = converterService.generateImportErrorMessage(i))
+      case im: ImportException =>
+        UnprocessableEntity(body = converterService.generateImportError(im))
       case h: HttpRequestException =>
         h.httpResponse match {
           case Some(resp) if resp.is4xx => BadRequest(body = resp.body)
@@ -67,12 +83,13 @@ trait NdlaController {
         InternalServerError(body = Error.GenericError)
     }
 
-
     def long(paramName: String)(implicit request: HttpServletRequest): Long = {
       val paramValue = params(paramName)
       paramValue.forall(_.isDigit) match {
         case true => paramValue.toLong
-        case false => throw new ValidationException(errors = Seq(ValidationMessage(paramName, s"Invalid value for $paramName. Only digits are allowed.")))
+        case false =>
+          throw new ValidationException(
+            errors = Seq(ValidationMessage(paramName, s"Invalid value for $paramName. Only digits are allowed.")))
       }
     }
 
@@ -84,13 +101,15 @@ trait NdlaController {
       paramOrNone(paramName).getOrElse(default)
     }
 
-    def intOrNone(paramName: String)(implicit request: HttpServletRequest): Option[Int] = paramOrNone(paramName).flatMap(p => Try(p.toInt).toOption)
+    def intOrNone(paramName: String)(implicit request: HttpServletRequest): Option[Int] =
+      paramOrNone(paramName).flatMap(p => Try(p.toInt).toOption)
 
-    def intOrDefault(paramName: String, default: Int): Int = intOrNone(paramName).getOrElse(default)
+    def intOrDefault(paramName: String, default: Int): Int =
+      intOrNone(paramName).getOrElse(default)
 
     def paramAsListOfString(paramName: String)(implicit request: HttpServletRequest): List[String] = {
       emptySomeToNone(params.get(paramName)) match {
-        case None => List.empty
+        case None        => List.empty
         case Some(param) => param.split(",").toList.map(_.trim)
       }
     }
@@ -101,7 +120,9 @@ trait NdlaController {
         case None => List.empty
         case Some(_) =>
           if (!strings.forall(entry => entry.forall(_.isDigit))) {
-            throw new ValidationException(errors = Seq(ValidationMessage(paramName, s"Invalid value for $paramName. Only (list of) digits are allowed.")))
+            throw new ValidationException(
+              errors =
+                Seq(ValidationMessage(paramName, s"Invalid value for $paramName. Only (list of) digits are allowed.")))
           }
           strings.map(_.toLong)
       }

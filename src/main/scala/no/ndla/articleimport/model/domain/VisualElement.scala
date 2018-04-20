@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.model.domain
 
 case class VisualElement(resource: String, language: String) extends LanguageField[String] {

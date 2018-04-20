@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import com.typesafe.scalalogging.LazyLogging
@@ -24,23 +23,27 @@ trait ContentBrowserConverter {
   val contentBrowserConverter: ContentBrowserConverter
 
   class ContentBrowserConverter extends ConverterModule with LazyLogging {
-    private val contentBrowserModules = Map[String, ContentBrowserConverterModule](
-      ImageConverter.typeName -> ImageConverter,
-      H5PConverter.typeName -> H5PConverter,
-      LenkeConverter.typeName -> LenkeConverter,
-      OppgaveConverter.typeName -> OppgaveConverter,
-      FagstoffConverter.typeName -> FagstoffConverter,
-      AktualitetConverter.typeName -> AktualitetConverter,
-      NonExistentNodeConverter.typeName -> NonExistentNodeConverter,
-      VideoConverter.typeName -> VideoConverter,
-      VeiledningConverter.typeName -> VeiledningConverter,
-      AudioConverter.typeName -> AudioConverter,
-      FilConverter.typeName -> FilConverter,
-      BiblioConverter.typeName -> BiblioConverter,
-      BegrepConverter.typeName -> BegrepConverter)
+    private val contentBrowserModules =
+      Map[String, ContentBrowserConverterModule](
+        ImageConverter.typeName -> ImageConverter,
+        H5PConverter.typeName -> H5PConverter,
+        LenkeConverter.typeName -> LenkeConverter,
+        OppgaveConverter.typeName -> OppgaveConverter,
+        FagstoffConverter.typeName -> FagstoffConverter,
+        AktualitetConverter.typeName -> AktualitetConverter,
+        NonExistentNodeConverter.typeName -> NonExistentNodeConverter,
+        VideoConverter.typeName -> VideoConverter,
+        VeiledningConverter.typeName -> VeiledningConverter,
+        AudioConverter.typeName -> AudioConverter,
+        FilConverter.typeName -> FilConverter,
+        BiblioConverter.typeName -> BiblioConverter,
+        BegrepConverter.typeName -> BegrepConverter
+      )
 
     private def getConverterModule(contentBrowser: ContentBrowser) = {
-      val nodeType = extractService.getNodeType(contentBrowser.get("nid")).getOrElse(NonExistentNodeConverter.typeName)
+      val nodeType = extractService
+        .getNodeType(contentBrowser.get("nid"))
+        .getOrElse(NonExistentNodeConverter.typeName)
       contentBrowserModules.getOrElse(nodeType, UnsupportedContentConverter)
     }
 
@@ -50,8 +53,12 @@ trait ContentBrowserConverter {
     }
 
     def convert(languageContent: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
-      @tailrec def convert(element: Element, languageContent: LanguageContent, importStatus: ImportStatus, exceptions: Seq[Throwable]): (LanguageContent, ImportStatus, Seq[Throwable]) = {
-        val cont = ContentBrowserString(element.html(), languageContent.language)
+      @tailrec def convert(element: Element,
+                           languageContent: LanguageContent,
+                           importStatus: ImportStatus,
+                           exceptions: Seq[Throwable]): (LanguageContent, ImportStatus, Seq[Throwable]) = {
+        val cont =
+          ContentBrowserString(element.html(), languageContent.language)
 
         if (!cont.IsContentBrowserField)
           return (languageContent, importStatus, exceptions)
@@ -73,17 +80,23 @@ trait ContentBrowserConverter {
       }
 
       val contentElement = stringToJsoupDocument(languageContent.content)
-      val (updatedLanguageContent, updatedImportStatus, contentExceptions) = convert(contentElement, languageContent, importStatus, Seq())
+      val (updatedLanguageContent, updatedImportStatus, contentExceptions) =
+        convert(contentElement, languageContent, importStatus, Seq())
 
       val metaDescriptionElement = stringToJsoupDocument(languageContent.metaDescription)
-      val (finalLanguageContent, finalImportStatus, migrationContentExceptions) = convert(metaDescriptionElement, updatedLanguageContent, updatedImportStatus, Seq())
+      val (finalLanguageContent, finalImportStatus, migrationContentExceptions) =
+        convert(metaDescriptionElement, updatedLanguageContent, updatedImportStatus, Seq())
 
       val converterExceptions = contentExceptions ++ migrationContentExceptions
       converterExceptions.headOption match {
-        case Some(_) => Failure(ImportExceptions(Set(languageContent.nid, languageContent.tnid), converterExceptions))
+        case Some(_) =>
+          Failure(ImportExceptions(Set(languageContent.nid, languageContent.tnid), converterExceptions))
         case None =>
-          Success(finalLanguageContent.copy(content=jsoupDocumentToString(contentElement), metaDescription=jsoupDocumentToString(metaDescriptionElement)),
-            finalImportStatus)
+          Success(
+            finalLanguageContent.copy(content = jsoupDocumentToString(contentElement),
+                                      metaDescription = jsoupDocumentToString(metaDescriptionElement)),
+            finalImportStatus
+          )
       }
     }
 

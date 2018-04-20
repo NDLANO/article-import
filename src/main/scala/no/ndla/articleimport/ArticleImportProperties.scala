@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport
 
 import com.typesafe.scalalogging.LazyLogging
@@ -26,7 +25,8 @@ object ArticleImportProperties extends LazyLogging {
 
   val AttachmentStorageName = s"$Environment.article-attachments.ndla"
 
-  val TopicAPIUrl = "http://api.topic.ndla.no/rest/v1/keywords/?filter[node]=ndlanode_"
+  val TopicAPIUrl =
+    "http://api.topic.ndla.no/rest/v1/keywords/?filter[node]=ndlanode_"
   val MigrationHost = prop("MIGRATION_HOST")
   val MigrationUser = prop("MIGRATION_USER")
   val MigrationPassword = prop("MIGRATION_PASSWORD")
@@ -40,17 +40,43 @@ object ArticleImportProperties extends LazyLogging {
   val nodeTypeBegrep: String = "begrep"
   val nodeTypeVideo: String = "video"
   val nodeTypeH5P: String = "h5p_content"
-  val supportedContentTypes = Set("fagstoff", "oppgave", "veiledning", "aktualitet", "emneartikkel", nodeTypeBegrep, nodeTypeVideo, nodeTypeH5P)
 
-  val oldCreatorTypes = List("opphavsmann", "fotograf", "kunstner", "forfatter", "manusforfatter", "innleser", "oversetter", "regissør", "illustratør", "medforfatter", "komponist")
-  val creatorTypes = List("originator", "photographer", "artist", "writer", "scriptwriter", "reader", "translator", "director", "illustrator", "cowriter", "composer")
+  val supportedContentTypes =
+    Set("fagstoff", "oppgave", "veiledning", "aktualitet", "emneartikkel", nodeTypeBegrep, nodeTypeVideo, nodeTypeH5P)
 
-  val oldProcessorTypes = List("bearbeider", "tilrettelegger", "redaksjonelt", "språklig", "ide", "sammenstiller", "korrektur")
+  val oldCreatorTypes = List("opphavsmann",
+                             "fotograf",
+                             "kunstner",
+                             "forfatter",
+                             "manusforfatter",
+                             "innleser",
+                             "oversetter",
+                             "regissør",
+                             "illustratør",
+                             "medforfatter",
+                             "komponist")
+
+  val creatorTypes = List("originator",
+                          "photographer",
+                          "artist",
+                          "writer",
+                          "scriptwriter",
+                          "reader",
+                          "translator",
+                          "director",
+                          "illustrator",
+                          "cowriter",
+                          "composer")
+
+  val oldProcessorTypes =
+    List("bearbeider", "tilrettelegger", "redaksjonelt", "språklig", "ide", "sammenstiller", "korrektur")
   val processorTypes = List("processor", "facilitator", "editorial", "linguistic", "idea", "compiler", "correction")
 
-  val oldRightsholderTypes = List("rettighetshaver", "forlag", "distributør", "leverandør")
-  val rightsholderTypes = List("rightsholder", "publisher", "distributor", "supplier")
+  val oldRightsholderTypes =
+    List("rettighetshaver", "forlag", "distributør", "leverandør")
 
+  val rightsholderTypes =
+    List("rightsholder", "publisher", "distributor", "supplier")
 
   // When converting a content node, the converter may run several times over the content to make sure
   // everything is converted. This value defines a maximum number of times the converter runs on a node
@@ -66,23 +92,29 @@ object ArticleImportProperties extends LazyLogging {
 
   val NDLABrightcoveAccountId = prop("NDLA_BRIGHTCOVE_ACCOUNT_ID")
   val NDLABrightcovePlayerId = prop("NDLA_BRIGHTCOVE_PLAYER_ID")
+
   val H5PHost = Map(
     "brukertest" -> "h5p.ndla.no",
     "prod" -> "h5p.ndla.no"
   ).getOrElse(Environment, "h5p-test.ndla.no")
 
-  val H5PResizerScriptUrl = "//ndla.no/sites/all/modules/h5p/library/js/h5p-resizer.js"
-  val NDLABrightcoveVideoScriptUrl = s"//players.brightcove.net/$NDLABrightcoveAccountId/${NDLABrightcovePlayerId}_default/index.min.js"
+  val H5PResizerScriptUrl =
+    "//ndla.no/sites/all/modules/h5p/library/js/h5p-resizer.js"
+
+  val NDLABrightcoveVideoScriptUrl =
+    s"//players.brightcove.net/$NDLABrightcoveAccountId/${NDLABrightcovePlayerId}_default/index.min.js"
   val NRKVideoScriptUrl = Seq("//www.nrk.no/serum/latest/js/video_embed.js", "//nrk.no/serum/latest/js/video_embed.js")
 
   lazy val secrets = readSecrets(SecretsFile) match {
-     case Success(values) => values
-     case Failure(exception) => throw new RuntimeException(s"Unable to load remote secrets from $SecretsFile", exception)
-   }
+    case Success(values) => values
+    case Failure(exception) =>
+      throw new RuntimeException(s"Unable to load remote secrets from $SecretsFile", exception)
+  }
 
   def booleanProp(key: String): Boolean = prop(key).toBoolean
 
-  def prop(key: String): String = propOrElse(key, throw new RuntimeException(s"Unable to load property $key"))
+  def prop(key: String): String =
+    propOrElse(key, throw new RuntimeException(s"Unable to load property $key"))
 
   def propOrElse(key: String, default: => String): String = {
     secrets.get(key).flatten match {
@@ -90,7 +122,7 @@ object ArticleImportProperties extends LazyLogging {
       case None =>
         envOrNone(key) match {
           case Some(env) => env
-          case None => default
+          case None      => default
         }
     }
   }

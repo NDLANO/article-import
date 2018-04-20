@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import com.typesafe.scalalogging.LazyLogging
@@ -22,12 +21,14 @@ trait ImageConverterModule {
   object ImageConverter extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "image"
 
-    override def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
+    override def convert(content: ContentBrowser,
+                         importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val nodeId = content.get("nid")
       logger.info(s"Converting image with nid $nodeId")
       getImage(content).map(imageHtml => (imageHtml, Seq(), importStatus)) match {
         case Success(x) => Success(x)
-        case Failure(_) => Failure(ImportException(nodeId, s"Failed to import image with node id $nodeId"))
+        case Failure(_) =>
+          Failure(ImportException(nodeId, s"Failed to import image with node id $nodeId"))
       }
     }
 
@@ -42,34 +43,39 @@ trait ImageConverterModule {
       imgPixels match {
         case Some(w) if w < 100 => xsmall
         case Some(w) if w < 300 => small
-        case Some(_) => full
+        case Some(_)            => full
         case None =>
           val imgSize = cont.get("imagecache").toLowerCase
-          Map("fullbredde" -> full,
-              "hoyrespalte" -> small,
-              "liten" -> xsmall)
-          .getOrElse(imgSize, full)
+          Map("fullbredde" -> full, "hoyrespalte" -> small, "liten" -> xsmall)
+            .getOrElse(imgSize, full)
       }
     }
 
     def toImageEmbed(nodeId: String, caption: String, align: String, size: String, altText: String): Try[String] = {
       imageApiClient.importImage(nodeId) match {
         case Some(image) =>
-          Success(HtmlTagGenerator.buildImageEmbedContent(caption, image.id, align, size, altText))
+          Success(
+            HtmlTagGenerator
+              .buildImageEmbedContent(caption, image.id, align, size, altText))
         case None =>
           Failure(ImportException(nodeId, s"Failed to import image with ID $nodeId"))
       }
     }
 
     private def getImageAlignment(cont: ContentBrowser): Option[String] = {
-      val marginCssClass = cont.get("css_class").split(" ").find(_.contains("margin"))
-      val margin = marginCssClass.flatMap(margin => """contentbrowser_margin_(left|right)$""".r.findFirstMatchIn(margin).map(_.group(1)))
+      val marginCssClass =
+        cont.get("css_class").split(" ").find(_.contains("margin"))
+      val margin = marginCssClass.flatMap(
+        margin =>
+          """contentbrowser_margin_(left|right)$""".r
+            .findFirstMatchIn(margin)
+            .map(_.group(1)))
 
       // right margin = left alignment, left margin = right alignment
       margin match {
         case Some("right") => Some("left")
-        case Some("left") => Some("right")
-        case _ => None
+        case Some("left")  => Some("right")
+        case _             => None
       }
     }
 

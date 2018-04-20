@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service.converters
 
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
@@ -28,19 +27,28 @@ object MathMLConverter extends ConverterModule {
   }
 
   def addMathMlAttributes(el: Element) = {
-    el.select("math").asScala.foreach(e => e.attr(s"$XMLNsAttribute", "http://www.w3.org/1998/Math/MathML"))
+    el.select("math")
+      .asScala
+      .foreach(e => e.attr(s"$XMLNsAttribute", "http://www.w3.org/1998/Math/MathML"))
   }
 
   private def convertCentering(el: Element) = {
-    el.select("math").asScala.foreach(math => {
-      math.parents().asScala.foreach({
-        case p if p.tagName() == "p" =>
-          if (p.attr("style").replaceAll("\\s", "").contains("text-align:center")) {
-            p.attr("data-align", "center")
-          }
-        case _ =>
+    el.select("math")
+      .asScala
+      .foreach(math => {
+        math
+          .parents()
+          .asScala
+          .foreach({
+            case p if p.tagName() == "p" =>
+              if (p.attr("style")
+                    .replaceAll("\\s", "")
+                    .contains("text-align:center")) {
+                p.attr("data-align", "center")
+              }
+            case _ =>
+          })
       })
-    })
   }
 
 }

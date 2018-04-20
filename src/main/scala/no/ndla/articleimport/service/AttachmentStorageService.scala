@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service
 
 import com.amazonaws.AmazonServiceException
@@ -21,6 +20,7 @@ trait AttachmentStorageService {
   val attachmentStorageService: AmazonStorageService
 
   class AmazonStorageService extends LazyLogging {
+
     def uploadFileFromUrl(nodeId: String, filMeta: ContentFilMeta): Try[String] = {
       val storageKey = s"$nodeId/${filMeta.fileName}"
       val connection = filMeta.url.openConnection()
@@ -28,11 +28,12 @@ trait AttachmentStorageService {
       metaData.setContentType(filMeta.mimeType)
       metaData.setContentLength(filMeta.fileSize.toLong)
 
-      uploadFile(new PutObjectRequest(attachmentStorageName, storageKey, connection.getInputStream, metaData), storageKey)
+      uploadFile(new PutObjectRequest(attachmentStorageName, storageKey, connection.getInputStream, metaData),
+                 storageKey)
     }
 
-  def uploadFile(request: PutObjectRequest, storageKey: String): Try[String] =
-    Try(amazonClient.putObject(request)).map(_ => storageKey)
+    def uploadFile(request: PutObjectRequest, storageKey: String): Try[String] =
+      Try(amazonClient.putObject(request)).map(_ => storageKey)
 
     def contains(storageKey: String): Boolean = {
       try {
@@ -45,7 +46,8 @@ trait AttachmentStorageService {
           case None => false
         }
       } catch {
-        case ase: AmazonServiceException => if (ase.getErrorCode == "NoSuchKey") false else throw ase
+        case ase: AmazonServiceException =>
+          if (ase.getErrorCode == "NoSuchKey") false else throw ase
       }
     }
   }

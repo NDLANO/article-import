@@ -25,13 +25,18 @@ trait DraftApiClient {
   class DraftApiClient {
     implicit val formats = org.json4s.DefaultFormats
 
-    private val DraftApiInternEndpoint = s"http://${ArticleImportProperties.DraftHost}/intern"
-    private val DraftApiPublicEndpoint = s"http://${ArticleImportProperties.DraftHost}/draft-api/v1/drafts"
-    private val DraftApiConceptPublicEndpoint = s"http://${ArticleImportProperties.DraftHost}/draft-api/v1/concepts"
-    private val DraftHealthEndpoint = s"http://${ArticleImportProperties.DraftHost}/health"
+    private val DraftApiInternEndpoint =
+      s"http://${ArticleImportProperties.DraftHost}/intern"
+    private val DraftApiPublicEndpoint =
+      s"http://${ArticleImportProperties.DraftHost}/draft-api/v1/drafts"
+    private val DraftApiConceptPublicEndpoint =
+      s"http://${ArticleImportProperties.DraftHost}/draft-api/v1/concepts"
+    private val DraftHealthEndpoint =
+      s"http://${ArticleImportProperties.DraftHost}/health"
 
     def getContentByExternalId(externalId: String): Option[api.ApiContent] = {
-      getArticleIdFromExternalId(externalId).flatMap(getArticleFromId)
+      getArticleIdFromExternalId(externalId)
+        .flatMap(getArticleFromId)
         .orElse(getConceptIdFromExternalId(externalId).flatMap(getConceptFromId))
     }
 
@@ -40,23 +45,33 @@ trait DraftApiClient {
     }
 
     def getArticleIdFromExternalId(externalId: String): Option[Long] = {
-      get[ContentId](s"$DraftApiPublicEndpoint/external_id/$externalId").map(_.id).toOption
+      get[ContentId](s"$DraftApiPublicEndpoint/external_id/$externalId")
+        .map(_.id)
+        .toOption
     }
 
     def newArticle(article: NewArticle, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
       postWithData[api.Article, NewArticle](s"$DraftApiPublicEndpoint/",
-        article,
-        "externalId" -> mainNodeId, "externalSubjectIds" -> subjectIds.mkString(","))
+                                            article,
+                                            "externalId" -> mainNodeId,
+                                            "externalSubjectIds" -> subjectIds.mkString(","))
     }
 
     def newArticle(article: Article, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
       val newArt = converterService.toApiNewArticle(article, article.supportedLanguages.head)
-      val updateArticles = article.supportedLanguages.drop(1).zipWithIndex
-          .map { case (lang, idx) => converterService.toApiUpdateArticle(article, lang, idx + 1)}
+      val updateArticles = article.supportedLanguages
+        .drop(1)
+        .zipWithIndex
+        .map {
+          case (lang, idx) =>
+            converterService.toApiUpdateArticle(article, lang, idx + 1)
+        }
 
       newArticle(newArt, mainNodeId, subjectIds) match {
         case Success(a) =>
-          val (failed, _) = updateArticles.map(u => updateArticle(u, a.id, mainNodeId, subjectIds)).partition(_.isFailure)
+          val (failed, _) = updateArticles
+            .map(u => updateArticle(u, a.id, mainNodeId, subjectIds))
+            .partition(_.isFailure)
           if (failed.nonEmpty) {
             val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
             Failure(ImportException(s"${a.id}", s"Failed to update one or more article: $failedMsgs"))
@@ -69,29 +84,41 @@ trait DraftApiClient {
 
     def newEmptyArticle(mainNodeId: String, subjectIds: Set[String]): Try[ContentId] =
       post[ContentId](s"$DraftApiInternEndpoint/empty_article/",
-        "externalId" -> mainNodeId,
-        "externalSubjectIds" -> subjectIds.mkString(","))
+                      "externalId" -> mainNodeId,
+                      "externalSubjectIds" -> subjectIds.mkString(","))
 
-    private def updateArticle(article: api.UpdateArticle, id: Long, mainNodeId: String, externalSubjectIds: Set[String]): Try[api.Article] = {
-      patch[api.Article, api.UpdateArticle](
-        s"$DraftApiPublicEndpoint/$id",
-        article,
-        "externalId" -> mainNodeId, "externalSubjectIds" -> externalSubjectIds.mkString(","))
+    private def updateArticle(article: api.UpdateArticle,
+                              id: Long,
+                              mainNodeId: String,
+                              externalSubjectIds: Set[String]): Try[api.Article] = {
+      patch[api.Article, api.UpdateArticle](s"$DraftApiPublicEndpoint/$id",
+                                            article,
+                                            "externalId" -> mainNodeId,
+                                            "externalSubjectIds" -> externalSubjectIds.mkString(","))
     }
 
-    private def updateArticle(article: api.UpdateArticle, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
+    private def updateArticle(article: api.UpdateArticle,
+                              mainNodeId: String,
+                              subjectIds: Set[String]): Try[api.Article] = {
       getArticleIdFromExternalId(mainNodeId) match {
         case Some(id) => updateArticle(article, id, mainNodeId, subjectIds)
-        case None => Failure(NotFoundException(s"No article with external id $mainNodeId found"))
+        case None =>
+          Failure(NotFoundException(s"No article with external id $mainNodeId found"))
       }
     }
 
     def updateArticle(article: Article, mainNodeId: String, externalSubjectIds: Set[String]): Try[api.Article] = {
-      val startRevision = getContentByExternalId(mainNodeId).flatMap(_.revision).getOrElse(1)
+      val startRevision =
+        getContentByExternalId(mainNodeId).flatMap(_.revision).getOrElse(1)
       val updateArticles = article.supportedLanguages.zipWithIndex
-        .map { case (lang, idx) => converterService.toApiUpdateArticle(article, lang, startRevision + idx)}
+        .map {
+          case (lang, idx) =>
+            converterService.toApiUpdateArticle(article, lang, startRevision + idx)
+        }
 
-      val (failed, updated) = updateArticles.map(u => updateArticle(u, mainNodeId, externalSubjectIds)).partition(_.isFailure)
+      val (failed, updated) = updateArticles
+        .map(u => updateArticle(u, mainNodeId, externalSubjectIds))
+        .partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
         Failure(ImportException(s"${article.id}", s"Failed to update one or more article: $failedMsg"))
@@ -107,7 +134,8 @@ trait DraftApiClient {
       } yield status
     }
 
-    def deleteArticle(id: Long): Try[ContentId] = delete[ContentId](s"$DraftApiInternEndpoint/article/$id/")
+    def deleteArticle(id: Long): Try[ContentId] =
+      delete[ContentId](s"$DraftApiInternEndpoint/article/$id/")
 
     private def getConceptFromId(id: Long): Option[api.Concept] = {
       get[api.Concept](s"$DraftApiConceptPublicEndpoint/$id").toOption
@@ -118,12 +146,17 @@ trait DraftApiClient {
     }
 
     def newConcept(concept: Concept, mainNodeId: String): Try[api.Concept] = {
-      val newCon: api.NewConcept = converterService.toNewApiConcept(concept, concept.supportedLanguages.headOption.getOrElse(Language.UnknownLanguage))
-      val updateCons = concept.supportedLanguages.drop(1).map(l => converterService.toUpdateApiConcept(concept, l))
+      val newCon: api.NewConcept = converterService.toNewApiConcept(concept,
+                                                                    concept.supportedLanguages.headOption
+                                                                      .getOrElse(Language.UnknownLanguage))
+      val updateCons = concept.supportedLanguages
+        .drop(1)
+        .map(l => converterService.toUpdateApiConcept(concept, l))
 
       newConcept(newCon, mainNodeId) match {
         case Success(c) =>
-          val (failed, _) = updateCons.map(u => updateConcept(u, c.id)).partition(_.isFailure)
+          val (failed, _) =
+            updateCons.map(u => updateConcept(u, c.id)).partition(_.isFailure)
           if (failed.nonEmpty) {
             val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
             Failure(ImportException(s"${c.id}", s"Failed to update one or more concepts: $failedMsgs"))
@@ -144,13 +177,15 @@ trait DraftApiClient {
     def updateConcept(concept: api.UpdateConcept, mainNodeId: String): Try[api.Concept] = {
       getConceptIdFromExternalId(mainNodeId) match {
         case Some(id) => updateConcept(concept, id)
-        case None => Failure(NotFoundException(s"No concept with external id $mainNodeId found"))
+        case None =>
+          Failure(NotFoundException(s"No concept with external id $mainNodeId found"))
       }
     }
 
     def updateConcept(concept: Concept, mainNodeId: String): Try[api.Concept] = {
       val updateCons = concept.supportedLanguages.map(l => converterService.toUpdateApiConcept(concept, l))
-      val (failed, updated) = updateCons.map(u => updateConcept(u, mainNodeId)).partition(_.isFailure)
+      val (failed, updated) =
+        updateCons.map(u => updateConcept(u, mainNodeId)).partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
         Failure(ImportException(s"${concept.id}", s"Failed to update one or more concept: $failedMsg"))
@@ -163,21 +198,28 @@ trait DraftApiClient {
       post[ContentId](s"$DraftApiInternEndpoint/concept/$id/publish/").map(_.id)
     }
 
-    def deleteConcept(id: Long): Try[ContentId] = delete[ContentId](s"$DraftApiInternEndpoint/article/$id/")
+    def deleteConcept(id: Long): Try[ContentId] =
+      delete[ContentId](s"$DraftApiInternEndpoint/article/$id/")
 
     def getConceptIdFromExternalId(externalId: String): Option[Long] = {
-      get[ContentId](s"$DraftApiConceptPublicEndpoint/external_id/$externalId").map(_.id).toOption
+      get[ContentId](s"$DraftApiConceptPublicEndpoint/external_id/$externalId")
+        .map(_.id)
+        .toOption
     }
 
-    private def get[A](endpointUrl: String, params: Seq[(String, String)] = Seq.empty)(implicit mf: Manifest[A]): Try[A] = {
+    private def get[A](endpointUrl: String, params: Seq[(String, String)] = Seq.empty)(
+        implicit mf: Manifest[A]): Try[A] = {
       ndlaClient.fetchWithForwardedAuth[A](Http(endpointUrl).params(params))
     }
 
-    private def post[A](endpointUrl: String, params: (String, String)*)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
+    private def post[A](endpointUrl: String, params: (String, String)*)(implicit mf: Manifest[A],
+                                                                        format: org.json4s.Formats): Try[A] = {
       ndlaClient.fetchWithForwardedAuth[A](Http(endpointUrl).method("POST").params(params.toMap))
     }
 
-    private def postWithData[A, B <: AnyRef](endpointUrl: String, data: B, params: (String, String)*)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
+    private def postWithData[A, B <: AnyRef](endpointUrl: String, data: B, params: (String, String)*)(
+        implicit mf: Manifest[A],
+        format: org.json4s.Formats): Try[A] = {
       ndlaClient.fetchWithForwardedAuth[A](
         Http(endpointUrl)
           .postData(write(data))
@@ -191,7 +233,9 @@ trait DraftApiClient {
       ndlaClient.fetchWithForwardedAuth[A](Http(endpointUrl).method("PUT"))
     }
 
-    private def patch[A, B <: AnyRef](endpointUrl: String, data: B, params: (String, String)*)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
+    private def patch[A, B <: AnyRef](endpointUrl: String, data: B, params: (String, String)*)(
+        implicit mf: Manifest[A],
+        format: org.json4s.Formats): Try[A] = {
       ndlaClient.fetchWithForwardedAuth[A](
         Http(endpointUrl)
           .postData(write(data))
@@ -201,14 +245,15 @@ trait DraftApiClient {
       )
     }
 
-    private def delete[A](endpointUrl: String, params: (String, String)*)(implicit mf: Manifest[A], format: org.json4s.Formats): Try[A] = {
+    private def delete[A](endpointUrl: String, params: (String, String)*)(implicit mf: Manifest[A],
+                                                                          format: org.json4s.Formats): Try[A] = {
       ndlaClient.fetchWithForwardedAuth[A](Http(endpointUrl).method("DELETE").params(params.toMap))
     }
 
     def isHealthy: Boolean = {
       Try(Http(DraftHealthEndpoint).execute()) match {
         case Success(resp) => resp.isSuccess
-        case _ => false
+        case _             => false
       }
     }
   }

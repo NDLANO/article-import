@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service
 
 import com.amazonaws.AmazonClientException
@@ -22,12 +21,13 @@ class AttachmentStorageServiceTest extends UnitSuite with TestEnvironment {
     val request = mock[PutObjectRequest]
     val key = "storagekey"
 
-    when(amazonClient.putObject(request)).thenThrow(new AmazonClientException("Fail"))
+    when(amazonClient.putObject(request))
+      .thenThrow(new AmazonClientException("Fail"))
     attachmentStorageService.uploadFile(request, key).isFailure should equal(true)
   }
 
   test("That uploadFile returns the second parameter on success") {
     val key = "storagekey"
-    attachmentStorageService.uploadFile(mock[PutObjectRequest], key) should equal (Success(key))
+    attachmentStorageService.uploadFile(mock[PutObjectRequest], key) should equal(Success(key))
   }
 }

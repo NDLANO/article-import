@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport
 
 import com.amazonaws.regions.Regions
@@ -20,7 +19,7 @@ import no.ndla.articleimport.service.converters.contentbrowser._
 import no.ndla.network.NdlaClient
 
 object ComponentRegistry
-  extends InternController
+    extends InternController
     with HealthController
     with NdlaController
     with LazyLogging
@@ -46,14 +45,14 @@ object ComponentRegistry
     with HtmlTagGenerator
     with Clock
     with Role
-    with User
-{
+    with User {
 
   lazy val extractConvertStoreContent = new ExtractConvertStoreContent
   lazy val internController = new InternController
   lazy val healthController = new HealthController
 
-  val amazonClient = AmazonS3ClientBuilder.standard().withRegion(Regions.EU_CENTRAL_1).build()
+  val amazonClient =
+    AmazonS3ClientBuilder.standard().withRegion(Regions.EU_CENTRAL_1).build()
   lazy val attachmentStorageName = ArticleImportProperties.AttachmentStorageName
   lazy val attachmentStorageService = new AmazonStorageService
 
@@ -73,7 +72,12 @@ object ComponentRegistry
 
   override lazy val articleConverter = ConverterPipeLine(
     mainConverters = List(contentBrowserConverter),
-    postProcessorConverters = List(SimpleTagConverter, TableConverter, MathMLConverter, htmlCleaner, VisualElementConverter, RelatedContentConverter)
+    postProcessorConverters = List(SimpleTagConverter,
+                                   TableConverter,
+                                   MathMLConverter,
+                                   htmlCleaner,
+                                   VisualElementConverter,
+                                   RelatedContentConverter)
   )
   override lazy val conceptConverter = ConverterPipeLine(
     mainConverters = List(contentBrowserConverter),

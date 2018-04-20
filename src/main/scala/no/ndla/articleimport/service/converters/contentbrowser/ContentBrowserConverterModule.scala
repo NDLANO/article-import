@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import com.typesafe.scalalogging.LazyLogging
@@ -18,41 +17,40 @@ import no.ndla.network.NdlaClient
 
 import scala.util.Try
 
-
 trait ContentBrowserConverterModule {
   def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)]
   val typeName: String
 }
 
 trait ContentBrowserConverterModules
-  extends ExtractService
-  with AttachmentStorageService
-  with AmazonClient
-  with ConverterModules
-  with ConverterService
-  with Clock
-  with ExtractConvertStoreContent
-  with LazyLogging
-  with ImageConverterModule
-  with ImageApiClient
-  with LenkeConverterModule
-  with H5PConverterModule
-  with OppgaveConverterModule
-  with FagstoffConverterModule
-  with NonExistentNodeConverterModule
-  with AudioConverterModule
-  with AudioApiClient
-  with H5PApiClient
-  with AktualitetConverterModule
-  with VideoConverterModule
-  with FilConverterModule
-  with VeiledningConverterModule
-  with BiblioConverterModule
-  with BegrepConverterModule
-  with TagsService
-  with NdlaClient
-  with MigrationApiClient
-  with DraftApiClient
-  with HtmlTagGenerator
-  with UnsupportedContentConverter
-  with User
+    extends ExtractService
+    with AttachmentStorageService
+    with AmazonClient
+    with ConverterModules
+    with ConverterService
+    with Clock
+    with ExtractConvertStoreContent
+    with LazyLogging
+    with ImageConverterModule
+    with ImageApiClient
+    with LenkeConverterModule
+    with H5PConverterModule
+    with OppgaveConverterModule
+    with FagstoffConverterModule
+    with NonExistentNodeConverterModule
+    with AudioConverterModule
+    with AudioApiClient
+    with H5PApiClient
+    with AktualitetConverterModule
+    with VideoConverterModule
+    with FilConverterModule
+    with VeiledningConverterModule
+    with BiblioConverterModule
+    with BegrepConverterModule
+    with TagsService
+    with NdlaClient
+    with MigrationApiClient
+    with DraftApiClient
+    with HtmlTagGenerator
+    with UnsupportedContentConverter
+    with User

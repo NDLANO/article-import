@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import com.typesafe.scalalogging.LazyLogging
@@ -24,7 +23,8 @@ trait H5PConverterModule {
   object H5PConverter extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "h5p_content"
 
-    override def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
+    override def convert(content: ContentBrowser,
+                         importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val nodeId = content.get("nid")
 
       logger.info(s"Converting h5p_content with nid $nodeId")
@@ -39,9 +39,11 @@ trait H5PConverterModule {
     def toH5PEmbed(nodeId: String): Try[String] = {
       h5pApiClient.getViewFromOldId(nodeId) match {
         case Some(url) =>
-          val replacement = HtmlTagGenerator.buildExternalInlineEmbedContent(url)
+          val replacement =
+            HtmlTagGenerator.buildExternalInlineEmbedContent(url)
           Success(replacement)
-        case None => Failure(ImportException(nodeId, s"Failed to import H5P with id $nodeId: Not yet exported to new H5P service"))
+        case None =>
+          Failure(ImportException(nodeId, s"Failed to import H5P with id $nodeId: Not yet exported to new H5P service"))
       }
     }
 

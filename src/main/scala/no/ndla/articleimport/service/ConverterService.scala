@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service
 
 import com.typesafe.scalalogging.LazyLogging
@@ -25,7 +24,12 @@ import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
 trait ConverterService {
-  this: ConverterModules with ExtractConvertStoreContent with ImageApiClient with Clock with User with MigrationApiClient =>
+  this: ConverterModules
+    with ExtractConvertStoreContent
+    with ImageApiClient
+    with Clock
+    with User
+    with MigrationApiClient =>
   val converterService: ConverterService
 
   class ConverterService extends LazyLogging {
@@ -34,72 +38,84 @@ trait ConverterService {
       val nodeIdsToImport = nodeToConvert.contents.map(_.nid).toSet
 
       convert(nodeToConvert, maxConvertionRounds, importStatus.addVisitedNodes(nodeIdsToImport))
-          .flatMap { case (content, status) => postProcess(content, status) } match {
+        .flatMap { case (content, status) => postProcess(content, status) } match {
         case Failure(f) => Failure(f)
         case Success((convertedContent, converterStatus)) if convertedContent.nodeType == nodeTypeBegrep =>
           Success((toDomainConcept(convertedContent), converterStatus))
-        case Success((convertedContent, converterStatus)) => Success((toDomainArticle(convertedContent), converterStatus))
+        case Success((convertedContent, converterStatus)) =>
+          Success((toDomainArticle(convertedContent), converterStatus))
       }
     }
 
-    @tailrec private def convert(nodeToConvert: NodeToConvert, maxRoundsLeft: Int, importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] = {
+    @tailrec private def convert(nodeToConvert: NodeToConvert,
+                                 maxRoundsLeft: Int,
+                                 importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] = {
       if (maxRoundsLeft == 0) {
-        val message = "Maximum number of converter rounds reached; Some content might not be converted"
+        val message =
+          "Maximum number of converter rounds reached; Some content might not be converted"
         logger.warn(message)
-        return Success((nodeToConvert, importStatus.copy(messages=importStatus.messages :+ message)))
+        return Success((nodeToConvert, importStatus.copy(messages = importStatus.messages :+ message)))
       }
 
-      val (updatedContent, updatedStatus) = executeConverterModules(nodeToConvert, importStatus) match {
-        case Failure(e) => return Failure(e)
-        case Success(s) => s
-      }
+      val (updatedContent, updatedStatus) =
+        executeConverterModules(nodeToConvert, importStatus) match {
+          case Failure(e) => return Failure(e)
+          case Success(s) => s
+        }
 
       // If this converting round did not yield any changes to the content, this node is finished (case true)
       // If changes were made during this convertion, we run the converters again (case false)
       updatedContent == nodeToConvert match {
-        case true => Success((updatedContent, updatedStatus))
+        case true  => Success((updatedContent, updatedStatus))
         case false => convert(updatedContent, maxRoundsLeft - 1, updatedStatus)
       }
     }
 
-    private def postProcess(nodeToConvert: NodeToConvert, importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] =
+    private def postProcess(nodeToConvert: NodeToConvert,
+                            importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] =
       executePostprocessorModules(nodeToConvert, importStatus)
 
     private[service] def toDomainArticle(nodeToConvert: NodeToConvert): Article = {
-      val requiredLibraries = nodeToConvert.contents.flatMap(_.requiredLibraries).distinct
-      val ingresses = nodeToConvert.contents.flatMap(content => content.asArticleIntroduction)
+      val requiredLibraries =
+        nodeToConvert.contents.flatMap(_.requiredLibraries).distinct
+      val ingresses =
+        nodeToConvert.contents.flatMap(content => content.asArticleIntroduction)
       val visualElements = nodeToConvert.contents.flatMap(_.asVisualElement)
 
-      val languagesInNode: Set[String] = (nodeToConvert.titles.map(_.language) ++
-        nodeToConvert.contents.map(_.language) ++
-        ingresses.map(_.language)).toSet
+      val languagesInNode: Set[String] =
+        (nodeToConvert.titles.map(_.language) ++
+          nodeToConvert.contents.map(_.language) ++
+          ingresses.map(_.language)).toSet
 
-      val metaImages = nodeToConvert.contents.flatMap(c => c.metaImage.map(imageNid =>
-        imageApiClient.importImage(imageNid) match {
-          case Some(image) =>
-            Some(ArticleMetaImage(image.id, c.language))
-          case None =>
-            logger.warn(s"Failed to import meta image with node id $imageNid")
-            None
-        })).flatten
+      val metaImages = nodeToConvert.contents
+        .flatMap(c =>
+          c.metaImage.map(imageNid =>
+            imageApiClient.importImage(imageNid) match {
+              case Some(image) =>
+                Some(ArticleMetaImage(image.id, c.language))
+              case None =>
+                logger.warn(s"Failed to import meta image with node id $imageNid")
+                None
+          }))
+        .flatten
 
-
-        Article(None,
-          None,
-          nodeToConvert.titles,
-          nodeToConvert.contents.map(_.asContent),
-          toDomainCopyright(nodeToConvert.license, nodeToConvert.authors),
-          nodeToConvert.tags.filter(tag => languagesInNode.contains(tag.language)),
-          requiredLibraries,
-          visualElements,
-          ingresses,
-          nodeToConvert.contents.map(_.asArticleMetaDescription),
-          metaImages,
-          nodeToConvert.created,
-          nodeToConvert.updated,
-          authUser.userOrClientid(),
-          nodeToConvert.articleType.toString,
-          nodeToConvert.editorialKeywords.flatMap(_.keywords)
+      Article(
+        None,
+        None,
+        nodeToConvert.titles,
+        nodeToConvert.contents.map(_.asContent),
+        toDomainCopyright(nodeToConvert.license, nodeToConvert.authors),
+        nodeToConvert.tags.filter(tag => languagesInNode.contains(tag.language)),
+        requiredLibraries,
+        visualElements,
+        ingresses,
+        nodeToConvert.contents.map(_.asArticleMetaDescription),
+        metaImages,
+        nodeToConvert.created,
+        nodeToConvert.updated,
+        authUser.userOrClientid(),
+        nodeToConvert.articleType.toString,
+        nodeToConvert.editorialKeywords.flatMap(_.keywords)
       )
     }
 
@@ -117,23 +133,36 @@ trait ConverterService {
     }
 
     private def toDomainAuthor(author: Author): Author = {
-      val creatorMap = (oldCreatorTypes zip creatorTypes).toMap.withDefaultValue(None)
-      val processorMap = (oldProcessorTypes zip processorTypes).toMap.withDefaultValue(None)
-      val rightsholderMap = (oldRightsholderTypes zip rightsholderTypes).toMap.withDefaultValue(None)
+      val creatorMap =
+        (oldCreatorTypes zip creatorTypes).toMap.withDefaultValue(None)
+      val processorMap =
+        (oldProcessorTypes zip processorTypes).toMap.withDefaultValue(None)
+      val rightsholderMap = (oldRightsholderTypes zip rightsholderTypes).toMap
+        .withDefaultValue(None)
 
-      (creatorMap(author.`type`.toLowerCase), processorMap(author.`type`.toLowerCase), rightsholderMap(author.`type`.toLowerCase)) match {
+      (creatorMap(author.`type`.toLowerCase),
+       processorMap(author.`type`.toLowerCase),
+       rightsholderMap(author.`type`.toLowerCase)) match {
         case (t: String, _, _) => Author(t.capitalize, author.name)
         case (_, t: String, _) => Author(t.capitalize, author.name)
         case (_, _, t: String) => Author(t.capitalize, author.name)
-        case (_, _, _) => Author(author.`type`, author.name)
+        case (_, _, _)         => Author(author.`type`, author.name)
       }
     }
 
     private[service] def toDomainCopyright(license: String, authors: Seq[Author]): Copyright = {
-      val origin = authors.find(author => author.`type`.toLowerCase == "opphavsmann").map(_.name)
-      val creators = authors.filter(a => oldCreatorTypes.contains(a.`type`.toLowerCase)).map(toDomainAuthor)
-      val processors = authors.filter(a => oldProcessorTypes.contains(a.`type`.toLowerCase)).map(toDomainAuthor)
-      val rightsholders = authors.filter(a => oldRightsholderTypes.contains(a.`type`.toLowerCase)).map(toDomainAuthor)
+      val origin = authors
+        .find(author => author.`type`.toLowerCase == "opphavsmann")
+        .map(_.name)
+      val creators = authors
+        .filter(a => oldCreatorTypes.contains(a.`type`.toLowerCase))
+        .map(toDomainAuthor)
+      val processors = authors
+        .filter(a => oldProcessorTypes.contains(a.`type`.toLowerCase))
+        .map(toDomainAuthor)
+      val rightsholders = authors
+        .filter(a => oldRightsholderTypes.contains(a.`type`.toLowerCase))
+        .map(toDomainAuthor)
 
       Copyright(license, origin, creators, processors, rightsholders, None, None, None)
     }
@@ -186,7 +215,7 @@ trait ConverterService {
       ArticleMetaDescription(meta.metaDescription, meta.language)
     }
 
-    def toDomainMetaDescriptionV2(meta: Option[String], language: String): Seq[ArticleMetaDescription]= {
+    def toDomainMetaDescriptionV2(meta: Option[String], language: String): Seq[ArticleMetaDescription] = {
       if (meta.isEmpty) {
         Seq.empty[ArticleMetaDescription]
       } else {
@@ -204,11 +233,15 @@ trait ConverterService {
 
     private def removeUnknownEmbedTagAttributes(html: String): String = {
       val document = stringToJsoupDocument(html)
-      document.select("embed").asScala.map(el => {
-        ResourceType.valueOf(el.attr(TagAttributes.DataResource.toString))
-          .map(EmbedTagRules.attributesForResourceType)
-          .map(knownAttributes => HtmlTagRules.removeIllegalAttributes(el, knownAttributes.all.map(_.toString)))
-      })
+      document
+        .select("embed")
+        .asScala
+        .map(el => {
+          ResourceType
+            .valueOf(el.attr(TagAttributes.DataResource.toString))
+            .map(EmbedTagRules.attributesForResourceType)
+            .map(knownAttributes => HtmlTagRules.removeIllegalAttributes(el, knownAttributes.all.map(_.toString)))
+        })
 
       jsoupDocumentToString(document)
     }
@@ -216,6 +249,7 @@ trait ConverterService {
     def toApiMetaImage(metaImageId: String): String = {
       s"${externalApiUrls("raw-image")}/$metaImageId"
     }
+
     def toApiArticleTitle(title: ArticleTitle): api.ArticleTitle = {
       api.ArticleTitle(title.title, title.language)
     }
@@ -243,7 +277,7 @@ trait ConverterService {
     def toApiLicense(shortLicense: String): api.License = {
       getLicense(shortLicense) match {
         case Some(l) => api.License(l.license, Option(l.description), l.url)
-        case None => api.License("unknown", None, None)
+        case None    => api.License("unknown", None, None)
       }
     }
 
@@ -267,15 +301,20 @@ trait ConverterService {
       api.ArticleIntroduction(intro.introduction, intro.language)
     }
 
-    def toApiArticleMetaDescription(metaDescription: ArticleMetaDescription): api.ArticleMetaDescription= {
+    def toApiArticleMetaDescription(metaDescription: ArticleMetaDescription): api.ArticleMetaDescription = {
       api.ArticleMetaDescription(metaDescription.content, metaDescription.language)
     }
 
-    def createLinkToOldNdla(nodeId: String): String = s"//red.ndla.no/node/$nodeId"
+    def createLinkToOldNdla(nodeId: String): String =
+      s"//red.ndla.no/node/$nodeId"
 
     def toNewApiConcept(concept: Concept, language: String): api.NewConcept = {
-      val title = findByLanguageOrBestEffort(concept.title, language).map(_.title).getOrElse("")
-      val content = findByLanguageOrBestEffort(concept.content, language).map(_.content).getOrElse("")
+      val title = findByLanguageOrBestEffort(concept.title, language)
+        .map(_.title)
+        .getOrElse("")
+      val content = findByLanguageOrBestEffort(concept.content, language)
+        .map(_.content)
+        .getOrElse("")
 
       api.NewConcept(
         language,
@@ -286,8 +325,10 @@ trait ConverterService {
     }
 
     def toUpdateApiConcept(concept: Concept, language: String): api.UpdateConcept = {
-      val title = findByLanguageOrBestEffort(concept.title, language).map(_.title)
-      val content = findByLanguageOrBestEffort(concept.content, language).map(_.content)
+      val title =
+        findByLanguageOrBestEffort(concept.title, language).map(_.title)
+      val content =
+        findByLanguageOrBestEffort(concept.content, language).map(_.content)
 
       api.UpdateConcept(
         language,
@@ -297,15 +338,23 @@ trait ConverterService {
       )
     }
 
-    def toApiConceptTitle(title: ConceptTitle): api.ConceptTitle = api.ConceptTitle(title.title, title.language)
+    def toApiConceptTitle(title: ConceptTitle): api.ConceptTitle =
+      api.ConceptTitle(title.title, title.language)
 
-    def toApiConceptContent(title: ConceptContent): api.ConceptContent= api.ConceptContent(title.content, title.language)
+    def toApiConceptContent(title: ConceptContent): api.ConceptContent =
+      api.ConceptContent(title.content, title.language)
 
     def toApiNewArticle(article: Article, lang: String): api.NewArticle = {
       api.NewArticle(
-        findByLanguageOrBestEffort(article.title, lang).map(_.value).getOrElse(""),
-        findByLanguageOrBestEffort(article.content, lang).map(_.value).getOrElse(""),
-        findByLanguageOrBestEffort(article.tags, lang).map(_.value).getOrElse(Seq.empty),
+        findByLanguageOrBestEffort(article.title, lang)
+          .map(_.value)
+          .getOrElse(""),
+        findByLanguageOrBestEffort(article.content, lang)
+          .map(_.value)
+          .getOrElse(""),
+        findByLanguageOrBestEffort(article.tags, lang)
+          .map(_.value)
+          .getOrElse(Seq.empty),
         findByLanguageOrBestEffort(article.introduction, lang).map(_.value),
         findByLanguageOrBestEffort(article.metaDescription, lang).map(_.value),
         findByLanguageOrBestEffort(article.metaImageId, lang).map(_.value),
@@ -324,7 +373,9 @@ trait ConverterService {
         lang,
         findByLanguageOrBestEffort(article.title, lang).map(_.value),
         findByLanguageOrBestEffort(article.content, lang).map(_.value),
-        findByLanguageOrBestEffort(article.tags, lang).map(_.value).getOrElse(Seq.empty),
+        findByLanguageOrBestEffort(article.tags, lang)
+          .map(_.value)
+          .getOrElse(Seq.empty),
         findByLanguageOrBestEffort(article.introduction, lang).map(_.value),
         findByLanguageOrBestEffort(article.metaDescription, lang).map(_.value),
         findByLanguageOrBestEffort(article.metaImageId, lang).map(_.value),
@@ -336,35 +387,45 @@ trait ConverterService {
       )
     }
 
-    def generateImportErrorMessage(ex: ImportExceptions): ImportError = ImportError(messages = getAllErrors(ex))
+    def generateImportErrorMessage(ex: ImportExceptions): ImportError =
+      ImportError(messages = getAllErrors(ex))
 
-    def generateImportError(ex: ImportException): ImportError = ImportError(messages = Set(ImportMessages(Set.empty, Set(ex.message))))
+    def generateImportError(ex: ImportException): ImportError =
+      ImportError(messages = Set(ImportMessages(Set.empty, Set(ex.message))))
 
     private def getAllErrors(exceptions: ImportExceptions): Set[ImportMessages] = {
       val mainException = ImportMessages(exceptions.failedNodeIds, exceptions.errors.map(_.getMessage).toSet)
 
       val importErrors = exceptions.errors.flatMap {
         case ex: ImportExceptions => getAllErrors(ex)
-        case ex: ImportException => getAllErrors(ex)
-        case ex => Seq(ImportMessages(exceptions.failedNodeIds, Set(ex.getMessage)))
+        case ex: ImportException  => getAllErrors(ex)
+        case ex =>
+          Seq(ImportMessages(exceptions.failedNodeIds, Set(ex.getMessage)))
       } ++ Seq(mainException)
 
       val keys = importErrors.map(_.nids).sortBy(k => -k.size)
-      importErrors.groupBy(k => keys.find(a => k.nids.subsetOf(a))).collect {
-        case (Some(nids), errors) => ImportMessages(nids, errors.flatMap(_.messages).toSet)
-      }.toSet
+      importErrors
+        .groupBy(k => keys.find(a => k.nids.subsetOf(a)))
+        .collect {
+          case (Some(nids), errors) =>
+            ImportMessages(nids, errors.flatMap(_.messages).toSet)
+        }
+        .toSet
     }
 
     private def getAllErrors(exception: ImportException): Set[ImportMessages] = {
       exception match {
         case ImportException(nid, msg, Some(ex: ImportExceptions)) =>
-          val nids = migrationApiClient.getAllTranslationNids(nid).getOrElse(Set(nid))
+          val nids =
+            migrationApiClient.getAllTranslationNids(nid).getOrElse(Set(nid))
           Set(ImportMessages(nids, Set(msg))) ++ getAllErrors(ex)
         case ImportException(nid, msg, Some(ex: ImportException)) =>
-          val nids = migrationApiClient.getAllTranslationNids(nid).getOrElse(Set(nid))
+          val nids =
+            migrationApiClient.getAllTranslationNids(nid).getOrElse(Set(nid))
           Set(ImportMessages(nids, Set(msg))) ++ getAllErrors(ex)
         case ImportException(nid, msg, exOpt) =>
-          val nids = migrationApiClient.getAllTranslationNids(nid).getOrElse(Set(nid))
+          val nids =
+            migrationApiClient.getAllTranslationNids(nid).getOrElse(Set(nid))
           Set(ImportMessages(nids, exOpt.map(_.getMessage).toSet ++ Set(msg)))
       }
     }

@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport
 
 import com.typesafe.scalalogging.LazyLogging
@@ -15,8 +14,12 @@ import org.scalatra.servlet.ScalatraListener
 import scala.io.Source
 
 object JettyLauncher extends LazyLogging {
+
   def main(args: Array[String]) {
-    logger.info(Source.fromInputStream(getClass.getResourceAsStream("/log-license.txt")).mkString)
+    logger.info(
+      Source
+        .fromInputStream(getClass.getResourceAsStream("/log-license.txt"))
+        .mkString)
 
     val startMillis = System.currentTimeMillis()
 

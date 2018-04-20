@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service
 
 import no.ndla.articleimport.integration.ConverterModule
@@ -28,29 +27,35 @@ trait ConverterModules {
     nodeTypeVideo -> leafNodeConverter
   ).withDefaultValue(articleConverter)
 
-  def executeConverterModules(nodeToConvert: NodeToConvert, importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] =
+  def executeConverterModules(nodeToConvert: NodeToConvert,
+                              importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] =
     runConverters(Converters(nodeToConvert.nodeType.toLowerCase).mainConverters, nodeToConvert, importStatus)
 
-  def executePostprocessorModules(nodeToConvert: NodeToConvert, importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] =
+  def executePostprocessorModules(nodeToConvert: NodeToConvert,
+                                  importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] =
     runConverters(Converters(nodeToConvert.nodeType.toLowerCase).postProcessorConverters, nodeToConvert, importStatus)
 
-  private def runConverters(converters: Seq[ConverterModule], nodeToConvert: NodeToConvert, importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] = {
-     val (convertedNode, finalImportStatus, exceptions) = converters.foldLeft((nodeToConvert, importStatus, Seq[Throwable]()))((element, converter) => {
+  private def runConverters(converters: Seq[ConverterModule],
+                            nodeToConvert: NodeToConvert,
+                            importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] = {
+    val (convertedNode, finalImportStatus, exceptions) =
+      converters.foldLeft((nodeToConvert, importStatus, Seq[Throwable]()))((element, converter) => {
 
-      val (partiallyConvertedNode, importStatus, exceptions) = element
-      converter.convert(partiallyConvertedNode, importStatus) match {
-        case Success((updatedNode, updatedImportStatus)) => (updatedNode, updatedImportStatus, exceptions)
-        case Failure(x) => (partiallyConvertedNode, importStatus, exceptions :+ x)
-      }
-    })
+        val (partiallyConvertedNode, importStatus, exceptions) = element
+        converter.convert(partiallyConvertedNode, importStatus) match {
+          case Success((updatedNode, updatedImportStatus)) =>
+            (updatedNode, updatedImportStatus, exceptions)
+          case Failure(x) =>
+            (partiallyConvertedNode, importStatus, exceptions :+ x)
+        }
+      })
 
     if (exceptions.nonEmpty) {
       val failedNodeIds = nodeToConvert.contents.map(_.nid)
-      return Failure(ImportExceptions(failedNodeIds.toSet, errors=exceptions))
+      return Failure(ImportExceptions(failedNodeIds.toSet, errors = exceptions))
     }
 
     Success((convertedNode, finalImportStatus))
   }
-
 
 }

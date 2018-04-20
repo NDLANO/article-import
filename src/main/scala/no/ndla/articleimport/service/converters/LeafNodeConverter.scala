@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service.converters
 
 import no.ndla.articleimport.ArticleImportProperties.{nodeTypeH5P, nodeTypeVideo}
@@ -20,7 +19,14 @@ import org.jsoup.nodes.Element
 import scala.util.{Success, Try}
 
 trait LeafNodeConverter {
-  this: VideoConverterModule with HtmlTagGenerator with H5PConverterModule with ExtractService with MigrationApiClient with TagsService with NdlaClient with TagsService =>
+  this: VideoConverterModule
+    with HtmlTagGenerator
+    with H5PConverterModule
+    with ExtractService
+    with MigrationApiClient
+    with TagsService
+    with NdlaClient
+    with TagsService =>
 
   object LeafNodeConverter extends ConverterModule {
 
@@ -30,13 +36,11 @@ trait LeafNodeConverter {
 
       val newContent = content.nodeType match {
         case `nodeTypeVideo` => doVideo(element, content.nid)
-        case `nodeTypeH5P` => doH5P(element, content.nid)
-        case _ => Success(content.content)
+        case `nodeTypeH5P`   => doH5P(element, content.nid)
+        case _               => Success(content.content)
       }
 
-      newContent.map(c =>
-        (content.copy(content=c, metaDescription = defaltMetaDescription), importStatus)
-      )
+      newContent.map(c => (content.copy(content = c, metaDescription = defaltMetaDescription), importStatus))
     }
 
     private def doVideo(el: Element, nid: String): Try[String] = {
@@ -45,10 +49,12 @@ trait LeafNodeConverter {
     }
 
     private def doH5P(el: Element, nid: String): Try[String] = {
-      H5PConverter.toH5PEmbed(nid).map(html => {
-        el.append(s"<section>$html</section>")
-        jsoupDocumentToString(el)
-      })
+      H5PConverter
+        .toH5PEmbed(nid)
+        .map(html => {
+          el.append(s"<section>$html</section>")
+          jsoupDocumentToString(el)
+        })
     }
 
   }

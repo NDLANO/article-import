@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport
 
 import com.amazonaws.services.s3.AmazonS3Client
@@ -20,7 +19,7 @@ import no.ndla.network.NdlaClient
 import org.scalatest.mockito.MockitoSugar
 
 trait TestEnvironment
-  extends LazyLogging
+    extends LazyLogging
     with InternController
     with HealthController
     with NdlaController
@@ -66,7 +65,12 @@ trait TestEnvironment
 
   lazy val articleConverter = ConverterPipeLine(
     mainConverters = List(contentBrowserConverter),
-    postProcessorConverters = List(SimpleTagConverter, TableConverter, MathMLConverter, RelatedContentConverter, htmlCleaner, VisualElementConverter)
+    postProcessorConverters = List(SimpleTagConverter,
+                                   TableConverter,
+                                   MathMLConverter,
+                                   RelatedContentConverter,
+                                   htmlCleaner,
+                                   VisualElementConverter)
   )
   lazy val conceptConverter = ConverterPipeLine(
     mainConverters = List(contentBrowserConverter),

@@ -13,12 +13,14 @@ import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 trait HtmlTagGenerator {
 
   object HtmlTagGenerator {
+
     def buildEmbedContent(dataAttributes: Map[TagAttributes.Value, String]): String = {
       s"<$ResourceHtmlEmbedTag ${buildAttributesString(dataAttributes)} />"
     }
 
     def buildErrorContent(message: String): String =
-      buildEmbedContent(Map(TagAttributes.DataResource -> ResourceType.Error.toString, TagAttributes.DataMessage -> message))
+      buildEmbedContent(
+        Map(TagAttributes.DataResource -> ResourceType.Error.toString, TagAttributes.DataMessage -> message))
 
     def buildImageEmbedContent(caption: String, imageId: String, align: String, size: String, altText: String) = {
       val dataAttributes = Map(
@@ -27,7 +29,8 @@ trait HtmlTagGenerator {
         TagAttributes.DataSize -> size,
         TagAttributes.DataAlt -> altText,
         TagAttributes.DataCaption -> caption,
-        TagAttributes.DataAlign -> align)
+        TagAttributes.DataAlign -> align
+      )
 
       buildEmbedContent(dataAttributes)
     }
@@ -58,10 +61,9 @@ trait HtmlTagGenerator {
     }
 
     def buildContentLinkEmbedContent(contentId: Long, linkText: String, openInNewWindow: Boolean): String = {
-      val attributes = Map(
-        TagAttributes.DataResource -> ResourceType.ContentLink.toString,
-        TagAttributes.DataContentId -> s"$contentId",
-        TagAttributes.DataLinkText -> linkText)
+      val attributes = Map(TagAttributes.DataResource -> ResourceType.ContentLink.toString,
+                           TagAttributes.DataContentId -> s"$contentId",
+                           TagAttributes.DataLinkText -> linkText)
 
       val openInNewWindowAttr =
         if (openInNewWindow)
@@ -73,10 +75,9 @@ trait HtmlTagGenerator {
     }
 
     def buildConceptEmbedContent(conceptId: Long, linkText: String) = {
-      val dataAttributes = Map(
-        TagAttributes.DataResource -> ResourceType.ConceptLink.toString,
-        TagAttributes.DataContentId -> s"$conceptId",
-        TagAttributes.DataLinkText -> linkText)
+      val dataAttributes = Map(TagAttributes.DataResource -> ResourceType.ConceptLink.toString,
+                               TagAttributes.DataContentId -> s"$conceptId",
+                               TagAttributes.DataLinkText -> linkText)
       buildEmbedContent(dataAttributes)
     }
 
@@ -113,14 +114,20 @@ trait HtmlTagGenerator {
 
     def buildAnchor(href: String, anchorText: String, title: String, openInNewTab: Boolean): String = {
       val target = openInNewTab match {
-        case true => Map(TagAttributes.Target -> "_blank", TagAttributes.Rel -> "noopener noreferrer")
+        case true =>
+          Map(TagAttributes.Target -> "_blank", TagAttributes.Rel -> "noopener noreferrer")
         case false => Map[TagAttributes.Value, String]()
       }
       val attributes = Map(TagAttributes.Href -> href, TagAttributes.Title -> title) ++ target
       s"<a ${buildAttributesString(attributes)}>$anchorText</a>"
     }
 
-    def buildFootNoteItem(title: String, `type`: String, year: String, edition: String, publisher: String, authors: Set[String]) = {
+    def buildFootNoteItem(title: String,
+                          `type`: String,
+                          year: String,
+                          edition: String,
+                          publisher: String,
+                          authors: Set[String]) = {
       val attrs = Map(
         TagAttributes.DataResource -> ResourceType.FootNote.toString,
         TagAttributes.DataTitle -> title,
@@ -142,9 +149,14 @@ trait HtmlTagGenerator {
     }
 
     private def buildAttributesString(figureDataAttributeMap: Map[TagAttributes.Value, String]): String =
-      figureDataAttributeMap.toList.sortBy(_._1.toString).map { case (key, value) => s"""$key="${value.trim.replace("\"", "&quot;")}"""" }.mkString(" ")
+      figureDataAttributeMap.toList
+        .sortBy(_._1.toString)
+        .map {
+          case (key, value) =>
+            s"""$key="${value.trim.replace("\"", "&quot;")}""""
+        }
+        .mkString(" ")
 
   }
 
 }
-
