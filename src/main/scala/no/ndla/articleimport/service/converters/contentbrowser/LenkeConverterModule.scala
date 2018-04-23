@@ -18,6 +18,7 @@ import no.ndla.validation.ResourceType
 import org.jsoup.Jsoup
 import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
 import no.ndla.articleimport.integration.MigrationEmbedMeta
+import no.ndla.articleimport.service.DomainRegex._
 
 import scala.util.{Failure, Success, Try}
 
@@ -48,14 +49,13 @@ trait LenkeConverterModule {
 
       embedMeta match {
         case Success(MigrationEmbedMeta(Some(url), embedCode)) =>
-          val (htmlTag, requiredLibrary, errors) = cont.get("insertion") match {
-            case "inline" => insertInline(url, embedCode.getOrElse(""))
-            case "link" | "collapsed_body" | LightboxPattern(_) =>
-              insertAnchor(url, cont)
-            case _ => insertUnhandled(url, cont)
+          val inserted = cont.get("insertion") match {
+            case "inline"                                       => insertInline(externalId, url, embedCode.getOrElse(""))
+            case "link" | "collapsed_body" | LightboxPattern(_) => insertAnchor(url, cont)
+            case _                                              => insertUnhandled(url, cont)
           }
 
-          val NDLAPattern = """.*(ndla.no).*""".r
+          val NDLAPattern = "ndla.no".asDomainRegex
           val warnings = Try(parse(url)) match {
             case Success(uri) =>
               uri.host.getOrElse("") match {
@@ -64,9 +64,12 @@ trait LenkeConverterModule {
               }
             case Failure(_) => Seq(s"Link in article is invalid: '$url'")
           }
-
           warnings.foreach(msg => logger.warn(msg))
-          Success((htmlTag, requiredLibrary.toList, errors ++ warnings))
+
+          inserted.map {
+            case (htmlTag, requiredLibrary, errors) =>
+              (htmlTag, requiredLibrary.toList, errors ++ warnings)
+          }
         case Success(MigrationEmbedMeta(url, embedCode)) =>
           Failure(
             ImportException(externalId,
@@ -81,33 +84,62 @@ trait LenkeConverterModule {
         .filter(_.trim.nonEmpty)
     }
 
-    private def insertInline(url: String, embedCode: String): (String, Option[RequiredLibrary], Seq[String]) = {
+    private val embedHostWhitelist = List(
+      "commoncraft.com",
+      "exprogroup.com",
+      "kahoot.it",
+      "khanacademy.org",
+      "ndla.filmiundervisning.no",
+      "nrk.no",
+      "prezi.com",
+      "scribd.com",
+      "slideshare.net",
+      "ted.com",
+      "tv2skole.no",
+      "vg.no",
+      "vimeo.com",
+      "youtu.be",
+      "youtube.com"
+    ).map(_.asDomainRegex)
+
+    private def urlIsWhitelisted(url: String): Boolean = {
+      val host = url.host.getOrElse("")
+      embedHostWhitelist.exists(_.pattern.matcher(host).matches())
+    }
+
+    private def insertInline(nid: String,
+                             url: String,
+                             embedCode: String): Try[(String, Option[RequiredLibrary], Seq[String])] = {
       val message = s"External resource to be embedded: $url"
       logger.info(message)
 
-      val NRKUrlPattern = """(.*\.?nrk.no)""".r
-      val PreziUrlPattern = """(.*\.?prezi.com)""".r
-      val CommonCraftUrlPattern = """(.*\.?commoncraft.com)""".r
-      val NdlaFilmIundervisningUrlPattern =
-        """(.*\.?ndla.filmiundervisning.no)""".r
-      val KahootUrlPattern = """(.*\.?play.kahoot.it)""".r
-      val vimeoProUrlPattern = """(.*\.?vimeopro.com)""".r
-      val khanAcademyUrlPattern = """(.*\.?khanacademy.org)""".r
-      val tv2SkoleUrlPattern = """(.*\.?tv2skole.no)""".r
-      val vgNoUrlPattern = """(.*\.?vg.no)""".r
-      val scribdUrlPattern = """(.*\.?scribd.com)""".r
-      val kunnskapsFilmUrlPattern = """(.*\.?kunnskapsfilm.no)""".r
+      if (urlIsWhitelisted(url)) {
+        val NRKUrlPattern = "nrk.no".asDomainRegex
+        val PreziUrlPattern = "prezi.com".asDomainRegex
+        val CommonCraftUrlPattern = "commoncraft.com".asDomainRegex
+        val NdlaFilmIundervisningUrlPattern = "ndla.filmiundervisning.no".asDomainRegex
+        val KahootUrlPattern = "play.kahoot.it".asDomainRegex
+        val vimeoProUrlPattern = "vimeopro.com".asDomainRegex
+        val khanAcademyUrlPattern = "khanacademy.org".asDomainRegex
+        val tv2SkoleUrlPattern = "tv2skole.no".asDomainRegex
+        val vgNoUrlPattern = "vg.no".asDomainRegex
+        val scribdUrlPattern = "scribd.com".asDomainRegex
+        val kunnskapsFilmUrlPattern = "kunnskapsfilm.no".asDomainRegex
 
-      val (embedTag, requiredLibs) = url.host.getOrElse("") match {
-        case NRKUrlPattern(_)           => getNrkEmbedTag(embedCode, url)
-        case vimeoProUrlPattern(_)      => getVimeoProEmbedTag(embedCode)
-        case kunnskapsFilmUrlPattern(_) => getKunnskapsFilmEmbedTag(embedCode)
-        case PreziUrlPattern(_) | CommonCraftUrlPattern(_) | NdlaFilmIundervisningUrlPattern(_) | KahootUrlPattern(_) |
-            khanAcademyUrlPattern(_) | tv2SkoleUrlPattern(_) | scribdUrlPattern(_) | vgNoUrlPattern(_) =>
-          getRegularEmbedTag(embedCode)
-        case _ => (HtmlTagGenerator.buildExternalInlineEmbedContent(url), None)
+        val (embedTag, requiredLibs) = url.host.getOrElse("") match {
+          case NRKUrlPattern(_)           => getNrkEmbedTag(embedCode, url)
+          case vimeoProUrlPattern(_)      => getVimeoProEmbedTag(embedCode)
+          case kunnskapsFilmUrlPattern(_) => getKunnskapsFilmEmbedTag(embedCode)
+          case PreziUrlPattern(_) | CommonCraftUrlPattern(_) | NdlaFilmIundervisningUrlPattern(_) |
+              KahootUrlPattern(_) | khanAcademyUrlPattern(_) | tv2SkoleUrlPattern(_) | scribdUrlPattern(_) |
+              vgNoUrlPattern(_) =>
+            getRegularEmbedTag(embedCode)
+          case _ => (HtmlTagGenerator.buildExternalInlineEmbedContent(url), None)
+        }
+        Success((embedTag, requiredLibs, message :: Nil))
+      } else {
+        Failure(ImportException(nid, s"'$url'is not a whitelisted embed source"))
       }
-      (embedTag, requiredLibs, message :: Nil)
     }
 
     def getNrkEmbedTag(embedCode: String, url: String): (String, Option[RequiredLibrary]) = {
@@ -143,34 +175,41 @@ trait LenkeConverterModule {
       (HtmlTagGenerator.buildExternalInlineEmbedContent(src), None)
     }
 
-    private def insertDetailSummary(url: String,
+    private def insertDetailSummary(nid: String,
+                                    url: String,
                                     embedCode: String,
-                                    cont: ContentBrowser): (String, Option[RequiredLibrary], Seq[String]) = {
-      val (elementToInsert, requiredLib, figureErrors) =
-        insertInline(url, embedCode)
-      (s"<details><summary>${cont.get("link_text")}</summary>$elementToInsert</details>", requiredLib, figureErrors)
+                                    cont: ContentBrowser): Try[(String, Option[RequiredLibrary], Seq[String])] = {
+      insertInline(nid, url, embedCode) match {
+        case Success((elementToInsert, requiredLib, figureErrors)) =>
+          Success(
+            (s"<details><summary>${cont.get("link_text")}</summary>$elementToInsert</details>",
+             requiredLib,
+             figureErrors))
+        case Failure(ex) => Failure(ex)
+      }
     }
 
-    private def insertAnchor(url: String, cont: ContentBrowser): (String, Option[RequiredLibrary], Seq[String]) = {
-      val urlWithFragment = cont
-        .getOpt("link_anchor")
-        .map(anchor => url.withFragment(anchor).toString)
+    private def insertAnchor(url: String, cont: ContentBrowser): Try[(String, Option[RequiredLibrary], Seq[String])] = {
+      val urlWithFragment = cont.getOpt("link_anchor").map(anchor => url.withFragment(anchor).toString)
 
       val htmlTag = HtmlTagGenerator.buildAnchor(urlWithFragment.getOrElse(url),
                                                  cont.get("link_text"),
                                                  cont.get("link_title_text"),
                                                  true)
-      (s" $htmlTag", None, Seq())
+      Success(s" $htmlTag", None, Seq())
     }
 
-    private def insertUnhandled(url: String, cont: ContentBrowser): (String, Option[RequiredLibrary], Seq[String]) = {
-      val (anchor, requiredLib, anchorErrors) = insertAnchor(url, cont)
-      val message =
-        s"""Unhandled insertion method '${cont.get("insertion")}' on '${cont
-          .get("link_text")}'. Defaulting to link."""
+    private def insertUnhandled(url: String,
+                                cont: ContentBrowser): Try[(String, Option[RequiredLibrary], Seq[String])] = {
+      insertAnchor(url, cont) match {
+        case Success((anchor, requiredLib, anchorErrors)) =>
+          val message =
+            s"""Unhandled insertion method '${cont.get("insertion")}' on '${cont.get("link_text")}'. Defaulting to link."""
 
-      logger.warn(message)
-      (anchor, requiredLib, anchorErrors :+ message)
+          logger.warn(message)
+          Success(anchor, requiredLib, anchorErrors :+ message)
+        case Failure(ex) => Failure(ex)
+      }
     }
   }
 
