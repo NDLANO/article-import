@@ -184,9 +184,17 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   test("LenkeConverter should use url from embedCode if url is undefined") {
     val content = TestData.contentBrowserWithFields("nid" -> nodeId, "insertion" -> "inline")
 
-    when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(None, Some("<script src='http://infogr.am'></script>"))))
+    when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(None, Some("<script src='http://nrk.no'></script>"))))
     val Success((result, _, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
 
-    result should equal(s"""<$ResourceHtmlEmbedTag data-resource="${ResourceType.ExternalContent}" data-url="http://infogr.am" />""")
+    result should equal(s"""<$ResourceHtmlEmbedTag data-nrk-video-id="" data-resource="${ResourceType.NRKContent}" data-url="http://nrk.no" />""")
+  }
+
+  test("only whitelisted hosts should be embedded") {
+    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "insertion" -> "inline")
+    when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(Success(MigrationEmbedMeta(Some("http://obscure.stuff.gg"), Some("<script src='http://hmmm.biz.niz"))))
+    val Failure(ex: ImportException) = LenkeConverter.convert(content, ImportStatus.empty)
+
+    ex.message.contains("not a whitelisted embed source") should be (true)
   }
 }
