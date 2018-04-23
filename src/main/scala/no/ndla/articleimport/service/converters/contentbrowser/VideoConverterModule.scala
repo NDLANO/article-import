@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import com.typesafe.scalalogging.LazyLogging
@@ -22,14 +21,15 @@ trait VideoConverterModule {
   object VideoConverter extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "video"
 
-    override def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
+    override def convert(content: ContentBrowser,
+                         importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val (linkText, nodeId) = (content.get("link_text"), content.get("nid"))
 
       val (embedVideo, updatedStatus) = content.get("insertion") match {
         case "link" =>
           toVideoLink(linkText, nodeId, importStatus) match {
             case Success(link) => link
-            case Failure(e) => return Failure(e)
+            case Failure(e)    => return Failure(e)
           }
         case _ => (toInlineVideo(linkText, nodeId), importStatus)
       }
@@ -38,19 +38,21 @@ trait VideoConverterModule {
       Success(embedVideo, Seq.empty, updatedStatus)
     }
 
-    private def toVideoLink(linkText: String, nodeId: String, importStatus: ImportStatus): Try[(String, ImportStatus)] = {
+    private def toVideoLink(linkText: String,
+                            nodeId: String,
+                            importStatus: ImportStatus): Try[(String, ImportStatus)] = {
       extractConvertStoreContent.processNode(nodeId, importStatus) match {
-        case Success((content, status)) => Success(HtmlTagGenerator.buildContentLinkEmbedContent(content.id, linkText, openInNewWindow = false), status)
+        case Success((content, status)) =>
+          Success(HtmlTagGenerator.buildContentLinkEmbedContent(content.id, linkText, openInNewWindow = false), status)
         case Failure(ex) => Failure(ex)
       }
     }
 
     def toInlineVideo(linkText: String, nodeId: String): String = {
-      HtmlTagGenerator.buildBrightCoveEmbedContent(
-        caption=linkText,
-        videoId=s"ref:$nodeId",
-        account=s"$NDLABrightcoveAccountId",
-        player=s"$NDLABrightcovePlayerId")
+      HtmlTagGenerator.buildBrightCoveEmbedContent(caption = linkText,
+                                                   videoId = s"ref:$nodeId",
+                                                   account = s"$NDLABrightcoveAccountId",
+                                                   player = s"$NDLABrightcovePlayerId")
     }
 
   }

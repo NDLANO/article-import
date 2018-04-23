@@ -22,7 +22,7 @@ object Language {
         case head :: tail =>
           sequence.find(_.language == head) match {
             case Some(x) => Some(x)
-            case None => findFirstLanguageMatching(sequence, tail)
+            case None    => findFirstLanguageMatching(sequence, tail)
           }
       }
     }
@@ -33,9 +33,8 @@ object Language {
   def languageOrUnknown(language: Option[String]): String = {
     language.filter(_.nonEmpty) match {
       case Some(x) => x
-      case None => UnknownLanguage
+      case None    => UnknownLanguage
     }
   }
 
 }
-

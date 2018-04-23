@@ -21,24 +21,32 @@ trait BiblioConverterModule {
   object BiblioConverter extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "biblio"
 
-    override def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
+    override def convert(content: ContentBrowser,
+                         importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val nodeId = content.get("nid")
       getFootNoteData(nodeId) match {
-        case None => Failure(ImportException(nodeId, s"Failed to fetch biblio meta data with node id $nodeId"))
+        case None =>
+          Failure(ImportException(nodeId, s"Failed to fetch biblio meta data with node id $nodeId"))
         case Some(meta) =>
-          Success(HtmlTagGenerator.buildFootNoteItem(
-          title = meta.title,
-          `type` = meta.`type`,
-          year = meta.year,
-          edition = meta.edition,
-          publisher = meta.publisher,
-          authors = meta.authors.toSet
-        ), List[RequiredLibrary](), importStatus)
+          Success(
+            HtmlTagGenerator.buildFootNoteItem(
+              title = meta.title,
+              `type` = meta.`type`,
+              year = meta.year,
+              edition = meta.edition,
+              publisher = meta.publisher,
+              authors = meta.authors.toSet
+            ),
+            List[RequiredLibrary](),
+            importStatus
+          )
       }
     }
 
     private def getFootNoteData(nodeId: String): Option[FootNoteItem] =
-      extractService.getBiblioMeta(nodeId).map(biblioMeta => FootNoteItem(biblioMeta.biblio, biblioMeta.authors))
+      extractService
+        .getBiblioMeta(nodeId)
+        .map(biblioMeta => FootNoteItem(biblioMeta.biblio, biblioMeta.authors))
 
   }
 }

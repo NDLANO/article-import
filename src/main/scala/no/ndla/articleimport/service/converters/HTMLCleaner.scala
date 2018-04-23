@@ -27,9 +27,13 @@ trait HTMLCleaner {
   class HTMLCleaner extends ConverterModule with LazyLogging {
     override def convert(content: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
       val element = stringToJsoupDocument(content.content)
-      val illegalTags = unwrapIllegalTags(element).map(x => s"Illegal tag(s) removed: $x").distinct
+      val illegalTags = unwrapIllegalTags(element)
+        .map(x => s"Illegal tag(s) removed: $x")
+        .distinct
       convertLists(element)
-      val illegalAttributes = removeAttributes(element).map(x => s"Illegal attribute(s) removed: $x").distinct
+      val illegalAttributes = removeAttributes(element)
+        .map(x => s"Illegal attribute(s) removed: $x")
+        .distinct
 
       removeEmptySpansWithoutAttributes(element)
       moveEmbedsOutOfPTags(element)
@@ -53,8 +57,11 @@ trait HTMLCleaner {
       // Jsoup doesn't support removing elements while iterating the dom-tree.
       // Thus executes the routine 3 times in order to be sure to remove all tags
       (1 to 3).foreach(_ => removeEmptyTags(element))
-      Success((content.copy(content = jsoupDocumentToString(finalCleanedDocument), metaDescription = metaDescription, ingress = ingress),
-        importStatus.addMessages(illegalTags ++ illegalAttributes)))
+      Success(
+        (content.copy(content = jsoupDocumentToString(finalCleanedDocument),
+                      metaDescription = metaDescription,
+                      ingress = ingress),
+         importStatus.addMessages(illegalTags ++ illegalAttributes)))
     }
 
     private def convertH3sToH2s(element: Element) {
@@ -79,7 +86,8 @@ trait HTMLCleaner {
     }
 
     private def removeEmptySpansWithoutAttributes(el: Element): Unit = {
-      el.select("span").asScala
+      el.select("span")
+        .asScala
         .filterNot(tag => tagIsValid(tag) && tag.attributes().asScala.nonEmpty)
         .foreach(_.unwrap)
     }
@@ -93,14 +101,23 @@ trait HTMLCleaner {
         ResourceType.Image
       )
 
-      val embedTypeString = embedsThatShouldNotBeInPTags.map(t => s"[${TagAttributes.DataResource}=$t]").mkString(",")
+      val embedTypeString = embedsThatShouldNotBeInPTags
+        .map(t => s"[${TagAttributes.DataResource}=$t]")
+        .mkString(",")
 
-      element.select("p").asScala.foreach(pTag => {
-        pTag.select(s"${ResourceHtmlEmbedTag}${embedTypeString}").asScala.toList.foreach(el => {
-          pTag.before(el.outerHtml())
-          el.remove()
+      element
+        .select("p")
+        .asScala
+        .foreach(pTag => {
+          pTag
+            .select(s"${ResourceHtmlEmbedTag}${embedTypeString}")
+            .asScala
+            .toList
+            .foreach(el => {
+              pTag.before(el.outerHtml())
+              el.remove()
+            })
         })
-      })
     }
 
     private def mergeTwoFirstSectionsIfFeasible(el: Element) {
@@ -113,13 +130,16 @@ trait HTMLCleaner {
       if (firstSectionChildren.size != 1 || firstSectionChildren.asScala.head.children.size > 2)
         return
 
-      firstSectionChildren.select(ResourceHtmlEmbedTag).asScala.headOption match {
+      firstSectionChildren
+        .select(ResourceHtmlEmbedTag)
+        .asScala
+        .headOption match {
         case Some(e) =>
           sections(1).prepend(e.outerHtml())
           e.remove()
           sections.head.childNodeSize() match {
             case x if x == 0 => sections.head.remove()
-            case _ =>
+            case _           =>
           }
         case _ =>
       }
@@ -129,13 +149,19 @@ trait HTMLCleaner {
       content.ingress match {
         case None => extractIngress(element).map(LanguageIngress(_, None))
         case Some(ingress) =>
-          val imageEmbedHtml = ingress.ingressImage.flatMap(imageApiClient.importOrGetMetaByExternId)
-            .map(imageMetaData => HtmlTagGenerator.buildImageEmbedContent(
-              caption = "",
-              imageId = imageMetaData.id.toString,
-              align = "",
-              size = "",
-              altText = imageMetaData.alttexts.find(_.language == content.language).map(_.alttext).getOrElse("")))
+          val imageEmbedHtml = ingress.ingressImage
+            .flatMap(imageApiClient.importOrGetMetaByExternId)
+            .map(imageMetaData =>
+              HtmlTagGenerator.buildImageEmbedContent(
+                caption = "",
+                imageId = imageMetaData.id.toString,
+                align = "",
+                size = "",
+                altText = imageMetaData.alttexts
+                  .find(_.language == content.language)
+                  .map(_.alttext)
+                  .getOrElse("")
+            ))
 
           imageEmbedHtml.map(element.prepend)
           Some(ingress.copy(content = extractElement(stringToJsoupDocument(ingress.content))))
@@ -143,7 +169,10 @@ trait HTMLCleaner {
     }
 
     private def unwrapIllegalTags(el: Element): Seq[String] = {
-      el.children().select("*").asScala.toList
+      el.children()
+        .select("*")
+        .asScala
+        .toList
         .filter(htmlTag => !HtmlTagRules.isTagValid(htmlTag.tagName))
         .map(illegalHtmlTag => {
           val tagName = illegalHtmlTag.tagName
@@ -163,9 +192,10 @@ trait HTMLCleaner {
     }
 
     private def removeAttributes(el: Element): Seq[String] = {
-      el.select("*").asScala.toList.flatMap(tag =>
-        HtmlTagRules.removeIllegalAttributes(tag, HtmlTagRules.legalAttributesForTag(tag.tagName))
-      )
+      el.select("*")
+        .asScala
+        .toList
+        .flatMap(tag => HtmlTagRules.removeIllegalAttributes(tag, HtmlTagRules.legalAttributesForTag(tag.tagName)))
     }
 
     private def removeComments(node: Node) {
@@ -174,7 +204,7 @@ trait HTMLCleaner {
       while (i < node.childNodeSize()) {
         val child = node.childNode(i)
 
-        child.nodeName() == "#comment"  || child.nodeName() == "#data" match {
+        child.nodeName() == "#comment" || child.nodeName() == "#data" match {
           case true => child.remove()
           case false => {
             i += 1
@@ -185,7 +215,9 @@ trait HTMLCleaner {
     }
 
     private def htmlTagIsEmpty(el: Element) = {
-      el.select(ResourceHtmlEmbedTag).isEmpty && el.select("math").isEmpty && !el.hasText
+      el.select(ResourceHtmlEmbedTag).isEmpty && el
+        .select("math")
+        .isEmpty && !el.hasText
     }
 
     private def removeEmptyTags(element: Element): Element = {
@@ -203,9 +235,15 @@ trait HTMLCleaner {
     // We first replace it with a placeholder to then replace replace the placeholder with &nbsp;
     // in tags where nbsp's are allowed.
     private def removeNbsp(el: Element) {
-      el.select("*").select("mo").asScala.foreach(mo => if (mo.html().equals(NBSP)) mo.html("[mathspace]"))
+      el.select("*")
+        .select("mo")
+        .asScala
+        .foreach(mo => if (mo.html().equals(NBSP)) mo.html("[mathspace]"))
       el.html(el.html().replace(NBSP, " "))
-      el.select("*").select("mo").asScala.foreach(mo => if (mo.html().equals("[mathspace]")) mo.html(NBSP))
+      el.select("*")
+        .select("mo")
+        .asScala
+        .foreach(mo => if (mo.html().equals("[mathspace]")) mo.html(NBSP))
     }
 
     // A paragraph containing an ingress can also be split up into mulitple strong-tags
@@ -221,20 +259,24 @@ trait HTMLCleaner {
     }
 
     private def getIngressText(el: Element): Option[Seq[Element]] = {
-      val firstParagraphs = Option(el.select(">p")).map(_.asScala.toList)
-        .flatMap(paragraphs => paragraphs.headOption.map(_ => paragraphs.take(2))) // select two first paragraphs
+      val firstParagraphs = Option(el.select(">p"))
+        .map(_.asScala.toList)
+        .flatMap(paragraphs =>
+          paragraphs.headOption
+            .map(_ => paragraphs.take(2))) // select two first paragraphs
       val ingress = firstParagraphs.flatMap(ps => {
         val ingresses = ps.map(p => Option(p.select(">strong").first))
 
         // In some cases the ingress is split up into two paragraphs
         ingresses match {
-          case Some(head) :: Some(second) :: _ => Some(getAllIngressElements(head) ++ getAllIngressElements(second))
+          case Some(head) :: Some(second) :: _ =>
+            Some(getAllIngressElements(head) ++ getAllIngressElements(second))
           case Some(head) :: None :: _ => Some(getAllIngressElements(head))
-          case Some(head) :: _ => Some(getAllIngressElements(head))
+          case Some(head) :: _         => Some(getAllIngressElements(head))
           case None :: Some(second) :: _ =>
             ps.head.select(">embed").first match {
               case _: Element => Some(getAllIngressElements(second))
-              case _ => None
+              case _          => None
             }
 
           case _ => None
@@ -242,23 +284,33 @@ trait HTMLCleaner {
       })
 
       ingress match {
-        case None => Option(el.select(">strong:eq(0)").first).orElse(Option(el.select(">strong:eq(1)").first)).map(Seq(_))
+        case None =>
+          Option(el.select(">strong:eq(0)").first)
+            .orElse(Option(el.select(">strong:eq(1)").first))
+            .map(Seq(_))
         case x => x
       }
     }
 
     private def findElementWithText(els: Seq[Element], tagName: String, text: String): Option[Element] = {
       for (el <- els)
-        el.select(tagName).asScala.find(t => t.tagName == tagName && t.text == text) match {
+        el.select(tagName)
+          .asScala
+          .find(t => t.tagName == tagName && t.text == text) match {
           case Some(e) => return Some(e)
-          case None =>
+          case None    =>
         }
       None
     }
 
     private def consecutiveNodesOfType(el: Element, tagName: String): Seq[Node] = {
-      def canMerge(n: Node): Boolean = n != null && (n.nodeName() == tagName || n.toString == " ")
-      Seq(el: Node) ++ el.siblingNodes().asScala.drop(el.siblingIndex()).takeWhile(canMerge)
+      def canMerge(n: Node): Boolean =
+        n != null && (n.nodeName() == tagName || n.toString == " ")
+      Seq(el: Node) ++ el
+        .siblingNodes()
+        .asScala
+        .drop(el.siblingIndex())
+        .takeWhile(canMerge)
     }
 
     private def mergeConsecutiveTags(el: Element, tagName: String): Unit = {
@@ -276,30 +328,42 @@ trait HTMLCleaner {
       val tagsToKeep = Set("p", "strong", "body", "embed", "section")
       val tagsToRemove = Set("aside")
 
-      strippedDownArticle.select("*").asScala
+      strippedDownArticle
+        .select("*")
+        .asScala
         .filter(e => tagsToRemove.contains(e.tagName))
         .foreach(_.remove())
 
-      strippedDownArticle.select("*").asScala
+      strippedDownArticle
+        .select("*")
+        .asScala
         .filterNot(e => tagsToKeep.contains(e.tagName))
         .foreach(_.unwrap())
 
       removeEmptyTags(strippedDownArticle)
 
-      val firstP = Option(strippedDownArticle.select("body>section:eq(0)>p:lt(2)>strong").first()).map(_.parent)
+      val firstP = Option(strippedDownArticle.select("body>section:eq(0)>p:lt(2)>strong").first())
+        .map(_.parent)
       firstP.flatMap(p => {
         mergeConsecutiveTags(p, "p")
-        val ingressTexts = consecutiveNodesOfType(p.select(">strong").first(), "strong").map {
-          case s: Element => s.text
-          case s => s.toString
-        }
+        val ingressTexts =
+          consecutiveNodesOfType(p.select(">strong").first(), "strong").map {
+            case s: Element => s.text
+            case s          => s.toString
+          }
         val ingressText = ingressTexts.mkString(" ").replaceAll(" +", " ")
-        val articleStartsWithIngress = p.text().startsWith(ingressTexts.mkString(""))
+        val articleStartsWithIngress =
+          p.text().startsWith(ingressTexts.mkString(""))
 
-        if (ingressText.split(" ").length < minimumIngressWordCount || !articleStartsWithIngress) {
+        if (ingressText
+              .split(" ")
+              .length < minimumIngressWordCount || !articleStartsWithIngress) {
           None
         } else {
-          ingressTexts.foreach(t => findElementWithText(el.select("p").asScala, "strong", t).map(_.remove))
+          ingressTexts.foreach(
+            t =>
+              findElementWithText(el.select("p").asScala, "strong", t)
+                .map(_.remove))
           removeEmptyTags(el)
           Some(ingressText)
         }
@@ -316,9 +380,12 @@ trait HTMLCleaner {
     private def wrapThingsInP(nodes: Seq[Node]) {
       val grouped = new Element("p")
 
-      val firstNonTextElementIdx = nodes.indexWhere(n => !NodeTypesToGroupTogether.contains(n.nodeName()) && n.toString.trim.length > 0) match {
+      val firstNonTextElementIdx = nodes.indexWhere(
+        n =>
+          !NodeTypesToGroupTogether
+            .contains(n.nodeName()) && n.toString.trim.length > 0) match {
         case idx: Int if idx < 0 => nodes.length
-        case idx => idx
+        case idx                 => idx
       }
 
       val toBeWrapped = nodes.slice(0, firstNonTextElementIdx)
@@ -361,14 +428,13 @@ trait HTMLCleaner {
     }
 
     private def moveMisplacedAsideTags(element: Element) = {
-      val aside = element.select("body>section:eq(0)>aside:eq(0)").asScala.headOption
+      val aside =
+        element.select("body>section:eq(0)>aside:eq(0)").asScala.headOption
       aside match {
         case None =>
         case Some(e) =>
           val sibling = e.siblingElements().asScala.lift(0)
-          sibling.map(s =>
-            s.before(e)
-          )
+          sibling.map(s => s.before(e))
       }
       element
     }
@@ -397,23 +463,28 @@ trait HTMLCleaner {
     }
 
     private def convertLists(element: Element) = {
-      element.select("ol").asScala.foreach(x => {
-        val styling = x.attr("style").split(";")
-        if (styling.contains("list-style-type: lower-alpha")) {
-          x.attr(TagAttributes.DataType.toString, "letters")
-        }
-      })
+      element
+        .select("ol")
+        .asScala
+        .foreach(x => {
+          val styling = x.attr("style").split(";")
+          if (styling.contains("list-style-type: lower-alpha")) {
+            x.attr(TagAttributes.DataType.toString, "letters")
+          }
+        })
     }
 
     private def replaceNestedSections(element: Element) = {
-      element.select("section").asScala.foreach(sec => {
-        if (sec.parents().asScala.exists(p => p.tagName() == "section")) {
-          sec.tagName("div")
-        }
-      })
+      element
+        .select("section")
+        .asScala
+        .foreach(sec => {
+          if (sec.parents().asScala.exists(p => p.tagName() == "section")) {
+            sec.tagName("div")
+          }
+        })
     }
 
   }
 
 }
-

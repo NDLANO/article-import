@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service
 
 import com.typesafe.scalalogging.LazyLogging
@@ -21,6 +20,7 @@ trait ExtractService {
   val extractService: ExtractService
 
   class ExtractService extends LazyLogging {
+
     def getNodeData(nodeId: String): Try[NodeToConvert] = {
       val tagsForNode = tagsService.forContent(nodeId) match {
         case Failure(e) =>
@@ -47,15 +47,24 @@ trait ExtractService {
       migrationApiClient.getFilMeta(nodeId).map(_.map(_.asContentFilMeta))
 
     def getNodeGeneralContent(nodeId: String): Seq[NodeGeneralContent] = {
-      val content = migrationApiClient.getNodeGeneralContent(nodeId).getOrElse(Seq()).map(x => x.asNodeGeneralContent)
+      val content = migrationApiClient
+        .getNodeGeneralContent(nodeId)
+        .getOrElse(Seq())
+        .map(x => x.asNodeGeneralContent)
 
       // make sure to return the content along with all its translations
-      content.exists {x => x.isMainNode} match {
+      content.exists { x =>
+        x.isMainNode
+      } match {
         case true => content
-        case false => if (content.nonEmpty)
-          migrationApiClient.getNodeGeneralContent(content.head.tnid).getOrElse(Seq()).map(x => x.asNodeGeneralContent)
-        else
-          content
+        case false =>
+          if (content.nonEmpty)
+            migrationApiClient
+              .getNodeGeneralContent(content.head.tnid)
+              .getOrElse(Seq())
+              .map(x => x.asNodeGeneralContent)
+          else
+            content
       }
     }
 

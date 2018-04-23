@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import com.typesafe.scalalogging.LazyLogging
@@ -23,7 +22,8 @@ trait BegrepConverterModule {
   object BegrepConverter extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "begrep"
 
-    override def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
+    override def convert(content: ContentBrowser,
+                         importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val nodeId = content.get("nid")
       extractConvertStoreContent.processNode(nodeId, importStatus) match {
         case Success((c: Concept, is)) =>
@@ -31,15 +31,18 @@ trait BegrepConverterModule {
           Success((embedContent, Seq.empty, is.addMessage(s"Imported concept with id ${c.id}")))
 
         case Success((x: Article, _)) =>
-          val msg = s"THIS IS A BUG: Imported begrep node with nid $nodeId but is marked as an article (id ${x.id})"
+          val msg =
+            s"THIS IS A BUG: Imported begrep node with nid $nodeId but is marked as an article (id ${x.id})"
           logger.error(msg)
           Failure(ImportException(nodeId, msg))
         case Failure(x) =>
           val exceptionMessage = x match {
-            case ex: ValidationException => s"${ex.getMessage}: ${ex.errors.mkString(",")}"
+            case ex: ValidationException =>
+              s"${ex.getMessage}: ${ex.errors.mkString(",")}"
             case ex => ex.getMessage
           }
-          val msg = s"Failed to import begrep with node id $nodeId: $exceptionMessage"
+          val msg =
+            s"Failed to import begrep with node id $nodeId: $exceptionMessage"
           logger.error(msg)
           Failure(ImportException(nodeId, msg))
       }

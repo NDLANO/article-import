@@ -30,19 +30,20 @@ object SimpleTagConverter extends ConverterModule {
   def convertDivs(el: Element) {
     for (el <- el.select("div").asScala) {
       el.className() match {
-        case "right" => replaceTag(el, "aside")
+        case "right"     => replaceTag(el, "aside")
         case "paragraph" => replaceTag(el, "section")
-        case "quote" => replaceTag(el, "blockquote")
-        case "hide" => handle_hide(el)
+        case "quote"     => replaceTag(el, "blockquote")
+        case "hide"      => handle_hide(el)
         case "frame" =>
           el.removeClass("frame")
           el.addClass("c-bodybox")
         case "full" | "wrapicon" | "no_icon" => el.unwrap()
-        case cellContent if cellContent contains "ndla_table_cell_content" => el.unwrap()
+        case cellContent if cellContent contains "ndla_table_cell_content" =>
+          el.unwrap()
         case cell if cell contains "ndla_table_cell" => replaceTag(el, "td")
-        case row if row contains "ndla_table_row" => replaceTag(el, "tr")
-        case table if table contains "ndla_table" => replaceTag(el, "table")
-        case _ => el.removeAttr("class")
+        case row if row contains "ndla_table_row"    => replaceTag(el, "tr")
+        case table if table contains "ndla_table"    => replaceTag(el, "table")
+        case _                                       => el.removeAttr("class")
       }
     }
   }
@@ -51,7 +52,7 @@ object SimpleTagConverter extends ConverterModule {
     for (el <- el.select("h1, h2, h3, h4, h5, h6").asScala) {
       el.className() match {
         case "frame" => replaceTagWithClass(el, "div", "c-bodybox")
-        case _ => el
+        case _       => el
       }
     }
   }
@@ -68,24 +69,31 @@ object SimpleTagConverter extends ConverterModule {
   }
 
   private def setFontSizeForChineseText(element: Element): Unit = {
-    element.select("span[style~=font-size]").asScala
+    element
+      .select("span[style~=font-size]")
+      .asScala
       .filter(tag => containsChineseText(tag.text))
       .foreach(el => {
-        val cssFontSize = parseInlineCss(el.attr("style")).getOrElse("font-size", "large")
-        val fontSize = if (cssFontSize.contains("large")) "large" else cssFontSize
+        val cssFontSize =
+          parseInlineCss(el.attr("style")).getOrElse("font-size", "large")
+        val fontSize =
+          if (cssFontSize.contains("large")) "large" else cssFontSize
 
         replaceAttribute(el, "style", DataSize.toString -> fontSize)
       })
   }
 
   private def setLanguageParameterIfPresent(element: Element) {
-    element.select("span").asScala.foreach(spanTag => {
-      val langAttribute = spanTag.attr("xml:lang")
-      if (langAttribute.nonEmpty) {
-        spanTag.attr("lang", langAttribute)
-        spanTag.removeAttr("xml:lang")
-      }
-    })
+    element
+      .select("span")
+      .asScala
+      .foreach(spanTag => {
+        val langAttribute = spanTag.attr("xml:lang")
+        if (langAttribute.nonEmpty) {
+          spanTag.attr("lang", langAttribute)
+          spanTag.removeAttr("xml:lang")
+        }
+      })
   }
 
   private def handle_hide(el: Element) {
@@ -109,7 +117,9 @@ object SimpleTagConverter extends ConverterModule {
   }
 
   private def containsChineseText(text: String): Boolean = {
-    text.codePoints().anyMatch(codepoint => Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN)
+    text
+      .codePoints()
+      .anyMatch(codepoint => Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN)
   }
 
   private def replaceAttribute(el: Element, originalAttrKey: String, attr: (String, String)): Unit = {
@@ -119,12 +129,15 @@ object SimpleTagConverter extends ConverterModule {
   }
 
   def parseInlineCss(str: String): Map[String, String] = {
-    str.split(";").flatMap(s => {
-      s.split(":").toList match {
-        case key :: value => Some(key.trim -> value.mkString(":").trim)
-        case _ => None
-      }
-    }).toMap
+    str
+      .split(";")
+      .flatMap(s => {
+        s.split(":").toList match {
+          case key :: value => Some(key.trim -> value.mkString(":").trim)
+          case _            => None
+        }
+      })
+      .toMap
   }
 
 }

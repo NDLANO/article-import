@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.model.domain
 
 import java.net.URL
@@ -35,7 +34,13 @@ case class NodeToConvert(titles: Seq[ArticleTitle],
                          articleType: ArticleType.Value,
                          editorialKeywords: Seq[MigrationEditorialKeywords])
 
-case class ContentFilMeta(nid: String, tnid: String, title: String, fileName: String, url: URL, mimeType: String, fileSize: String)
+case class ContentFilMeta(nid: String,
+                          tnid: String,
+                          title: String,
+                          fileName: String,
+                          url: URL,
+                          mimeType: String,
+                          fileSize: String)
 
 object ContentFilMeta {
   implicit def stringToUrl(s: String): URL = new URL(s.uri)

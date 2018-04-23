@@ -30,20 +30,26 @@ case class Article(id: Option[Long],
                    updated: Date,
                    updatedBy: String,
                    articleType: String,
-                   editorialKeywords: Seq[String]) extends Content {
+                   editorialKeywords: Seq[String])
+    extends Content {
   lazy val supportedLanguages: Set[String] =
-    (content union title union tags union visualElement union introduction union metaDescription).map(_.language).toSet
+    (content union title union tags union visualElement union introduction union metaDescription)
+      .map(_.language)
+      .toSet
 }
-
 
 object ArticleType extends Enumeration {
   val Standard = Value("standard")
   val TopicArticle = Value("topic-article")
 
   def all = ArticleType.values.map(_.toString).toSeq
-  def valueOf(s:String): Option[ArticleType.Value] = ArticleType.values.find(_.toString == s)
+
+  def valueOf(s: String): Option[ArticleType.Value] =
+    ArticleType.values.find(_.toString == s)
+
   def valueOfOrError(s: String): ArticleType.Value =
-    valueOf(s).getOrElse(throw new ValidationException(errors = List(ValidationMessage("articleType", s"'$s' is not a valid article type. Valid options are ${all.mkString(",")}."))))
+    valueOf(s).getOrElse(throw new ValidationException(errors = List(
+      ValidationMessage("articleType", s"'$s' is not a valid article type. Valid options are ${all.mkString(",")}."))))
 }
 
 case class Concept(id: Option[Long],
@@ -51,7 +57,8 @@ case class Concept(id: Option[Long],
                    content: Seq[ConceptContent],
                    copyright: Option[Copyright],
                    created: Date,
-                   updated: Date) extends Content {
-  lazy val supportedLanguages: Set[String] = (content union title).map(_.language).toSet
+                   updated: Date)
+    extends Content {
+  lazy val supportedLanguages: Set[String] =
+    (content union title).map(_.language).toSet
 }
-

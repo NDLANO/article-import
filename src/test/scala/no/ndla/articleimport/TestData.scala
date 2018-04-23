@@ -14,8 +14,9 @@ import no.ndla.articleimport.service.converters.contentbrowser.ContentBrowser
 import org.joda.time.DateTime
 
 object TestData {
-  private val publicDomainCopyright= Copyright("publicdomain", None, Seq.empty, Seq.empty, Seq.empty, None, None, None)
-  private val byNcSaCopyright = Copyright("by-nc-sa", Some("Gotham City"), Seq.empty, Seq.empty, Seq.empty, None, None, None)
+  private val publicDomainCopyright = Copyright("publicdomain", None, Seq.empty, Seq.empty, Seq.empty, None, None, None)
+  private val byNcSaCopyright =
+    Copyright("by-nc-sa", Some("Gotham City"), Seq.empty, Seq.empty, Seq.empty, None, None, None)
   private val today = new DateTime().toDate
 
   val articleId = 1
@@ -36,7 +37,8 @@ object TestData {
     DateTime.now().minusDays(2).toDate,
     "ndalId54321",
     ArticleType.Standard.toString,
-    Seq.empty)
+    Seq.empty
+  )
 
   val sampleDomainArticle = Article(
     Option(articleId),
@@ -73,7 +75,7 @@ object TestData {
     today,
     "ndalId54321",
     ArticleType.Standard.toString,
-      Seq.empty
+    Seq.empty
   )
 
   val newArticleV2 = api.NewArticle(
@@ -84,7 +86,14 @@ object TestData {
     None,
     None,
     None,
-    api.Copyright(Some(api.License("publicdomain", None, None)), Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None),
+    api.Copyright(Some(api.License("publicdomain", None, None)),
+                  Some(""),
+                  Seq.empty,
+                  Seq.empty,
+                  Seq.empty,
+                  None,
+                  None,
+                  None),
     Seq.empty,
     "standard",
     Seq.empty,
@@ -99,7 +108,14 @@ object TestData {
     Some("metadescription"),
     Some("22"),
     None,
-    api.Copyright(Some(api.License("by-sa", None, None)), Some("fromSomeWhere"), Seq(api.Author("string", "du")), Seq.empty, Seq.empty, None, None, None),
+    api.Copyright(Some(api.License("by-sa", None, None)),
+                  Some("fromSomeWhere"),
+                  Seq(api.Author("string", "du")),
+                  Seq.empty,
+                  Seq.empty,
+                  None,
+                  None,
+                  None),
     Seq.empty,
     "standard",
     Seq.empty,
@@ -122,12 +138,23 @@ object TestData {
     None
   )
 
-  val sampleArticleWithByNcSa = sampleArticleWithPublicDomain.copy(copyright=byNcSaCopyright)
+  val sampleArticleWithByNcSa =
+    sampleArticleWithPublicDomain.copy(copyright = byNcSaCopyright)
 
   val (nodeId, nodeId2) = ("1234", "4321")
   val sampleTitle = ArticleTitle("title", "en")
-  val sampleContent = LanguageContent(nodeId, nodeId, "sample content", "metadescription", "en", None, "fagstoff", Some("title"), Seq.empty, None)
-  val sampleTranslationContent = sampleContent.copy(tnid=nodeId2)
+
+  val sampleContent = LanguageContent(nodeId,
+                                      nodeId,
+                                      "sample content",
+                                      "metadescription",
+                                      "en",
+                                      None,
+                                      "fagstoff",
+                                      Some("title"),
+                                      Seq.empty,
+                                      None)
+  val sampleTranslationContent = sampleContent.copy(tnid = nodeId2)
 
   val sampleImageMetaInformation = ImageMetaInformation(
     "1",
@@ -137,7 +164,8 @@ object TestData {
     1024,
     "application/jpeg",
     ImageCopyright(ImageLicense("by", "Creative Commons", None), "pix", Seq.empty),
-    ImageTag(Seq("sample tag"), Some("nb")))
+    ImageTag(Seq("sample tag"), Some("nb"))
+  )
 
   val sampleConcept = Concept(
     Some(1),
@@ -153,7 +181,15 @@ object TestData {
     None,
     Some(api.ConceptTitle("Tittel for begrep", "nb")),
     Some(api.ConceptContent("Innhold for begrep", "nb")),
-    Some(api.Copyright(Some(api.License("publicdomain", None, None)), Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None)),
+    Some(
+      api.Copyright(Some(api.License("publicdomain", None, None)),
+                    Some(""),
+                    Seq.empty,
+                    Seq.empty,
+                    Seq.empty,
+                    None,
+                    None,
+                    None)),
     DateTime.now().minusDays(4).toDate,
     DateTime.now().minusDays(2).toDate,
     Set("nb")
@@ -165,7 +201,15 @@ object TestData {
     Some(1),
     api.ArticleTitle("tittel", "nb"),
     Some(api.ArticleContent("innhold", "nb")),
-    Some(api.Copyright(Some(api.License("by-sa", None, None)), Some("fromSomeWhere"), Seq(api.Author("string", "du")), Seq.empty, Seq.empty, None, None, None)),
+    Some(
+      api.Copyright(Some(api.License("by-sa", None, None)),
+                    Some("fromSomeWhere"),
+                    Seq(api.Author("string", "du")),
+                    Seq.empty,
+                    Seq.empty,
+                    None,
+                    None,
+                    None)),
     Some(api.ArticleTag(Seq.empty, "nb")),
     Seq.empty,
     None,
@@ -190,5 +234,3 @@ object TestData {
   }
 
 }
-
-

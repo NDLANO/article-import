@@ -23,7 +23,7 @@ object TableConverter extends ConverterModule {
     convertFirstTrToTh(element)
     wrapHeaderRowInThead(element)
 
-    Success(content.copy(content=jsoupDocumentToString(element)), importStatus)
+    Success(content.copy(content = jsoupDocumentToString(element)), importStatus)
   }
 
   def wrapHeaderRowInThead(el: Element) = {
@@ -36,7 +36,10 @@ object TableConverter extends ConverterModule {
             table.select("tbody").first.tagName("thead")
           case _ =>
         }
-        table.select("tbody").asScala.foreach(tb => if(tb.childNodeSize() == 0) tb.remove())
+        table
+          .select("tbody")
+          .asScala
+          .foreach(tb => if (tb.childNodeSize() == 0) tb.remove())
       }
     }
   }
@@ -53,7 +56,7 @@ object TableConverter extends ConverterModule {
   def convertFirstTrToTh(el: Element) = {
     for (table <- el.select("table").asScala) {
       Option(table.select("tr").first).foreach(firstRow => {
-        if(firstRow.select("strong").asScala.nonEmpty) {
+        if (firstRow.select("strong").asScala.nonEmpty) {
           firstRow.select("td").tagName("th")
           firstRow.select("strong").unwrap()
         }

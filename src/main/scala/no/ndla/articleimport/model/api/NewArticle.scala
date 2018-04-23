@@ -19,4 +19,3 @@ case class NewArticle(title: String,
                       articleType: String,
                       notes: Seq[String],
                       language: String)
-

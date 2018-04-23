@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.controller
 
 import no.ndla.articleimport.auth.{Role, User}
@@ -16,12 +15,7 @@ import org.json4s.{DefaultFormats, Formats}
 import scala.util.{Failure, Success}
 
 trait InternController {
-  this: ExtractService
-    with ConverterService
-    with ExtractConvertStoreContent
-    with User
-    with NdlaController
-    with Role =>
+  this: ExtractService with ConverterService with ExtractConvertStoreContent with User with NdlaController with Role =>
   val internController: InternController
 
   class InternController extends NdlaController {
@@ -36,7 +30,8 @@ trait InternController {
       val forceUpdate = booleanOrDefault("forceUpdate", default = false)
 
       extractConvertStoreContent.processNode(externalId, ImportStatus.empty(forceUpdate)) match {
-        case Success((content, status)) => status.addMessage(s"Successfully imported node $externalId: ${content.id}")
+        case Success((content, status)) =>
+          status.addMessage(s"Successfully imported node $externalId: ${content.id}")
         case Failure(exc) =>
           logger.error(exc.getMessage)
           errorHandler(exc)

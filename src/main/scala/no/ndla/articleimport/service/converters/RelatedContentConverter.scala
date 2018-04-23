@@ -27,29 +27,47 @@ trait RelatedContentConverter {
 
   object RelatedContentConverter extends ConverterModule {
     override def convert(content: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
-      val allRelatedNids = content.relatedContent.map(c => (c.nid, extractService.getNodeType(c.nid).getOrElse("unknown"))).toSet
-      val nidsToImport = allRelatedNids.filter { case (_, nodeType ) => supportedContentTypes.contains(nodeType) }.map{case (nid, _) => nid}
+      val allRelatedNids = content.relatedContent
+        .map(c => (c.nid, extractService.getNodeType(c.nid).getOrElse("unknown")))
+        .toSet
+      val nidsToImport = allRelatedNids
+        .filter {
+          case (_, nodeType) => supportedContentTypes.contains(nodeType)
+        }
+        .map { case (nid, _) => nid }
       val excludedNids = allRelatedNids.filterNot {
         case (nid, _) => nidsToImport.contains(nid)
       } map {
-        case (nid, nodeType) => (nid, s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
+        case (nid, nodeType) =>
+          (nid, s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
       }
 
       if (nidsToImport.isEmpty) {
-        Success(content, importStatus.copy(importRelatedArticles = false).addMessages(excludedNids.map(_._2).toSeq))
+        Success(content,
+                importStatus
+                  .copy(importRelatedArticles = false)
+                  .addMessages(excludedNids.map(_._2).toSeq))
       } else {
-        val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] = importRelatedContent(content.nid, _, _)
-        val handlerFunc = if (importStatus.importRelatedArticles) importRelatedContentCb else getRelatedContentFromDb _
+        val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] =
+          importRelatedContent(content.nid, _, _)
+        val handlerFunc =
+          if (importStatus.importRelatedArticles) importRelatedContentCb
+          else getRelatedContentFromDb _
 
         handlerFunc(nidsToImport, importStatus) match {
           case Success((ids, status)) if ids.nonEmpty =>
             val element = stringToJsoupDocument(content.content)
             element.append(s"<section>${HtmlTagGenerator.buildRelatedContent(ids)}</section>")
-            Success(content.copy(content = jsoupDocumentToString(element)), status.addMessages(excludedNids.map(_._2).toSeq))
-          case Success((_, status)) => Success(content, status.addMessages(excludedNids.map(_._2).toSeq))
+            Success(content.copy(content = jsoupDocumentToString(element)),
+                    status.addMessages(excludedNids.map(_._2).toSeq))
+          case Success((_, status)) =>
+            Success(content, status.addMessages(excludedNids.map(_._2).toSeq))
           case Failure(ex: ImportExceptions) =>
-            val filteredOutNodes = excludedNids.map { case (_, message) => ImportException(content.nid, message, Some(ex)) }
-            Failure(ex.copy(errors=ex.errors ++ filteredOutNodes))
+            val filteredOutNodes = excludedNids.map {
+              case (_, message) =>
+                ImportException(content.nid, message, Some(ex))
+            }
+            Failure(ex.copy(errors = ex.errors ++ filteredOutNodes))
           case Failure(ex) => Failure(ex)
         }
       }
@@ -57,26 +75,37 @@ trait RelatedContentConverter {
     }
   }
 
-  private def importRelatedContent(mainNodeId: String, relatedNids: Set[String], importStatus: ImportStatus): Try[(Set[Long], ImportStatus)] = {
-    val (importedArticles, updatedStatus) = relatedNids.foldLeft((Seq[Try[Article]](), importStatus.copy(importRelatedArticles = false)))((result, nid) => {
-      val (articles, status) = result
+  private def importRelatedContent(mainNodeId: String,
+                                   relatedNids: Set[String],
+                                   importStatus: ImportStatus): Try[(Set[Long], ImportStatus)] = {
+    val (importedArticles, updatedStatus) =
+      relatedNids.foldLeft((Seq[Try[Article]](), importStatus.copy(importRelatedArticles = false)))((result, nid) => {
+        val (articles, status) = result
 
-      extractConvertStoreContent.processNode(nid, status) match {
-        case Success((content: Article, st)) =>
-          (articles :+ Success(content), st)
-        case Success((_: Concept, _)) =>
-          (articles :+ Failure(ImportException(mainNodeId, s"Related content with nid $nid points to a concept. This should not be legal, no?")), status)
-        case Failure(ex) =>
-          (articles :+ Failure(ImportException(mainNodeId, s"Failed to import related content with nid $nid", Some(ex))), status)
-      }
-    })
+        extractConvertStoreContent.processNode(nid, status) match {
+          case Success((content: Article, st)) =>
+            (articles :+ Success(content), st)
+          case Success((_: Concept, _)) =>
+            (articles :+ Failure(
+               ImportException(mainNodeId,
+                               s"Related content with nid $nid points to a concept. This should not be legal, no?")),
+             status)
+          case Failure(ex) =>
+            (articles :+ Failure(
+               ImportException(mainNodeId, s"Failed to import related content with nid $nid", Some(ex))),
+             status)
+        }
+      })
 
-    val (importSuccesses, importFailures) = importedArticles.partition(_.isSuccess)
+    val (importSuccesses, importFailures) =
+      importedArticles.partition(_.isSuccess)
     if (importFailures.isEmpty) {
       val ids = importSuccesses.map(_.get.id).toSet
       Success(ids, updatedStatus)
     } else {
-      val nodeIds = migrationApiClient.getAllTranslationNids(mainNodeId).getOrElse(Set(mainNodeId))
+      val nodeIds = migrationApiClient
+        .getAllTranslationNids(mainNodeId)
+        .getOrElse(Set(mainNodeId))
       logger.info(s"Failed to import one or more related contents for node(s) ${nodeIds.mkString(",")}")
       Failure(ImportExceptions(nodeIds, importFailures.map(_.failed.get)))
     }

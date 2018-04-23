@@ -21,10 +21,13 @@ trait UnsupportedContentConverter {
   object UnsupportedContentConverter extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "unsupported content"
 
-    override def convert(content: ContentBrowser, importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
+    override def convert(content: ContentBrowser,
+                         importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val nodeId = content.get("nid")
-      val nodeType = extractService.getNodeType(content.get("nid")).getOrElse("unknown")
-      val errorMessage = s"Unsupported content $nodeType in node with id $nodeId"
+      val nodeType =
+        extractService.getNodeType(content.get("nid")).getOrElse("unknown")
+      val errorMessage =
+        s"Unsupported content $nodeType in node with id $nodeId"
       logger.error(errorMessage)
       Failure(ImportException(nodeId, errorMessage))
     }

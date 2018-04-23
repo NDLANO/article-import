@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import no.ndla.articleimport.integration.DraftApiClient

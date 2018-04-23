@@ -6,7 +6,6 @@
  *
  */
 
-
 import javax.servlet.ServletContext
 
 import no.ndla.articleimport.ComponentRegistry.{healthController, internController}

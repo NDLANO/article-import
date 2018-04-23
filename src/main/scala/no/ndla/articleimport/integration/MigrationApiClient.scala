@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.integration
 
 import java.net.URL
@@ -25,7 +24,7 @@ trait MigrationApiClient {
   this: NdlaClient with TagsService =>
   val migrationApiClient: MigrationApiClient
 
-  class MigrationApiClient{
+  class MigrationApiClient {
     val DBSource = "red"
     private val ContentMigrationBaseEndpoint = s"$MigrationHost/contents"
     private val ContentDataEndpoint = s"$ContentMigrationBaseEndpoint/:node_id" ? (s"db-source" -> s"$DBSource")
@@ -41,9 +40,10 @@ trait MigrationApiClient {
       get[MigrationMainNodeImport](ContentDataEndpoint, nodeId)
 
     private def get[A](endpointUrl: String, nodeId: String)(implicit mf: Manifest[A]): Try[A] = {
-      ndlaClient.fetchWithBasicAuth[A](
-        Http(endpointUrl.replace(":node_id", nodeId)).timeout(1000 * 30, 1000 * 30),
-        MigrationUser, MigrationPassword)
+      ndlaClient.fetchWithBasicAuth[A](Http(endpointUrl.replace(":node_id", nodeId))
+                                         .timeout(1000 * 30, 1000 * 30),
+                                       MigrationUser,
+                                       MigrationPassword)
     }
 
     def getContentType(nodeId: String): Try[MigrationNodeType] =
@@ -62,24 +62,39 @@ trait MigrationApiClient {
       get[MigrationContentBiblioMeta](ContentBiblioMetaEndpoint, nodeId)
 
     def getSubjectForNode(nodeId: String): Try[Set[MigrationSubjectMeta]] =
-      get[Seq[MigrationSubjectMeta]](ContentSubjectMetaEndpoint, nodeId).map(_.toSet)
+      get[Seq[MigrationSubjectMeta]](ContentSubjectMetaEndpoint, nodeId)
+        .map(_.toSet)
 
     private val getAllNodeTranslationNids: Memoize[String, Try[Set[String]]] =
       Memoize((nodeId: String) => getContentNodeData(nodeId).map(_.contents.map(_.nid).toSet))
 
-    def getAllTranslationNids(nodeId: String): Try[Set[String]] = getAllNodeTranslationNids(nodeId)
+    def getAllTranslationNids(nodeId: String): Try[Set[String]] =
+      getAllNodeTranslationNids(nodeId)
   }
 }
 
-case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle], ingresses: Seq[MigrationIngress], contents: Seq[MigrationContent],
-                                   authors: Seq[MigrationContentAuthor], license: Option[String], nodeType: Option[String],
-                                   pageTitles: Seq[MigrationPageTitle], visualElements: Seq[MigrationVisualElement], relatedContents: Seq[MigrationRelatedContents],
-                                   editorialKeywords: Seq[MigrationEditorialKeywords], learningResourceType: Seq[MigrationLearningResourceType],
-                                   difficulty: Seq[MigrationDifficulty], contentType: Seq[MigrationContentType], innholdAndFag: Seq[MigrationInnholdsKategoriAndFag],
-                                   fagressurs: Seq[MigrationFagressurs], emneartikkelData: Seq[MigrationEmneArtikkelData]) {
+case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle],
+                                   ingresses: Seq[MigrationIngress],
+                                   contents: Seq[MigrationContent],
+                                   authors: Seq[MigrationContentAuthor],
+                                   license: Option[String],
+                                   nodeType: Option[String],
+                                   pageTitles: Seq[MigrationPageTitle],
+                                   visualElements: Seq[MigrationVisualElement],
+                                   relatedContents: Seq[MigrationRelatedContents],
+                                   editorialKeywords: Seq[MigrationEditorialKeywords],
+                                   learningResourceType: Seq[MigrationLearningResourceType],
+                                   difficulty: Seq[MigrationDifficulty],
+                                   contentType: Seq[MigrationContentType],
+                                   innholdAndFag: Seq[MigrationInnholdsKategoriAndFag],
+                                   fagressurs: Seq[MigrationFagressurs],
+                                   emneartikkelData: Seq[MigrationEmneArtikkelData]) {
 
-  def asNodeToConvert(nodeId  : String, tags: List[ArticleTag]): NodeToConvert = {
-    val articleType = nodeType.map(nType => if (nType == "emneartikkel") ArticleType.TopicArticle else ArticleType.Standard)
+  def asNodeToConvert(nodeId: String, tags: List[ArticleTag]): NodeToConvert = {
+    val articleType = nodeType.map(
+      nType =>
+        if (nType == "emneartikkel") ArticleType.TopicArticle
+        else ArticleType.Standard)
 
     NodeToConvert(
       titles.map(x => x.asContentTitle),
@@ -98,9 +113,13 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle], ingresses
 
   def asLanguageContents: Seq[LanguageContent] = {
     contents.map(content => {
-      val relatedContent = relatedContents.find(_.language == content.language).map(_.related).getOrElse(Seq.empty)
+      val relatedContent = relatedContents
+        .find(_.language == content.language)
+        .map(_.related)
+        .getOrElse(Seq.empty)
 
-      LanguageContent(content.nid,
+      LanguageContent(
+        content.nid,
         content.tnid,
         content.content,
         getMetaDescription(content),
@@ -110,7 +129,8 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle], ingresses
         titles.find(_.language == content.language).map(_.title),
         relatedContent,
         getMetaImage(content.language),
-        ingress = getIngress(content.language))
+        ingress = getIngress(content.language)
+      )
     })
   }
 
@@ -118,7 +138,8 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle], ingresses
     getEmneArtikkel(language) match {
       case Some(data) => Option(LanguageIngress(data.ingress, None))
       case None =>
-        ingresses.find(ingress => ingress.language == language && ingress.ingressVisPaaSiden == 1)
+        ingresses
+          .find(ingress => ingress.language == language && ingress.ingressVisPaaSiden == 1)
           .map(ingress => LanguageIngress(ingress.content.getOrElse(""), ingress.imageNid))
     }
   }
@@ -126,42 +147,64 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle], ingresses
   private def getMetaDescription(content: MigrationContent): String = {
     getEmneArtikkel(content.language) match {
       case Some(data) => data.metaDescription
-      case None => ingresses.find(_.language == content.language)
-        .flatMap(_.content).getOrElse(content.metaDescription)
+      case None =>
+        ingresses
+          .find(_.language == content.language)
+          .flatMap(_.content)
+          .getOrElse(content.metaDescription)
     }
   }
 
   private def getMetaImage(language: Option[String]): Option[String] =
     ingresses.find(ing => ing.language == language).flatMap(_.imageNid)
 
-  private def getEmneArtikkel(language: Option[String]) = emneartikkelData.find(_.language == language)
+  private def getEmneArtikkel(language: Option[String]) =
+    emneartikkelData.find(_.language == language)
 }
 
 case class MigrationNodeGeneralContent(nid: String, tnid: String, title: String, content: String, language: String) {
-  def asNodeGeneralContent: NodeGeneralContent = NodeGeneralContent(nid, tnid, title, content, language)
+
+  def asNodeGeneralContent: NodeGeneralContent =
+    NodeGeneralContent(nid, tnid, title, content, language)
 }
 
 case class MigrationContentAuthor(`type`: Option[String], name: Option[String]) {
+
   def asAuthor: Option[Author] = {
     (`type`, name) match {
       case (None, None) => None
-      case (authorType, authorName) => Some(Author(authorType.getOrElse(""), authorName.getOrElse("")))
+      case (authorType, authorName) =>
+        Some(Author(authorType.getOrElse(""), authorName.getOrElse("")))
     }
   }
 }
 
 case class MigrationContentTitle(title: String, language: Option[String]) {
-  def asContentTitle: ArticleTitle = ArticleTitle(title, Language.languageOrUnknown(language))
+
+  def asContentTitle: ArticleTitle =
+    ArticleTitle(title, Language.languageOrUnknown(language))
 }
 
-case class MigrationIngress(nid: String, content: Option[String], imageNid: Option[String], ingressVisPaaSiden: Int, language: Option[String])
+case class MigrationIngress(nid: String,
+                            content: Option[String],
+                            imageNid: Option[String],
+                            ingressVisPaaSiden: Int,
+                            language: Option[String])
 
-case class MigrationContent(nid: String, tnid: String, content: String, metaDescription: String, language: Option[String], created: Date, changed: Date)
+case class MigrationContent(nid: String,
+                            tnid: String,
+                            content: String,
+                            metaDescription: String,
+                            language: Option[String],
+                            created: Date,
+                            changed: Date)
 
 case class MigrationNodeType(nodeType: String)
 
 case class MigrationContentBiblioMeta(biblio: MigrationBiblio, authors: Seq[MigrationBiblioAuthor]) {
-  def asBiblioMeta: BiblioMeta = BiblioMeta(biblio.asBiblio, authors.map(x => x.asBiblioAuthor))
+
+  def asBiblioMeta: BiblioMeta =
+    BiblioMeta(biblio.asBiblio, authors.map(x => x.asBiblioAuthor))
 }
 
 case class MigrationBiblio(title: String, bibType: String, year: String, edition: String, publisher: String) {
@@ -172,8 +215,16 @@ case class MigrationBiblioAuthor(name: String, lastname: String, firstname: Stri
   def asBiblioAuthor: BiblioAuthor = BiblioAuthor(name, lastname, firstname)
 }
 
-case class MigrationContentFileMeta(nid: String, tnid: String, title: String, fileName: String, url: String, mimeType: String, fileSize: String) {
-  def asContentFilMeta: ContentFilMeta = ContentFilMeta(nid, tnid, title, fileName, new URL(url.withScheme("https")), mimeType, fileSize)
+case class MigrationContentFileMeta(nid: String,
+                                    tnid: String,
+                                    title: String,
+                                    fileName: String,
+                                    url: String,
+                                    mimeType: String,
+                                    fileSize: String) {
+
+  def asContentFilMeta: ContentFilMeta =
+    ContentFilMeta(nid, tnid, title, fileName, new URL(url.withScheme("https")), mimeType, fileSize)
 }
 
 case class MigrationEmbedMeta(url: Option[String], embedCode: Option[String])

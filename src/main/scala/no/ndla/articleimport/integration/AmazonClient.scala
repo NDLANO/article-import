@@ -5,7 +5,6 @@
  * See LICENSE
  */
 
-
 package no.ndla.articleimport.integration
 
 import com.amazonaws.services.s3.AmazonS3
