@@ -37,7 +37,7 @@ case class ContentBrowserString(textContainingContentBrowser: String, language: 
     .split("==")
     .map(x => x.stripPrefix("=").split("="))
   private val FieldMap =
-    KeyVal.map(el => el(0) -> (if (el.length > 1) el(1) else "")).toMap
+    KeyVal.map(el => el(0) -> (if (el.length > 1) el(1).trim else "")).toMap
 
   lazy val IsContentBrowserField: Boolean =
     textContainingContentBrowser.matches(Pattern.toString)
