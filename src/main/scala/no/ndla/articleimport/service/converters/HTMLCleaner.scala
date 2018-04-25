@@ -13,7 +13,7 @@ import no.ndla.articleimport.integration.{ConverterModule, ImageApiClient, Langu
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.validation.{HtmlTagRules, ResourceType, TagAttributes, TagValidator}
-import org.apache.commons.text.StringEscapeUtils.escapeHtml4
+import org.apache.commons.text.translate.{AggregateTranslator, EntityArrays, LookupTranslator}
 import org.jsoup.nodes.{Element, Node, TextNode}
 
 import scala.annotation.tailrec
@@ -182,13 +182,22 @@ trait HTMLCleaner {
         .distinct
     }
 
+    private def escapeHtml(text: String): String = {
+      val escapeHtml = new AggregateTranslator(
+        new LookupTranslator(EntityArrays.BASIC_ESCAPE),
+        new LookupTranslator(EntityArrays.HTML40_EXTENDED_ESCAPE)
+      )
+
+      escapeHtml.translate(text)
+    }
+
     private def prepareMetaDescription(metaDescription: String): String = {
       val element = stringToJsoupDocument(metaDescription)
       for (el <- element.select("embed").asScala) {
         val caption = el.attr("data-caption")
         el.replaceWith(new TextNode(caption))
       }
-      escapeHtml4(extractElement(element).trim)
+      escapeHtml(extractElement(element).trim)
     }
 
     private def removeAttributes(el: Element): Seq[String] = {
