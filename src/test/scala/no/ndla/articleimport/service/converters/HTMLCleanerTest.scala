@@ -886,7 +886,8 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
 
   test("iso-8859-1 characters should not be escaped") {
     val content =
-      TestData.sampleContent.copy(content = "", metaDescription = """<p>Hei dette er et mindre enn tegn <> hæhøhå</p>""")
+      TestData.sampleContent.copy(content = "",
+                                  metaDescription = """<p>Hei dette er et mindre enn tegn <> hæhøhå</p>""")
     val Success((result, _)) = htmlCleaner.convert(content, defaultImportStatus)
 
     result.metaDescription should equal("Hei dette er et mindre enn tegn &lt;&gt; hæhøhå")
