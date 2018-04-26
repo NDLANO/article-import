@@ -11,7 +11,6 @@ import no.ndla.articleimport.model.domain._
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Entities.EscapeMode
-
 import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 

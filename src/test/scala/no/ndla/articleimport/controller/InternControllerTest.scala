@@ -27,7 +27,7 @@ class InternControllerTest extends UnitSuite with TestEnvironment with ScalatraF
   val sampleNode = NodeToConvert(
     List(sampleTitle),
     List(sampleContent),
-    "by-sa",
+    Some("by-sa"),
     Seq(author),
     List(ArticleTag(List("tag"), "en")),
     "fagstoff",

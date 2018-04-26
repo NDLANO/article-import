@@ -12,7 +12,7 @@ import no.ndla.articleimport.auth.User
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
 import no.ndla.articleimport.service._
-import no.ndla.articleimport.service.converters.HtmlTagGenerator
+import no.ndla.articleimport.service.converters.{HtmlTagGenerator, MetaInfoConverter}
 import no.ndla.network.NdlaClient
 
 import scala.util.Try
@@ -28,6 +28,7 @@ trait ContentBrowserConverterModules
     with AmazonClient
     with ConverterModules
     with ConverterService
+    with MetaInfoConverter
     with Clock
     with ExtractConvertStoreContent
     with LazyLogging

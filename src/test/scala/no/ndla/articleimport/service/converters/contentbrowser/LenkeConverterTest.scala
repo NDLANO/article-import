@@ -22,6 +22,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
   val linkUrl = "https://www.youtube.com/watch?v=1qN72LEQnaU"
 
+  override val extractService = new ExtractService
+
   override def beforeEach = {
     val iframeEmbed = s"""<iframe src="$linkUrl" />"""
     when(extractService.getNodeEmbedMeta(nodeId))

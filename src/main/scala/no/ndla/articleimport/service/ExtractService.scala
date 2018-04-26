@@ -8,9 +8,9 @@
 package no.ndla.articleimport.service
 
 import com.typesafe.scalalogging.LazyLogging
-import no.ndla.articleimport.caching.Memoize
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.domain.{BiblioMeta, ContentFilMeta, NodeGeneralContent, NodeToConvert}
+import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
 
 import scala.util.{Failure, Success, Try}
 
@@ -70,5 +70,16 @@ trait ExtractService {
 
     def getBiblioMeta(nodeId: String): Option[BiblioMeta] =
       migrationApiClient.getBiblioMeta(nodeId).map(x => x.asBiblioMeta).toOption
+
+    def getLinkEmbedMeta(externalId: String): Try[MigrationEmbedMeta] = {
+      extractService
+        .getNodeEmbedMeta(externalId)
+        .map(meta => meta.copy(url = meta.url.orElse(tryFetchSrcAttributeFromTag(meta.embedCode.getOrElse("")))))
+    }
+
+    private def tryFetchSrcAttributeFromTag(tag: String): Option[String] = {
+      Option(stringToJsoupDocument(tag).select("[src]").attr("src"))
+        .filter(_.trim.nonEmpty)
+    }
   }
 }

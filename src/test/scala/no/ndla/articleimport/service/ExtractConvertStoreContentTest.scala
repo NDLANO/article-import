@@ -38,7 +38,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   val sampleNode = NodeToConvert(
     List(sampleTitle),
     List(sampleContent),
-    "by-sa",
+    Some("by-sa"),
     Seq(author),
     List(ArticleTag(List("tag"), "en")),
     "fagstoff",

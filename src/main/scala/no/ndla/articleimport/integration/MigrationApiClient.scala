@@ -96,10 +96,12 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle],
         if (nType == "emneartikkel") ArticleType.TopicArticle
         else ArticleType.Standard)
 
+    val lic = if (license.exists(_.trim.nonEmpty)) license else None
+
     NodeToConvert(
       titles.map(x => x.asContentTitle),
       asLanguageContents,
-      license.getOrElse(""),
+      lic,
       authors.flatMap(x => x.asAuthor),
       tags,
       nodeType.getOrElse("unknown"),
