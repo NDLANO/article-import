@@ -8,6 +8,7 @@
 package no.ndla.articleimport.service.converters
 
 import no.ndla.articleimport.integration.MigrationEmbedMeta
+import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
@@ -15,7 +16,7 @@ import no.ndla.validation.ResourceType
 import org.mockito.Mockito._
 import org.mockito.Matchers._
 
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class LeafNodeConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
@@ -64,6 +65,25 @@ class LeafNodeConverterTest extends UnitSuite with TestEnvironment {
 
     result.content should be(expectedResult)
     result.metaDescription should be(KahootUrl)
+  }
+
+  test("Leaf node converter should fail if lenkenode url is unsupported") {
+    val nid = "1234"
+    val sampleLanguageContent = TestData.sampleContent.copy(nid = nid, nodeType = "lenke")
+    val UnsupportedUrl = "https://play.unsupporteddomain.com/#/k/e577f7e9-59ff-4a80-89a1-c95acf04815d"
+    val UnsupportedSrc = "https://embed.unsupporteddomain.com/e577f7e9-59ff-4a80-89a1-c95acf04815d"
+    val UnsupportedEmbedCode =
+      s"""<iframe src="$UnsupportedSrc" name="iframe1" scrolling="no" frameborder="no" align="center" height = "350px" width = "620px"></iframe>"""
+
+    val embedMeta = Success(MigrationEmbedMeta(Some(UnsupportedUrl), Some(UnsupportedEmbedCode)))
+    when(extractService.getLinkEmbedMeta(any[String])).thenReturn(embedMeta)
+    val result = LeafNodeConverter.convert(sampleLanguageContent, ImportStatus.empty)
+
+    result.isFailure should be(true)
+    val Failure(exception: ImportException) = result
+    exception.message should be(s"'$UnsupportedUrl' is not a whitelisted embed source")
+    exception.nid should be(nid)
+
   }
 
 }

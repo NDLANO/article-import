@@ -96,7 +96,7 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle],
         if (nType == "emneartikkel") ArticleType.TopicArticle
         else ArticleType.Standard)
 
-    val lic = if (license.exists(_.trim.nonEmpty)) license else None
+    val lic = emptySomeToNone(license)
 
     NodeToConvert(
       titles.map(x => x.asContentTitle),

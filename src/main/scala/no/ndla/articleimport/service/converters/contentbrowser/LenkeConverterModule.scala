@@ -128,7 +128,7 @@ trait LenkeConverterModule {
         }
         Success((embedTag, requiredLibs, message :: Nil))
       } else {
-        Failure(ImportException(nid, s"'$url'is not a whitelisted embed source"))
+        Failure(ImportException(nid, s"'$url' is not a whitelisted embed source"))
       }
     }
 
