@@ -19,7 +19,7 @@ class AudioConverterTest extends UnitSuite with TestEnvironment {
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
   val caption = "This is caption"
 
-  val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "link_text" -> caption)
+  val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "link_text" -> caption)
 
   test("That AudioConverter returns a embed resource string if the audio was imported") {
     val audioId: Long = 123

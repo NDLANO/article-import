@@ -24,7 +24,8 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
   val insertion = "inline"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
 
-  val content = TestData.contentBrowserWithFields("nid" -> nodeId,
+  val content = TestData.contentBrowserWithFields(List.empty,
+                                                  "nid" -> nodeId,
                                                   "alt" -> altText,
                                                   "insertion" -> insertion,
                                                   "link_text" -> "Tittel")
@@ -79,7 +80,8 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That GeneralContentConverter inserts the content if insertion mode is 'collapsed_body'") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId,
+    val content = TestData.contentBrowserWithFields(List.empty,
+                                                    "nid" -> nodeId,
                                                     "alt" -> altText,
                                                     "insertion" -> "collapsed_body",
                                                     "link_text" -> "Tittel")
@@ -99,7 +101,8 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That GeneralContentConverter inserts the content if insertion mode is 'link'") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId,
+    val content = TestData.contentBrowserWithFields(List.empty,
+                                                    "nid" -> nodeId,
                                                     "alt" -> altText,
                                                     "insertion" -> "link",
                                                     "link_text" -> "Tittel")
@@ -120,7 +123,8 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That GeneralContentConverter inserts the content if insertion mode is 'lightbox_large'") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId,
+    val content = TestData.contentBrowserWithFields(List.empty,
+                                                    "nid" -> nodeId,
                                                     "alt" -> altText,
                                                     "insertion" -> "lightbox_large",
                                                     "link_text" -> "Tittel")
@@ -141,7 +145,8 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That GeneralContentConverter defaults to 'link' if the insertion method is unknown") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId,
+    val content = TestData.contentBrowserWithFields(List.empty,
+                                                    "nid" -> nodeId,
                                                     "alt" -> altText,
                                                     "insertion" -> "unknown",
                                                     "link_text" -> "Tittel")
@@ -164,7 +169,8 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
 
   test("That GeneralContentConverter imports nodes from old NDLA which is referenced in a content") {
     val newNodeid: Long = 1111
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId,
+    val content = TestData.contentBrowserWithFields(List.empty,
+                                                    "nid" -> nodeId,
                                                     "alt" -> altText,
                                                     "insertion" -> "link",
                                                     "link_text" -> "Tittel")
@@ -186,7 +192,8 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That GeneralContentConverter returns a Failure if node could not be imported") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId,
+    val content = TestData.contentBrowserWithFields(List.empty,
+                                                    "nid" -> nodeId,
                                                     "alt" -> altText,
                                                     "insertion" -> "link",
                                                     "link_title" -> "Tittel")
@@ -206,7 +213,8 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That GeneralContentConverter inserts the content in language before languageless") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId,
+    val content = TestData.contentBrowserWithFields(List.empty,
+                                                    "nid" -> nodeId,
                                                     "alt" -> altText,
                                                     "insertion" -> "collapsed_body",
                                                     "link_text" -> "Tittel")
@@ -228,7 +236,8 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That GeneralContentConverter inserts the content languageless if language not found") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId,
+    val content = TestData.contentBrowserWithFields(List.empty,
+                                                    "nid" -> nodeId,
                                                     "alt" -> altText,
                                                     "insertion" -> "collapsed_body",
                                                     "link_text" -> "Tittel")
@@ -259,7 +268,10 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
 
   test("GeneralContentConverter should insert an open-in-new-window cnotent-link embed on all lightbox links") {
     val content =
-      TestData.contentBrowserWithFields("nid" -> nodeId, "insertion" -> "lightbox_custom", "link_text" -> "link")
+      TestData.contentBrowserWithFields(List.empty,
+                                        "nid" -> nodeId,
+                                        "insertion" -> "lightbox_custom",
+                                        "link_text" -> "link")
     when(extractService.getNodeGeneralContent(nodeId))
       .thenReturn(Seq(sampleFagstoff1, sampleFagstoff2))
     when(draftApiClient.getArticleIdFromExternalId(nodeId))

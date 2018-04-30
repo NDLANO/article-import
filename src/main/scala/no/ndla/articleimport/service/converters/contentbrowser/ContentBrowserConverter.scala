@@ -58,7 +58,7 @@ trait ContentBrowserConverter {
                            importStatus: ImportStatus,
                            exceptions: Seq[Throwable]): (LanguageContent, ImportStatus, Seq[Throwable]) = {
         val cont =
-          ContentBrowserString(element.html(), languageContent.language)
+          ContentBrowserString(element, languageContent.language)
 
         if (!cont.IsContentBrowserField)
           return (languageContent, importStatus, exceptions)

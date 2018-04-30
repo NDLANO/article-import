@@ -18,7 +18,7 @@ class H5PConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
 
-  val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText)
+  val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText)
 
   test("That contentbrowser strings of type 'h5p_content' returns an iframe") {
     when(h5pApiClient.getViewFromOldId("1234"))

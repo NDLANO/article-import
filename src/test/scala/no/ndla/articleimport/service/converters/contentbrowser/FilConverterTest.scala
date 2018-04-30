@@ -20,7 +20,7 @@ class FilConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val title = "melon"
 
-  val content = TestData.contentBrowserWithFields("nid" -> nodeId, "link_text" -> title)
+  val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "link_text" -> title)
 
   override def beforeEach = {
     reset(extractService, attachmentStorageService)

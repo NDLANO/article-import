@@ -22,7 +22,7 @@ class VideoConverterTest extends UnitSuite with TestEnvironment {
   val caption = "sample caption"
 
   test("That VideoConverter converts a ContentBrowser to html code") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText)
+    val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText)
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-account="$NDLABrightcoveAccountId" data-caption="" data-player="$NDLABrightcovePlayerId" data-resource="brightcove" data-videoid="ref:$nodeId" />"""
     val Success((result, requiredLibraries, _)) =
@@ -34,7 +34,7 @@ class VideoConverterTest extends UnitSuite with TestEnvironment {
 
   test("Captions are added as video metadata") {
     val contentWithCaptions =
-      TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "link_text" -> caption)
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "link_text" -> caption)
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-account="$NDLABrightcoveAccountId" data-caption="$caption" data-player="$NDLABrightcovePlayerId" data-resource="brightcove" data-videoid="ref:$nodeId" />"""
     val Success((result, requiredLibraries, _)) =
@@ -45,7 +45,8 @@ class VideoConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("the contentbrowser should be converted to a link if insertion method is link") {
-    val contentWithInsertionLink = TestData.contentBrowserWithFields("nid" -> nodeId,
+    val contentWithInsertionLink = TestData.contentBrowserWithFields(List.empty,
+                                                                     "nid" -> nodeId,
                                                                      "alt" -> altText,
                                                                      "link_text" -> caption,
                                                                      "insertion" -> "link")

@@ -12,7 +12,7 @@ import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 
 class NonExistentNodeConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
-  val content = TestData.contentBrowserWithFields("nid" -> nodeId)
+  val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId)
 
   test("That NonExistentNodeConverter returns a Failure") {
     NonExistentNodeConverter
