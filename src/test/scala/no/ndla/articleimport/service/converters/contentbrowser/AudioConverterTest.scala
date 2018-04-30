@@ -42,7 +42,10 @@ class AudioConverterTest extends UnitSuite with TestEnvironment {
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-caption="$caption" data-resource="audio" data-resource_id="123" data-type="minimal" />"""
 
-    val contentInsideTable = TestData.contentBrowserWithFields(List("td", "tr", "tbody", "table", "div", "section"), "nid" -> nodeId, "alt" -> altText, "link_text" -> caption)
+    val contentInsideTable = TestData.contentBrowserWithFields(List("td", "tr", "tbody", "table", "div", "section"),
+                                                               "nid" -> nodeId,
+                                                               "alt" -> altText,
+                                                               "link_text" -> caption)
     when(audioApiClient.getOrImportAudio(nodeId)).thenReturn(Success(audioId))
 
     val Success((result, requiredLibraries, status)) =

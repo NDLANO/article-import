@@ -42,7 +42,7 @@ class VisualElementConverterTest extends UnitSuite with TestEnvironment {
 
   test("visual element of type audio should be converted to embed tag") {
     val expectedResult =
-      s"""<$ResourceHtmlEmbedTag data-caption="" data-resource="audio" data-resource_id="1" />"""
+      s"""<$ResourceHtmlEmbedTag data-caption="" data-resource="audio" data-resource_id="1" data-type="standard" />"""
 
     when(extractService.getNodeType(nodeId)).thenReturn(Some("audio"))
     when(audioApiClient.getOrImportAudio(nodeId)).thenReturn(Success(1: Long))
@@ -149,7 +149,7 @@ class VisualElementConverterTest extends UnitSuite with TestEnvironment {
     val Success((result, _)) = VisualElementConverter.convert(
       sampleArticle.copy(
         content =
-          s"""<$ResourceHtmlEmbedTag data-caption="" data-resource="audio" data-resource_id="$visId" />${sampleArticle.content}""",
+          s"""<$ResourceHtmlEmbedTag data-caption="" data-resource="audio" data-resource_id="$visId" data-type="standard" />${sampleArticle.content}""",
         visualElement = Some(visId)
       ),
       ImportStatus.empty

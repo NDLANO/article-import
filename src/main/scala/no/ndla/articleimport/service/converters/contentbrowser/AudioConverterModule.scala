@@ -39,7 +39,7 @@ trait AudioConverterModule {
     }
 
     def toAudio(nodeId: String, caption: String, minimalPlayer: Boolean = false): Try[String] = {
-      val playerType = if (minimalPlayer)  "minimal" else "standard"
+      val playerType = if (minimalPlayer) "minimal" else "standard"
       audioApiClient
         .getOrImportAudio(nodeId)
         .map(audioId => {

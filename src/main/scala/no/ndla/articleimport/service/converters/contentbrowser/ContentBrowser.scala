@@ -39,10 +39,9 @@ case class ContentBrowserString(document: Element, language: String) extends Con
   }
 
   override val DOMPath: List[String] = if (IsContentBrowserField) {
-    val tag = document.select(s"*:contains($contentBrowserWithoutBrackets)").last()
-    val ok = List(tag.tagName) ++ tag.parents().asScala.map(_.tagName)
-
-    ok
+    Option(document.select(s"*:contains($contentBrowserWithoutBrackets)").last())
+      .map(tag => List(tag.tagName) ++ tag.parents().asScala.map(_.tagName))
+      .getOrElse(List.empty)
   } else {
     List.empty
   }
