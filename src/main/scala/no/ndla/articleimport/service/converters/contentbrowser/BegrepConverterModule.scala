@@ -27,7 +27,9 @@ trait BegrepConverterModule {
       val nodeId = content.get("nid")
       extractConvertStoreContent.processNode(nodeId, importStatus) match {
         case Success((c: Concept, is)) =>
-          val embedContent = HtmlTagGenerator.buildConceptEmbedContent(c.id, content.get("link_text"))
+          val linkText = removeJunkFormatting(content.get("link_text"))
+          val embedContent = HtmlTagGenerator.buildConceptEmbedContent(c.id, linkText)
+
           Success((embedContent, Seq.empty, is.addMessage(s"Imported concept with id ${c.id}")))
 
         case Success((x: Article, _)) =>
@@ -46,8 +48,9 @@ trait BegrepConverterModule {
           logger.error(msg)
           Failure(ImportException(nodeId, msg))
       }
-
     }
+
+    private def removeJunkFormatting(text: String): String = text.replace("[i]", "").replace("[/i]", "")
 
   }
 }
