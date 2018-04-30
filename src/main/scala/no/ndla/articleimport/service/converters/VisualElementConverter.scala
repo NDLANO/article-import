@@ -99,7 +99,7 @@ trait VisualElementConverter {
 
     private def toAudio(nodeId: String): Option[(String, Seq[RequiredLibrary])] =
       AudioConverter
-        .toAudio(nodeId, "")
+        .toAudio(nodeId, "", false)
         .map(audioEmbed => (audioEmbed, Seq.empty))
         .toOption
 
