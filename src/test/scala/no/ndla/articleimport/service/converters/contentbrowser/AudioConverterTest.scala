@@ -7,7 +7,7 @@
 
 package no.ndla.articleimport.service.converters.contentbrowser
 
-import no.ndla.articleimport.{TestEnvironment, UnitSuite}
+import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.model.domain.ImportStatus
 import org.mockito.Mockito._
@@ -17,15 +17,14 @@ import scala.util.{Failure, Success}
 class AudioConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
+  val caption = "This is caption"
 
-  val contentString =
-    s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text=This is caption==text_align===css_class=contentbrowser contentbrowser]"
-  val content = ContentBrowserString(contentString, "nb")
+  val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "link_text" -> caption)
 
   test("That AudioConverter returns a embed resource string if the audio was imported") {
     val audioId: Long = 123
     val expectedResult =
-      s"""<$ResourceHtmlEmbedTag data-caption="This is caption" data-resource="audio" data-resource_id="123" />"""
+      s"""<$ResourceHtmlEmbedTag data-caption="$caption" data-resource="audio" data-resource_id="123" />"""
 
     when(audioApiClient.getOrImportAudio(nodeId)).thenReturn(Success(audioId))
 

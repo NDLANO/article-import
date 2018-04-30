@@ -63,9 +63,7 @@ trait ContentBrowserConverter {
         if (!cont.IsContentBrowserField)
           return (languageContent, importStatus, exceptions)
 
-        val converterModule = getConverterModule(cont)
-
-        converterModule.convert(cont, importStatus) match {
+        getConverterModule(cont).convert(cont, importStatus) match {
           case Failure(x) =>
             val (start, end) = cont.StartEndIndex
             replaceHtmlInElement(element, start, end, "")

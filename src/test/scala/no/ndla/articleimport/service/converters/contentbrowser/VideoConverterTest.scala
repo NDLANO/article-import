@@ -19,22 +19,12 @@ import scala.util.Success
 class VideoConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
-
-  val contentString =
-    s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
   val caption = "sample caption"
 
-  val contentStringWithCaptions =
-    s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text=$caption==text_align===css_class=contentbrowser contentbrowser]"
-
-  val contentStringWithInsertionLink =
-    s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=link==link_title_text==link_text=$caption==text_align===css_class=contentbrowser contentbrowser]"
-
   test("That VideoConverter converts a ContentBrowser to html code") {
-    val content = ContentBrowserString(contentString, "nb")
+    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText)
     val expectedResult =
-      s"""<$ResourceHtmlEmbedTag data-account="$NDLABrightcoveAccountId" data-caption="" data-player="$NDLABrightcovePlayerId" data-resource="brightcove" data-videoid="ref:${content
-        .get("nid")}" />"""
+      s"""<$ResourceHtmlEmbedTag data-account="$NDLABrightcoveAccountId" data-caption="" data-player="$NDLABrightcovePlayerId" data-resource="brightcove" data-videoid="ref:$nodeId" />"""
     val Success((result, requiredLibraries, _)) =
       VideoConverter.convert(content, ImportStatus.empty)
 
@@ -43,19 +33,22 @@ class VideoConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("Captions are added as video metadata") {
-    val content = ContentBrowserString(contentStringWithCaptions, "nb")
+    val contentWithCaptions =
+      TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "link_text" -> caption)
     val expectedResult =
-      s"""<$ResourceHtmlEmbedTag data-account="$NDLABrightcoveAccountId" data-caption="$caption" data-player="$NDLABrightcovePlayerId" data-resource="brightcove" data-videoid="ref:${content
-        .get("nid")}" />"""
+      s"""<$ResourceHtmlEmbedTag data-account="$NDLABrightcoveAccountId" data-caption="$caption" data-player="$NDLABrightcovePlayerId" data-resource="brightcove" data-videoid="ref:$nodeId" />"""
     val Success((result, requiredLibraries, _)) =
-      VideoConverter.convert(content, ImportStatus.empty)
+      VideoConverter.convert(contentWithCaptions, ImportStatus.empty)
 
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
   }
 
   test("the contentbrowser should be converted to a link if insertion method is link") {
-    val content = ContentBrowserString(contentStringWithInsertionLink, "nb")
+    val contentWithInsertionLink = TestData.contentBrowserWithFields("nid" -> nodeId,
+                                                                     "alt" -> altText,
+                                                                     "link_text" -> caption,
+                                                                     "insertion" -> "link")
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-content-id="1" data-link-text="$caption" data-resource="${ResourceType.ContentLink}" />"""
 
@@ -63,7 +56,7 @@ class VideoConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Success(TestData.sampleApiArticle, ImportStatus.empty))
 
     val Success((result, requiredLibraries, _)) =
-      VideoConverter.convert(content, ImportStatus.empty)
+      VideoConverter.convert(contentWithInsertionLink, ImportStatus.empty)
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
   }
