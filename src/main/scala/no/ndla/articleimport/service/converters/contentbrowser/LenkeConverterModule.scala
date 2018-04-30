@@ -16,7 +16,6 @@ import no.ndla.articleimport.service.ExtractService
 import no.ndla.articleimport.service.converters.HtmlTagGenerator
 import no.ndla.validation.ResourceType
 import org.jsoup.Jsoup
-import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
 import no.ndla.articleimport.integration.MigrationEmbedMeta
 import no.ndla.articleimport.service.DomainRegex._
 
@@ -43,11 +42,7 @@ trait LenkeConverterModule {
       val LightboxPattern = "(lightbox_.*)".r
       val externalId = cont.get("nid")
 
-      val embedMeta = extractService
-        .getNodeEmbedMeta(externalId)
-        .map(meta => meta.copy(url = meta.url.orElse(tryFetchSrcAttributeFromTag(meta.embedCode.getOrElse("")))))
-
-      embedMeta match {
+      extractService.getLinkEmbedMeta(externalId) match {
         case Success(MigrationEmbedMeta(Some(url), embedCode)) =>
           val inserted = cont.get("insertion") match {
             case "inline"                                       => insertInline(externalId, url, embedCode.getOrElse(""))
@@ -79,11 +74,6 @@ trait LenkeConverterModule {
       }
     }
 
-    private def tryFetchSrcAttributeFromTag(tag: String): Option[String] = {
-      Option(stringToJsoupDocument(tag).select("[src]").attr("src"))
-        .filter(_.trim.nonEmpty)
-    }
-
     private val embedHostWhitelist = List(
       "commoncraft.com",
       "exprogroup.com",
@@ -107,9 +97,9 @@ trait LenkeConverterModule {
       embedHostWhitelist.exists(_.pattern.matcher(host).matches())
     }
 
-    private def insertInline(nid: String,
-                             url: String,
-                             embedCode: String): Try[(String, Option[RequiredLibrary], Seq[String])] = {
+    def insertInline(nid: String,
+                     url: String,
+                     embedCode: String): Try[(String, Option[RequiredLibrary], Seq[String])] = {
       val message = s"External resource to be embedded: $url"
       logger.info(message)
 
@@ -138,7 +128,7 @@ trait LenkeConverterModule {
         }
         Success((embedTag, requiredLibs, message :: Nil))
       } else {
-        Failure(ImportException(nid, s"'$url'is not a whitelisted embed source"))
+        Failure(ImportException(nid, s"'$url' is not a whitelisted embed source"))
       }
     }
 

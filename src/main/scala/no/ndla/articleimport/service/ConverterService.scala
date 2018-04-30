@@ -16,6 +16,7 @@ import no.ndla.articleimport.model.api
 import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
 import no.ndla.articleimport.model.domain.Language._
 import no.ndla.articleimport.model.domain._
+import no.ndla.articleimport.service.converters.MetaInfoConverter
 import no.ndla.mapping.License.getLicense
 import no.ndla.validation.{EmbedTagRules, HtmlTagRules, ResourceType, TagAttributes}
 
@@ -29,6 +30,7 @@ trait ConverterService {
     with ImageApiClient
     with Clock
     with User
+    with MetaInfoConverter
     with MigrationApiClient =>
   val converterService: ConverterService
 
@@ -43,7 +45,8 @@ trait ConverterService {
         case Success((convertedContent, converterStatus)) if convertedContent.nodeType == nodeTypeBegrep =>
           Success((toDomainConcept(convertedContent), converterStatus))
         case Success((convertedContent, converterStatus)) =>
-          Success((toDomainArticle(convertedContent), converterStatus))
+          val (converted, convertedStatus) = MetaInfoConverter.convert(convertedContent, converterStatus)
+          Success((toDomainArticle(converted), convertedStatus))
       }
     }
 
@@ -64,7 +67,7 @@ trait ConverterService {
         }
 
       // If this converting round did not yield any changes to the content, this node is finished (case true)
-      // If changes were made during this convertion, we run the converters again (case false)
+      // If changes were made during this conversion, we run the converters again (case false)
       updatedContent == nodeToConvert match {
         case true  => Success((updatedContent, updatedStatus))
         case false => convert(updatedContent, maxRoundsLeft - 1, updatedStatus)
@@ -75,47 +78,35 @@ trait ConverterService {
                             importStatus: ImportStatus): Try[(NodeToConvert, ImportStatus)] =
       executePostprocessorModules(nodeToConvert, importStatus)
 
-    private[service] def toDomainArticle(nodeToConvert: NodeToConvert): Article = {
+    private[service] def toDomainArticle(convertedNode: NodeWithConvertedMeta): Article = {
       val requiredLibraries =
-        nodeToConvert.contents.flatMap(_.requiredLibraries).distinct
+        convertedNode.contents.flatMap(_.requiredLibraries).distinct
       val ingresses =
-        nodeToConvert.contents.flatMap(content => content.asArticleIntroduction)
-      val visualElements = nodeToConvert.contents.flatMap(_.asVisualElement)
+        convertedNode.contents.flatMap(content => content.asArticleIntroduction)
+      val visualElements = convertedNode.contents.flatMap(_.asVisualElement)
 
       val languagesInNode: Set[String] =
-        (nodeToConvert.titles.map(_.language) ++
-          nodeToConvert.contents.map(_.language) ++
+        (convertedNode.titles.map(_.language) ++
+          convertedNode.contents.map(_.language) ++
           ingresses.map(_.language)).toSet
-
-      val metaImages = nodeToConvert.contents
-        .flatMap(c =>
-          c.metaImage.map(imageNid =>
-            imageApiClient.importImage(imageNid) match {
-              case Some(image) =>
-                Some(ArticleMetaImage(image.id, c.language))
-              case None =>
-                logger.warn(s"Failed to import meta image with node id $imageNid")
-                None
-          }))
-        .flatten
 
       Article(
         None,
         None,
-        nodeToConvert.titles,
-        nodeToConvert.contents.map(_.asContent),
-        toDomainCopyright(nodeToConvert.license, nodeToConvert.authors),
-        nodeToConvert.tags.filter(tag => languagesInNode.contains(tag.language)),
+        convertedNode.titles,
+        convertedNode.contents.map(_.asContent),
+        toDomainCopyright(convertedNode.license, convertedNode.authors),
+        convertedNode.tags.filter(tag => languagesInNode.contains(tag.language)),
         requiredLibraries,
         visualElements,
         ingresses,
-        nodeToConvert.contents.map(_.asArticleMetaDescription),
-        metaImages,
-        nodeToConvert.created,
-        nodeToConvert.updated,
+        convertedNode.contents.map(_.asArticleMetaDescription),
+        convertedNode.metaImages,
+        convertedNode.created,
+        convertedNode.updated,
         authUser.userOrClientid(),
-        nodeToConvert.articleType.toString,
-        nodeToConvert.editorialKeywords.flatMap(_.keywords)
+        convertedNode.articleType.toString,
+        convertedNode.editorialKeywords.flatMap(_.keywords)
       )
     }
 
@@ -126,7 +117,7 @@ trait ConverterService {
         None,
         convertedNode.titles.map(title => ConceptTitle(title.title, title.language)),
         convertedNode.contents.map(content => ConceptContent(content.content, content.language)),
-        license.map(l => toDomainCopyright(l, convertedNode.authors)),
+        license.map(l => toDomainCopyright(l.getOrElse(""), convertedNode.authors)),
         convertedNode.created,
         convertedNode.updated
       )
@@ -276,8 +267,10 @@ trait ConverterService {
 
     def toApiLicense(shortLicense: String): api.License = {
       getLicense(shortLicense) match {
-        case Some(l) => api.License(l.license, Option(l.description), l.url)
-        case None    => api.License("unknown", None, None)
+        case Some(l) =>
+          api.License(l.license, Option(l.description), l.url)
+        case None =>
+          api.License("unknown", None, None)
       }
     }
 

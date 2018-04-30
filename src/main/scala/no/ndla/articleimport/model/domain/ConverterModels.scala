@@ -24,7 +24,7 @@ case class NodeGeneralContent(nid: String, tnid: String, title: String, content:
 
 case class NodeToConvert(titles: Seq[ArticleTitle],
                          contents: Seq[LanguageContent],
-                         license: String,
+                         license: Option[String],
                          authors: Seq[Author],
                          tags: Seq[ArticleTag],
                          nodeType: String,
@@ -33,6 +33,19 @@ case class NodeToConvert(titles: Seq[ArticleTitle],
                          updated: Date,
                          articleType: ArticleType.Value,
                          editorialKeywords: Seq[MigrationEditorialKeywords])
+
+case class NodeWithConvertedMeta(titles: Seq[ArticleTitle],
+                                 contents: Seq[LanguageContent],
+                                 license: String,
+                                 authors: Seq[Author],
+                                 tags: Seq[ArticleTag],
+                                 nodeType: String,
+                                 contentType: String,
+                                 created: Date,
+                                 updated: Date,
+                                 metaImages: Seq[ArticleMetaImage],
+                                 articleType: ArticleType.Value,
+                                 editorialKeywords: Seq[MigrationEditorialKeywords])
 
 case class ContentFilMeta(nid: String,
                           tnid: String,

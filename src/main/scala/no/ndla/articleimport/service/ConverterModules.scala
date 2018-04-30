@@ -10,7 +10,8 @@ package no.ndla.articleimport.service
 import no.ndla.articleimport.integration.ConverterModule
 import no.ndla.articleimport.model.api.ImportExceptions
 import no.ndla.articleimport.model.domain.{ImportStatus, NodeToConvert}
-import no.ndla.articleimport.ArticleImportProperties.{nodeTypeBegrep, nodeTypeVideo, nodeTypeH5P}
+import no.ndla.articleimport.ArticleImportProperties.{nodeTypeBegrep, nodeTypeH5P, nodeTypeLink, nodeTypeVideo}
+import no.ndla.articleimport.service.converters.MetaInfoConverter
 
 import scala.util.{Failure, Success, Try}
 
@@ -24,7 +25,8 @@ trait ConverterModules {
   private lazy val Converters = Map(
     nodeTypeBegrep -> conceptConverter,
     nodeTypeH5P -> leafNodeConverter,
-    nodeTypeVideo -> leafNodeConverter
+    nodeTypeVideo -> leafNodeConverter,
+    nodeTypeLink -> leafNodeConverter
   ).withDefaultValue(articleConverter)
 
   def executeConverterModules(nodeToConvert: NodeToConvert,

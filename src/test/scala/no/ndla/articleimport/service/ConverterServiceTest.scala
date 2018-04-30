@@ -33,7 +33,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
 
   val sampleNode = NodeToConvert(List(contentTitle),
                                  Seq(),
-                                 "by-sa",
+                                 Some("by-sa"),
                                  Seq(author),
                                  List(tag),
                                  "fagstoff",
@@ -42,6 +42,19 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
                                  new Date(1),
                                  ArticleType.Standard,
                                  Seq.empty)
+
+  val sampleMetaConvertedNode = NodeWithConvertedMeta(List(contentTitle),
+                                                      Seq(),
+                                                      "by-sa",
+                                                      Seq(author),
+                                                      List(tag),
+                                                      "fagstoff",
+                                                      "fagstoff",
+                                                      new Date(0),
+                                                      new Date(1),
+                                                      Seq.empty,
+                                                      ArticleType.Standard,
+                                                      Seq.empty)
 
   val sampleLanguageContent =
     TestData.sampleContent.copy(content = sampleContentString, language = "nb")
@@ -370,19 +383,8 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
       Seq(ArticleTag(Seq("t1", "t2"), "nb"), ArticleTag(Seq("t1", "t2"), "en"))
 
     val node =
-      sampleNode.copy(titles = titles, contents = contents, tags = tags)
+      sampleMetaConvertedNode.copy(titles = titles, contents = contents, tags = tags)
     service.toDomainArticle(node).tags.map(_.language) should equal(Seq("nb"))
-  }
-
-  test("toDomainArticle should import ingress images and use as meta images (yes really)") {
-    val (imageId, imageNid) = ("1", "1234")
-    val contents = Seq(TestData.sampleContent.copy(metaImage = Some(imageNid), language = "nb"))
-
-    when(imageApiClient.importImage(imageNid))
-      .thenReturn(Some(TestData.sampleImageMetaInformation.copy(id = imageId)))
-    val node = sampleNode.copy(contents = contents)
-
-    service.toDomainArticle(node).metaImageId should equal(Seq(ArticleMetaImage(imageId, "nb")))
   }
 
   test("Leaf node converter should create an article from a pure h5p node") {

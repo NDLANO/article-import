@@ -26,6 +26,7 @@ object ComponentRegistry
     with ExtractService
     with ConverterModules
     with ConverterService
+    with MetaInfoConverter
     with LeafNodeConverter
     with ContentBrowserConverterModules
     with ContentBrowserConverter

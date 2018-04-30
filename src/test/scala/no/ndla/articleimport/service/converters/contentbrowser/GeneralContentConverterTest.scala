@@ -35,7 +35,7 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
 
   val sampleNodeToConvert = NodeToConvert(Seq(ArticleTitle("title", "en")),
                                           Seq(),
-                                          "publicdomain",
+                                          Some("publicdomain"),
                                           Seq(),
                                           Seq(),
                                           "fagstoff",

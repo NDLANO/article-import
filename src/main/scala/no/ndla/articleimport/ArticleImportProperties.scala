@@ -40,9 +40,18 @@ object ArticleImportProperties extends LazyLogging {
   val nodeTypeBegrep: String = "begrep"
   val nodeTypeVideo: String = "video"
   val nodeTypeH5P: String = "h5p_content"
+  val nodeTypeLink: String = "lenke"
 
   val supportedContentTypes =
-    Set("fagstoff", "oppgave", "veiledning", "aktualitet", "emneartikkel", nodeTypeBegrep, nodeTypeVideo, nodeTypeH5P)
+    Set("fagstoff",
+        "oppgave",
+        "veiledning",
+        "aktualitet",
+        "emneartikkel",
+        nodeTypeBegrep,
+        nodeTypeVideo,
+        nodeTypeH5P,
+        nodeTypeLink)
 
   val oldCreatorTypes = List("opphavsmann",
                              "fotograf",
