@@ -26,10 +26,11 @@ trait AudioConverterModule {
                          importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val nodeId = content.get("nid")
       val caption = content.get("link_text")
+      val isInsideHtmlTable = content.DOMPath.contains("table")
 
       logger.info(s"Converting audio with nid $nodeId")
 
-      toAudio(nodeId, caption) match {
+      toAudio(nodeId, caption, isInsideHtmlTable) match {
         case Success(audioHtml) =>
           Success((audioHtml, Seq.empty, importStatus))
         case Failure(_) =>
@@ -37,11 +38,12 @@ trait AudioConverterModule {
       }
     }
 
-    def toAudio(nodeId: String, caption: String): Try[String] = {
+    def toAudio(nodeId: String, caption: String, minimalPlayer: Boolean = false): Try[String] = {
+      val playerType = if (minimalPlayer) "minimal" else "standard"
       audioApiClient
         .getOrImportAudio(nodeId)
         .map(audioId => {
-          HtmlTagGenerator.buildAudioEmbedContent(audioId.toString, caption)
+          HtmlTagGenerator.buildAudioEmbedContent(audioId.toString, caption, playerType)
         })
     }
 

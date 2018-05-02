@@ -35,11 +35,12 @@ trait HtmlTagGenerator {
       buildEmbedContent(dataAttributes)
     }
 
-    def buildAudioEmbedContent(audioId: String, caption: String) = {
+    def buildAudioEmbedContent(audioId: String, caption: String, playerType: String) = {
       val dataAttributes = Map(
         TagAttributes.DataResource -> ResourceType.Audio.toString,
         TagAttributes.DataResource_Id -> audioId,
-        TagAttributes.DataCaption -> caption
+        TagAttributes.DataCaption -> caption,
+        TagAttributes.DataType -> playerType
       )
       buildEmbedContent(dataAttributes)
     }

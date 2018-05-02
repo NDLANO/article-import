@@ -224,12 +224,13 @@ object TestData {
     None
   )
 
-  def contentBrowserWithFields(fields: (String, String)*): ContentBrowser = {
+  def contentBrowserWithFields(dOMPath: List[String], fields: (String, String)*): ContentBrowser = {
     new ContentBrowser {
       val FieldMap = fields.toMap
       override def getOpt(key: String): Option[String] = FieldMap.get(key)
       override def get(key: String): String = getOpt(key).getOrElse("")
       override val language: String = "nb"
+      override val DOMPath: List[String] = dOMPath
     }
   }
 

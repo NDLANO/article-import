@@ -31,7 +31,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That LenkeConverter returns an embed code if insertion method is 'inline'") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
 
     val Success((result, requiredLibraries, errors)) =
       LenkeConverter.convert(content, ImportStatus.empty)
@@ -42,7 +43,11 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
   test("That LenkeConverter returns an a-tag if insertion method is 'link'") {
     val content =
-      TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "link_text" -> " ", "insertion" -> "link")
+      TestData.contentBrowserWithFields(List.empty,
+                                        "nid" -> nodeId,
+                                        "alt" -> altText,
+                                        "link_text" -> " ",
+                                        "insertion" -> "link")
     val expectedResult =
       """ <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
@@ -54,7 +59,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That LenkeConverter defaults to 'link' if insertion method is not handled") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "link_text" -> " ")
+    val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "link_text" -> " ")
     val expectedResult =
       """ <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
@@ -67,7 +72,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
   test("That LenkeConverter returns an a-tag if insertion method is 'lightbox_large'") {
     val content =
-      TestData.contentBrowserWithFields("nid" -> nodeId,
+      TestData.contentBrowserWithFields(List.empty,
+                                        "nid" -> nodeId,
                                         "alt" -> altText,
                                         "link_text" -> " ",
                                         "insertion" -> "lightbox_large")
@@ -83,7 +89,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
   test("That LenkeConverter returns an a-tag if insertion method is 'collapsed_body'") {
     val content =
-      TestData.contentBrowserWithFields("nid" -> nodeId,
+      TestData.contentBrowserWithFields(List.empty,
+                                        "nid" -> nodeId,
                                         "alt" -> altText,
                                         "link_text" -> " ",
                                         "insertion" -> "collapsed_body")
@@ -105,7 +112,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
       s"""<div class="nrk-video" data-nrk-id="$nrkVideoId"></div><script src="$nrkScriptUrl"></script>"""
     val nrkLinkUrl =
       "http://nrk.no/skole/klippdetalj?topic=urn%3Ax-mediadb%3A18745"
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-nrk-video-id="$nrkVideoId" data-resource="nrk" data-url="$nrkLinkUrl" />"""
 
@@ -126,7 +134,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     val preziEmbedCode =
       s"""<iframe id="iframe_container" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen="" width="620" height="451" src="$preziSrc"></iframe>"""
 
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-height="451" data-resource="${ResourceType.IframeContent}" data-url="$preziSrc" data-width="620" />"""
 
@@ -145,7 +154,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     val CcraftEmbedCode =
       s"""<iframe id="cc-embed" frameborder="0" width="620" height="451" src="$CcraftSrc" scrolling="false"></iframe>"""
 
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-height="451" data-resource="${ResourceType.IframeContent}" data-url="$CcraftSrc" data-width="620" />"""
 
@@ -166,7 +176,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     val NdlaFilmEmbedCode =
       s"""<iframe src="$NdlaFilmSrc" style="border: none;" frameBorder="0" width="632px" height="337px" allowfullscreen></iframe>"""
 
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-height="337px" data-resource="${ResourceType.IframeContent}" data-url="$NdlaFilmSrc" data-width="632px" />"""
 
@@ -187,7 +198,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     val KahootEmbedCode =
       s"""<iframe src="$KahootSrc" name="iframe1" scrolling="no" frameborder="no" align="center" height = "350px" width = "620px"></iframe>"""
 
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-height="350px" data-resource="${ResourceType.IframeContent}" data-url="$KahootSrc" data-width="620px" />"""
 
@@ -202,7 +214,8 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
   test("LenkeConverter should include an url fragment if defined in contentbrowser") {
     val anchor = "9a-4"
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "insertion" -> "link", "link_anchor" -> anchor)
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "link", "link_anchor" -> anchor)
 
     val Success((result, _, errors)) =
       LenkeConverter.convert(content, ImportStatus.empty)
@@ -212,7 +225,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("LenkeConverter should return an error if embedmeta does not contain embedcode or url") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId)
+    val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId)
 
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(None, None)))
@@ -223,7 +236,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
   test(
     "LenkeConverter should return an error if embedmeta does not contain url and a src attr cant be found in embed code") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId)
+    val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId)
 
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(None, Some("<h1>this makes no sense</h1>"))))
@@ -233,7 +246,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("LenkeConverter should use url from embedCode if url is undefined") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "insertion" -> "inline")
+    val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
 
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(None, Some("<script src='http://nrk.no'></script>"))))
@@ -244,7 +257,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("only whitelisted hosts should be embedded") {
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "insertion" -> "inline")
+    val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
     when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(
       Success(MigrationEmbedMeta(Some("http://obscure.stuff.gg"), Some("<script src='http://hmmm.biz.niz"))))
     val Failure(ex: ImportException) = LenkeConverter.convert(content, ImportStatus.empty)

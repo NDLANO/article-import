@@ -27,9 +27,8 @@ class BiblioConverterModuleTest extends UnitSuite with TestEnvironment {
 
   test("That BiblioConverter replaces contentbrowser strings with an a tag containing the nodeId") {
     val insertion = "inline"
-    val contentString =
-      s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=$insertion==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
-    val content = ContentBrowserString(contentString, "nb")
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> insertion)
     val biblio =
       BiblioMeta(Biblio("title", "book", "2009", "1", "me"), Seq(BiblioAuthor("first last", "last", "first")))
     val expectedResult =
@@ -46,7 +45,8 @@ class BiblioConverterModuleTest extends UnitSuite with TestEnvironment {
 
   test("Authors list should only contain unique names") {
     val insertion = "inline"
-    val content = TestData.contentBrowserWithFields("nid" -> nodeId, "alt" -> altText, "insertion" -> insertion)
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> insertion)
     val author = BiblioAuthor("Henrik Henriksen", "Henriksen", "Henrik")
     val biblio = BiblioMeta(Biblio("title", "book", "2009", "1", "me"),
                             Seq(author, author, author, BiblioAuthor("first last", "last", "first")))
