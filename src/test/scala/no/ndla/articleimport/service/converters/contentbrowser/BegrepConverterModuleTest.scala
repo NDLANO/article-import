@@ -20,9 +20,7 @@ class BegrepConverterModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val linkText = "begrepsnoder"
 
-  val contentString =
-    s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt===link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text=$linkText==text_align===css_class=contentbrowser contentbrowser]"
-  val content = ContentBrowserString(contentString, "nb")
+  val content = TestData.contentBrowserWithFields("nid" -> nodeId, "link_text" -> linkText)
 
   test("begrep should be imported and inserted as an embed tag in the article") {
     when(extractConvertStoreContent.processNode(nodeId, ImportStatus.empty))
@@ -53,5 +51,24 @@ class BegrepConverterModuleTest extends UnitSuite with TestEnvironment {
     val result = BegrepConverter.convert(content, ImportStatus.empty)
 
     result.isFailure should be(true)
+  }
+
+  test("formatting should be removed from link text") {
+    when(extractConvertStoreContent.processNode(nodeId, ImportStatus.empty))
+      .thenReturn(Success((TestData.sampleApiConcept, ImportStatus.empty)))
+
+    val linkTextWithFormatting = "[i]ridebelte[/i]"
+    val linkText = "ridebelte"
+    val content = TestData.contentBrowserWithFields("nid" -> nodeId,
+                                                    "link_title_text" -> linkTextWithFormatting,
+                                                    "link_text" -> linkTextWithFormatting)
+    val expectedResult =
+      s"""<$ResourceHtmlEmbedTag data-content-id="1" data-link-text="$linkText" data-resource="concept" />"""
+
+    val Success((result, requiredLibs, _)) =
+      BegrepConverter.convert(content, ImportStatus.empty)
+
+    requiredLibs.isEmpty should be(true)
+    result should equal(expectedResult)
   }
 }
