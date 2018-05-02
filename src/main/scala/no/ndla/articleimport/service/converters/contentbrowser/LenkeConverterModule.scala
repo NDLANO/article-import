@@ -18,6 +18,7 @@ import no.ndla.validation.ResourceType
 import org.jsoup.Jsoup
 import no.ndla.articleimport.integration.MigrationEmbedMeta
 import no.ndla.articleimport.service.DomainRegex._
+import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
 
 import scala.util.{Failure, Success, Try}
 
@@ -116,17 +117,18 @@ trait LenkeConverterModule {
         val scribdUrlPattern = "scribd.com".asDomainRegex
         val kunnskapsFilmUrlPattern = "kunnskapsfilm.no".asDomainRegex
 
-        val (embedTag, requiredLibs) = url.host.getOrElse("") match {
-          case NRKUrlPattern(_)           => getNrkEmbedTag(embedCode, url)
-          case vimeoProUrlPattern(_)      => getVimeoProEmbedTag(embedCode)
-          case kunnskapsFilmUrlPattern(_) => getKunnskapsFilmEmbedTag(embedCode)
+        url.host.getOrElse("") match {
+          case NRKUrlPattern(_)           =>
+            val (embed, requiredLib) = getNrkEmbedTag(embedCode, url)
+            Success((embed, requiredLib, Seq(message)))
+          case vimeoProUrlPattern(_)      => Success(getVimeoProEmbedTag(embedCode), None, Seq(message))
+          case kunnskapsFilmUrlPattern(_) => Success(getKunnskapsFilmEmbedTag(embedCode), None, Seq(message))
           case PreziUrlPattern(_) | CommonCraftUrlPattern(_) | NdlaFilmIundervisningUrlPattern(_) |
               KahootUrlPattern(_) | khanAcademyUrlPattern(_) | tv2SkoleUrlPattern(_) | scribdUrlPattern(_) |
               vgNoUrlPattern(_) =>
-            getRegularEmbedTag(embedCode)
-          case _ => (HtmlTagGenerator.buildExternalInlineEmbedContent(url), None)
+            buildRegularEmbedTag(embedCode, nid, url).map(embedTag => (embedTag, None, Seq(message)))
+          case _ => Success((HtmlTagGenerator.buildExternalInlineEmbedContent(url), None, Seq(message)))
         }
-        Success((embedTag, requiredLibs, message :: Nil))
       } else {
         Failure(ImportException(nid, s"'$url' is not a whitelisted embed source"))
       }
@@ -142,27 +144,31 @@ trait LenkeConverterModule {
       (HtmlTagGenerator.buildNRKInlineVideoContent(videoId, url), Some(requiredLibrary))
     }
 
-    def getRegularEmbedTag(embedCode: String): (String, Option[RequiredLibrary]) = {
-      val doc = Jsoup.parseBodyFragment(embedCode).select("iframe").first()
-      val (src, width, height) =
-        (doc.attr("src"), doc.attr("width"), doc.attr("height"))
+    def buildRegularEmbedTag(embedCode: String, nid: String, url: String): Try[String] = {
+      Option(stringToJsoupDocument(embedCode).select("iframe").first()).map(doc => {
+        val (src, width, height) =
+          (doc.attr("src"), doc.attr("width"), doc.attr("height"))
 
-      (HtmlTagGenerator.buildRegularInlineContent(src, width, height, ResourceType.IframeContent), None)
+        HtmlTagGenerator.buildRegularInlineContent(src, width, height, ResourceType.IframeContent)
+      }) match {
+        case None    => Failure(ImportException(nid, s"embed code for '$url' is undefined"))
+        case Some(x) => Success(x)
+      }
     }
 
-    def getVimeoProEmbedTag(embedCode: String): (String, Option[RequiredLibrary]) = {
+    def getVimeoProEmbedTag(embedCode: String): String = {
       val doc = Jsoup.parseBodyFragment(embedCode).select("iframe").first()
       val src = doc.attr("src")
 
-      (HtmlTagGenerator.buildExternalInlineEmbedContent(src), None)
+      HtmlTagGenerator.buildExternalInlineEmbedContent(src)
     }
 
-    def getKunnskapsFilmEmbedTag(embedCode: String): (String, Option[RequiredLibrary]) = {
+    def getKunnskapsFilmEmbedTag(embedCode: String): String = {
       val doc = Jsoup.parseBodyFragment(embedCode).select("iframe").first()
       val src = doc.attr("src")
 
       // Since all sources seem to be vimeo urls, we simply use data-resource=external to let oembed-proxy handle these
-      (HtmlTagGenerator.buildExternalInlineEmbedContent(src), None)
+      HtmlTagGenerator.buildExternalInlineEmbedContent(src)
     }
 
     private def insertDetailSummary(nid: String,
