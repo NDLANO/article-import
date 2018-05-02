@@ -893,4 +893,18 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
     result.metaDescription should equal("Hei dette er et mindre enn tegn &lt;&gt; hæhøhå")
   }
 
+  test("Nested p tags should be unwrapped") {
+    val Success((result, _)) =
+      htmlCleaner.convert(TestData.sampleContent.copy(content = """<section><p><p>huehuehue</p></p></section>"""),
+                          defaultImportStatus)
+
+    result.content should equal("<section><p>huehuehue</p></section>")
+
+    val Success((result2, _)) =
+      htmlCleaner.convert(TestData.sampleContent.copy(content = """<section><p><p>huehuehue</p></p></section>"""),
+                          defaultImportStatus)
+
+    result2.content should equal("<section><p>huehuehue</p></section>")
+  }
+
 }

@@ -118,7 +118,7 @@ trait LenkeConverterModule {
         val kunnskapsFilmUrlPattern = "kunnskapsfilm.no".asDomainRegex
 
         url.host.getOrElse("") match {
-          case NRKUrlPattern(_)           =>
+          case NRKUrlPattern(_) =>
             val (embed, requiredLib) = getNrkEmbedTag(embedCode, url)
             Success((embed, requiredLib, Seq(message)))
           case vimeoProUrlPattern(_)      => Success(getVimeoProEmbedTag(embedCode), None, Seq(message))
