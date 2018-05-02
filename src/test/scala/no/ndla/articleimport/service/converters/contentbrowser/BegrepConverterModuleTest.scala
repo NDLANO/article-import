@@ -52,4 +52,24 @@ class BegrepConverterModuleTest extends UnitSuite with TestEnvironment {
 
     result.isFailure should be(true)
   }
+
+  test("formatting should be removed from link text") {
+    when(extractConvertStoreContent.processNode(nodeId, ImportStatus.empty))
+      .thenReturn(Success((TestData.sampleApiConcept, ImportStatus.empty)))
+
+    val linkTextWithFormatting = "[i]ridebelte[/i]"
+    val linkText = "ridebelte"
+    val content = TestData.contentBrowserWithFields(List.empty,
+                                                    "nid" -> nodeId,
+                                                    "link_title_text" -> linkTextWithFormatting,
+                                                    "link_text" -> linkTextWithFormatting)
+    val expectedResult =
+      s"""<$ResourceHtmlEmbedTag data-content-id="1" data-link-text="$linkText" data-resource="concept" />"""
+
+    val Success((result, requiredLibs, _)) =
+      BegrepConverter.convert(content, ImportStatus.empty)
+
+    requiredLibs.isEmpty should be(true)
+    result should equal(expectedResult)
+  }
 }
