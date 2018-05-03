@@ -24,9 +24,6 @@ trait ExtractConvertStoreContent {
 
   class ExtractConvertStoreContent extends LazyLogging {
 
-    def processNode(externalId: String): Try[(ApiContent, ImportStatus)] =
-      processNode(externalId, ImportStatus.empty)
-
     def processNode(externalId: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
       if (importStatus.visitedNodes.contains(externalId)) {
         return getMainNodeId(externalId).flatMap(draftApiClient.getContentByExternalId) match {
@@ -53,8 +50,7 @@ trait ExtractConvertStoreContent {
          storeImportStatus
            .addMessage(s"Successfully imported node $externalId: ${content.id}")
            .setArticleId(content.id)
-           .resetNodeLocalContext(importStatus)
-        )
+           .resetNodeLocalContext(importStatus))
 
       convertedNode match {
         case Success(converted) => Success(converted)

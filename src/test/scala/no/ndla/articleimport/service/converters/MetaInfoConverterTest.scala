@@ -7,7 +7,6 @@
 
 package no.ndla.articleimport.service.converters
 
-
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.ArticleImportProperties.nodeTypeLink
@@ -26,7 +25,8 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Some(TestData.sampleImageMetaInformation.copy(id = imageId)))
     val node = sampleNodeToConvert.copy(contents = contents)
 
-    MetaInfoConverter.convert(node, ImportStatus.empty).get._1.metaImages should be(Seq(ArticleMetaImage(imageId, "nb")))
+    MetaInfoConverter.convert(node, ImportStatus.empty).get._1.metaImages should be(
+      Seq(ArticleMetaImage(imageId, "nb")))
   }
 
   test("That license should be by-sa by default if lenkenode") {
@@ -38,20 +38,20 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
   test("That import should fail if inserted licenses cannot be merged with original license") {
     val insertedAuthors = List(author)
     val insertedLicenses = List("by-sa", "copyrighted")
-    val status = ImportStatus.empty.addInsertedAuthors(insertedAuthors).addInsertedLicenses(insertedLicenses)
+    val status = ImportStatus.empty.addInsertedAuthors(insertedAuthors).copy(insertedLicenses = insertedLicenses)
 
     val result = MetaInfoConverter.convert(sampleNodeToConvert, status)
 
-    result.isFailure should be (true)
+    result.isFailure should be(true)
     val Failure(ex: ImportException) = result
   }
 
   test("That import should combine licenses") {
-    val status1 = ImportStatus.empty.addInsertedLicenses(List("by-sa", "by-nc-sa"))
+    val status1 = ImportStatus.empty.copy(insertedLicenses = List("by-sa", "by-nc-sa"))
     val Success((converted1, _)) = MetaInfoConverter.convert(sampleNodeToConvert, status1)
     converted1.license should be("by-nc-sa")
 
-    val status2 = ImportStatus.empty.addInsertedLicenses(List("by-nc-sa", "by-nc-sa"))
+    val status2 = ImportStatus.empty.copy(insertedLicenses = List("by-nc-sa", "by-nc-sa"))
     val Success((converted2, _)) = MetaInfoConverter.convert(sampleNodeToConvert, status2)
     converted2.license should be("by-nc-sa")
 
@@ -60,14 +60,15 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
     converted3.license should be("by-sa")
 
     val status4 = ImportStatus.empty
-    val Success((converted4, _)) = MetaInfoConverter.convert(sampleNodeToConvert.copy(license = Some("copyrighted")), status4)
+    val Success((converted4, _)) =
+      MetaInfoConverter.convert(sampleNodeToConvert.copy(license = Some("copyrighted")), status4)
     converted4.license should be("copyrighted")
   }
 
   test("That import should combine license and authors from inserted nodes") {
     val insertedAuthors = List(Author("forfatter", "Jonas"), Author("fotograf", "Christian"))
     val insertedLicenses = List("by-sa", "by-nc-sa")
-    val status = ImportStatus.empty.addInsertedAuthors(insertedAuthors).addInsertedLicenses(insertedLicenses)
+    val status = ImportStatus.empty.addInsertedAuthors(insertedAuthors).copy(insertedLicenses = insertedLicenses)
 
     val Success((converted, _)) = MetaInfoConverter.convert(sampleNodeToConvert, status)
 

@@ -231,18 +231,16 @@ object TestData {
   val tag = ArticleTag(List("asdf"), "nb")
 
   val sampleNodeToConvert = NodeToConvert(List(contentTitle),
-    Seq(),
-    Some("by-sa"),
-    Seq(author),
-    List(tag),
-    "fagstoff",
-    "fagstoff",
-    new Date(0),
-    new Date(1),
-    ArticleType.Standard,
-    Seq.empty)
-
-
+                                          Seq(),
+                                          Some("by-sa"),
+                                          Seq(author),
+                                          List(tag),
+                                          "fagstoff",
+                                          "fagstoff",
+                                          new Date(0),
+                                          new Date(1),
+                                          ArticleType.Standard,
+                                          Seq.empty)
 
   def contentBrowserWithFields(dOMPath: List[String], fields: (String, String)*): ContentBrowser = {
     new ContentBrowser {

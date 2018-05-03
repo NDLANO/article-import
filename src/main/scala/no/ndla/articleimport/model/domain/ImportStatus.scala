@@ -40,9 +40,6 @@ case class ImportStatus(messages: Seq[String],
   def addInsertedAuthors(authors: List[Author]): ImportStatus =
     this.copy(insertedAuthors = this.insertedAuthors ++ authors)
 
-  def addInsertedLicenses(licenses: List[String]): ImportStatus =
-    this.copy(insertedLicenses = this.insertedLicenses ++ licenses)
-
   def withNewNodeLocalContext(): ImportStatus = this.copy(insertedAuthors = List.empty, insertedLicenses = List.empty)
 
   def resetNodeLocalContext(originalContext: ImportStatus): ImportStatus =
