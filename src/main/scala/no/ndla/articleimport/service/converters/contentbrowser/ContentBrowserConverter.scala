@@ -62,7 +62,6 @@ trait ContentBrowserConverter {
 
         if (!cont.IsContentBrowserField)
           return (languageContent, importStatus, exceptions)
-
         getConverterModule(cont).convert(cont, importStatus) match {
           case Failure(x) =>
             val (start, end) = cont.StartEndIndex

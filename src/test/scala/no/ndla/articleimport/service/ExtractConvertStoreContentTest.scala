@@ -53,6 +53,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
   override def beforeEach: Unit = {
     when(extractService.getNodeData(nodeId)).thenReturn(Success(sampleNode))
+    when(extractService.getNodeData(nodeId2)).thenReturn(Success(sampleNode))
     when(extractService.getNodeType(nodeId2)).thenReturn(Some("fagstoff"))
     when(extractService.getNodeGeneralContent(nodeId2))
       .thenReturn(Seq(NodeGeneralContent(nodeId2, nodeId2, "title", "content", "en")))

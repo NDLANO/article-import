@@ -45,8 +45,9 @@ trait ConverterService {
         case Success((convertedContent, converterStatus)) if convertedContent.nodeType == nodeTypeBegrep =>
           Success((toDomainConcept(convertedContent), converterStatus))
         case Success((convertedContent, converterStatus)) =>
-          val (converted, convertedStatus) = MetaInfoConverter.convert(convertedContent, converterStatus)
-          Success((toDomainArticle(converted), convertedStatus))
+          MetaInfoConverter.convert(convertedContent, converterStatus).map{
+            case (converted, is) => (toDomainArticle(converted), is)
+          }
       }
     }
 

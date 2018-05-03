@@ -11,7 +11,9 @@ case class ImportStatus(messages: Seq[String],
                         visitedNodes: Set[String] = Set(),
                         articleId: Option[Long] = None,
                         importRelatedArticles: Boolean = true,
-                        forceUpdateArticles: Boolean = false) {
+                        forceUpdateArticles: Boolean = false,
+                        insertedLicenses: List[String] = List.empty,
+                        insertedAuthors: List[Author] = List.empty) {
 
   def ++(importStatus: ImportStatus): ImportStatus =
     ImportStatus(messages ++ importStatus.messages,
@@ -31,6 +33,21 @@ case class ImportStatus(messages: Seq[String],
   def addVisitedNodes(nodeIDs: Set[String]): ImportStatus =
     this.copy(visitedNodes = this.visitedNodes ++ nodeIDs)
   def setArticleId(id: Long): ImportStatus = this.copy(articleId = Some(id))
+
+  def addInsertedLicense(license: Option[String]): ImportStatus =
+    this.copy(insertedLicenses = this.insertedLicenses ++ license.toList)
+
+  def addInsertedAuthors(authors: List[Author]): ImportStatus =
+    this.copy(insertedAuthors = this.insertedAuthors ++ authors)
+
+  def addInsertedLicenses(licenses: List[String]): ImportStatus =
+    this.copy(insertedLicenses = this.insertedLicenses ++ licenses)
+
+  def withNewNodeLocalContext(): ImportStatus = this.copy(insertedAuthors = List.empty, insertedLicenses = List.empty)
+
+  def resetNodeLocalContext(originalContext: ImportStatus): ImportStatus =
+    this.copy(insertedAuthors = originalContext.insertedAuthors, insertedLicenses = originalContext.insertedLicenses)
+
 }
 
 object ImportStatus {

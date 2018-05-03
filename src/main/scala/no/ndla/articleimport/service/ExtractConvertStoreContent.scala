@@ -46,13 +46,15 @@ trait ExtractConvertStoreContent {
         // This ensures that cyclic dependencies between articles does not cause an infinite recursive import job
         _ <- generateNewIdIfFirstTimeImported(mainNodeId, node.nodeType)
         (convertedContent, updatedImportStatus) <- converterService
-          .toDomainArticle(node, importStatus)
+          .toDomainArticle(node, importStatus.withNewNodeLocalContext())
         (content, storeImportStatus) <- store(convertedContent, mainNodeId, updatedImportStatus)
       } yield
         (content,
          storeImportStatus
            .addMessage(s"Successfully imported node $externalId: ${content.id}")
-           .setArticleId(content.id))
+           .setArticleId(content.id)
+           .resetNodeLocalContext(importStatus)
+        )
 
       convertedNode match {
         case Success(converted) => Success(converted)

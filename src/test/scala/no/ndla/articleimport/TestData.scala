@@ -7,6 +7,8 @@
 
 package no.ndla.articleimport
 
+import java.util.Date
+
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.model.api
@@ -223,6 +225,24 @@ object TestData {
     Seq("nb"),
     None
   )
+
+  val contentTitle = ArticleTitle("", "unknown")
+  val author = Author("forfatter", "Henrik")
+  val tag = ArticleTag(List("asdf"), "nb")
+
+  val sampleNodeToConvert = NodeToConvert(List(contentTitle),
+    Seq(),
+    Some("by-sa"),
+    Seq(author),
+    List(tag),
+    "fagstoff",
+    "fagstoff",
+    new Date(0),
+    new Date(1),
+    ArticleType.Standard,
+    Seq.empty)
+
+
 
   def contentBrowserWithFields(dOMPath: List[String], fields: (String, String)*): ContentBrowser = {
     new ContentBrowser {

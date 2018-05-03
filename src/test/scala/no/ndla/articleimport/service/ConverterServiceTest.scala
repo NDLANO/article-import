@@ -66,7 +66,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     val node = sampleNode.copy(contents = List(contentNode))
     val expedtedResult = s"<section>$initialContent</section>"
 
-    when(extractConvertStoreContent.processNode("4321"))
+    when(extractConvertStoreContent.processNode("4321", ImportStatus.empty))
       .thenReturn(Try(TestData.sampleApiArticle, ImportStatus.empty))
 
     val Success((result: Article, status)) =
@@ -91,10 +91,12 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeType(nodeId)).thenReturn(Some("oppgave"))
     when(extractService.getNodeGeneralContent(nodeId))
       .thenReturn(Seq(sampleOppgave1))
+    when(extractService.getNodeData(nodeId)).thenReturn(Success(TestData.sampleNodeToConvert))
 
     when(extractService.getNodeType(nodeId2)).thenReturn(Some("oppgave"))
     when(extractService.getNodeGeneralContent(nodeId2))
       .thenReturn(Seq(sampleOppgave2))
+    when(extractService.getNodeData(nodeId2)).thenReturn(Success(TestData.sampleNodeToConvert))
 
     val Success((result: Article, status)) =
       service.toDomainArticle(node, ImportStatus.empty)
