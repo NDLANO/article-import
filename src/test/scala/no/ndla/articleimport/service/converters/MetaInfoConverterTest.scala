@@ -37,21 +37,25 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
 
   test("That import should fail if inserted licenses cannot be merged with original license") {
     val insertedAuthors = List(author)
-    val insertedLicenses = List("by-sa", "copyrighted")
-    val status = ImportStatus.empty.addInsertedAuthors(insertedAuthors).copy(insertedLicenses = insertedLicenses)
+    val status = ImportStatus.empty
+      .addInsertedAuthors(insertedAuthors)
+      .addInsertedLicense(Some("by-sa"))
+      .addInsertedLicense(Some("copyrighted"))
 
     val result = MetaInfoConverter.convert(sampleNodeToConvert, status)
 
     result.isFailure should be(true)
     val Failure(ex: ImportException) = result
+
+    ex.message should be("Could not combine license by-sa with inserted licenses: by-sa,copyrighted.")
   }
 
   test("That import should combine licenses") {
-    val status1 = ImportStatus.empty.copy(insertedLicenses = List("by-sa", "by-nc-sa"))
+    val status1 = ImportStatus.empty.addInsertedLicense(Some("by-sa")).addInsertedLicense(Some("by-nc-sa"))
     val Success((converted1, _)) = MetaInfoConverter.convert(sampleNodeToConvert, status1)
     converted1.license should be("by-nc-sa")
 
-    val status2 = ImportStatus.empty.copy(insertedLicenses = List("by-nc-sa", "by-nc-sa"))
+    val status2 = ImportStatus.empty.addInsertedLicense(Some("by-nc-sa")).addInsertedLicense(Some("by-nc-sa"))
     val Success((converted2, _)) = MetaInfoConverter.convert(sampleNodeToConvert, status2)
     converted2.license should be("by-nc-sa")
 
@@ -67,8 +71,10 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
 
   test("That import should combine license and authors from inserted nodes") {
     val insertedAuthors = List(Author("forfatter", "Jonas"), Author("fotograf", "Christian"))
-    val insertedLicenses = List("by-sa", "by-nc-sa")
-    val status = ImportStatus.empty.addInsertedAuthors(insertedAuthors).copy(insertedLicenses = insertedLicenses)
+    val status = ImportStatus.empty
+      .addInsertedAuthors(insertedAuthors)
+      .addInsertedLicense(Some("by-sa"))
+      .addInsertedLicense(Some("by-nc-sa"))
 
     val Success((converted, _)) = MetaInfoConverter.convert(sampleNodeToConvert, status)
 

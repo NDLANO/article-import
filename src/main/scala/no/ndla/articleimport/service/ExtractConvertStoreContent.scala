@@ -50,7 +50,7 @@ trait ExtractConvertStoreContent {
          storeImportStatus
            .addMessage(s"Successfully imported node $externalId: ${content.id}")
            .setArticleId(content.id)
-           .resetNodeLocalContext(importStatus))
+           .resetNodeLocalContext(importStatus.nodeLocalContext))
 
       convertedNode match {
         case Success(converted) => Success(converted)

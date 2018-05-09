@@ -47,7 +47,7 @@ trait MetaInfoConverter {
     }
 
     private def combineAuthors(nodeToConvert: NodeToConvert, importStatus: ImportStatus) =
-      (nodeToConvert.authors ++ importStatus.insertedAuthors).toSet
+      (nodeToConvert.authors ++ importStatus.nodeLocalContext.insertedAuthors).toSet
 
     private def combineLicenses(nodeToConvert: NodeToConvert,
                                 importStatus: ImportStatus): Try[(String, ImportStatus)] = {
@@ -58,7 +58,7 @@ trait MetaInfoConverter {
       }
 
       val mainNid = nodeToConvert.getMainNid.orElse(nodeToConvert.getNid).getOrElse("")
-      val allLicenses = (importStatus.insertedLicenses :+ license).toSet
+      val allLicenses = (importStatus.nodeLocalContext.insertedLicenses :+ license).toSet
 
       val combinableLicenses = Map(
         Set("by-sa", "by-nc-sa") -> "by-nc-sa"
@@ -73,7 +73,8 @@ trait MetaInfoConverter {
           Success((license, importStatus))
         case None =>
           val msg =
-            s"Could not combine license $license with inserted licenses: ${importStatus.insertedLicenses.mkString(",")}."
+            s"Could not combine license $license with inserted licenses: ${importStatus.nodeLocalContext.insertedLicenses
+              .mkString(",")}."
           logger.error(msg)
           Failure(ImportException(mainNid, msg))
       }
