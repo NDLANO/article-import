@@ -440,8 +440,8 @@ trait HTMLCleaner {
     private def unwrapNestedPs(element: Element): Unit = {
       val ps = element.select("p").asScala
       ps.foreach(p => {
-        val parentTags = p.parents.asScala.map(_.tagName())
-        if (parentTags.contains("p"))
+        val childTags = p.children.asScala.map(_.tagName())
+        if (childTags.contains("p"))
           p.unwrap()
       })
     }

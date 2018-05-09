@@ -901,10 +901,10 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
     result.content should equal("<section><p>huehuehue</p></section>")
 
     val Success((result2, _)) =
-      htmlCleaner.convert(TestData.sampleContent.copy(content = """<section><p><p>huehuehue</p></p></section>"""),
+      htmlCleaner.convert(TestData.sampleContent.copy(content = """<section><p><p>Hei</p><p>Hei</p></p></section>"""),
                           defaultImportStatus)
 
-    result2.content should equal("<section><p>huehuehue</p></section>")
+    result2.content should equal("<section><p>Hei</p><p>Hei</p></section>")
   }
 
 }
