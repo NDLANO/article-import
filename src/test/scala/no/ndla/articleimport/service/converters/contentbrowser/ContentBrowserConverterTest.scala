@@ -13,6 +13,7 @@ import no.ndla.articleimport.integration.{ImageCopyright, ImageLicense, ImageMet
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.model.domain._
 import org.mockito.Mockito._
+import org.mockito.Matchers._
 
 import scala.util.Success
 
@@ -23,6 +24,10 @@ class ContentBrowserConverterTest extends UnitSuite with TestEnvironment {
   val sampleContentString =
     s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$sampleAlt==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion=inline==link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
   val sampleContent = TestData.sampleContent.copy(content = s"<article>$sampleContentString</article>")
+
+  override def beforeEach(): Unit = {
+    when(extractService.getNodeData(any[String])).thenReturn(Success(TestData.sampleNodeToConvert))
+  }
 
   test("contentbrowser strings of unsupported causes a Failure to be returned") {
     val expectedResult =

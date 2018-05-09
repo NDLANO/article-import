@@ -11,13 +11,8 @@ case class ImportStatus(messages: Seq[String],
                         visitedNodes: Set[String] = Set(),
                         articleId: Option[Long] = None,
                         importRelatedArticles: Boolean = true,
-                        forceUpdateArticles: Boolean = false) {
-
-  def ++(importStatus: ImportStatus): ImportStatus =
-    ImportStatus(messages ++ importStatus.messages,
-                 visitedNodes ++ importStatus.visitedNodes,
-                 importStatus.articleId,
-                 importStatus.importRelatedArticles)
+                        forceUpdateArticles: Boolean = false,
+                        nodeLocalContext: NodeLocalImportStatus = NodeLocalImportStatus()) {
 
   def addMessage(message: String): ImportStatus =
     this.copy(messages = this.messages :+ message)
@@ -31,6 +26,18 @@ case class ImportStatus(messages: Seq[String],
   def addVisitedNodes(nodeIDs: Set[String]): ImportStatus =
     this.copy(visitedNodes = this.visitedNodes ++ nodeIDs)
   def setArticleId(id: Long): ImportStatus = this.copy(articleId = Some(id))
+
+  def withNewNodeLocalContext(): ImportStatus =
+    this.copy(nodeLocalContext = NodeLocalImportStatus(List.empty, List.empty))
+
+  def resetNodeLocalContext(originalContext: NodeLocalImportStatus): ImportStatus =
+    this.copy(nodeLocalContext = originalContext)
+
+  def addInsertedLicense(license: Option[String]): ImportStatus =
+    this.copy(nodeLocalContext = this.nodeLocalContext.addInsertedLicense(license))
+
+  def addInsertedAuthors(authors: List[Author]): ImportStatus =
+    this.copy(nodeLocalContext = this.nodeLocalContext.addInsertedAuthors(authors))
 }
 
 object ImportStatus {
@@ -48,4 +55,16 @@ object ImportStatus {
     ImportStatus(messages.flatten.distinct, visitedNodes.flatten.toSet, articleIds.lastOption.flatten)
   }
 
+}
+
+case class NodeLocalImportStatus(insertedLicenses: List[String] = List.empty,
+                                 insertedAuthors: List[Author] = List.empty) {
+
+  def addInsertedLicense(license: Option[String]): NodeLocalImportStatus = {
+    this.copy(insertedLicenses = this.insertedLicenses ++ license.toList)
+  }
+
+  def addInsertedAuthors(authors: List[Author]): NodeLocalImportStatus = {
+    this.copy(insertedAuthors = this.insertedAuthors ++ authors)
+  }
 }

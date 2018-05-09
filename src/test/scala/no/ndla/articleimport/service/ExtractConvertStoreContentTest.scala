@@ -53,6 +53,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
   override def beforeEach: Unit = {
     when(extractService.getNodeData(nodeId)).thenReturn(Success(sampleNode))
+    when(extractService.getNodeData(nodeId2)).thenReturn(Success(sampleNode))
     when(extractService.getNodeType(nodeId2)).thenReturn(Some("fagstoff"))
     when(extractService.getNodeGeneralContent(nodeId2))
       .thenReturn(Seq(NodeGeneralContent(nodeId2, nodeId2, "title", "content", "en")))
@@ -65,7 +66,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       .thenReturn(Some(1: Long))
     when(draftApiClient.newEmptyArticle(any[String], any[Set[String]]))
       .thenReturn(Success(ContentId(TestData.sampleArticleWithPublicDomain.id.get)))
-    when(extractConvertStoreContent.processNode("9876"))
+    when(extractConvertStoreContent.processNode("9876", ImportStatus.empty))
       .thenReturn(Try(TestData.sampleApiArticle, ImportStatus.empty))
 
     when(extractConvertStoreContent.getMainNodeId(any[String]))
@@ -85,7 +86,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.publishArticle(any[Long]))
       .thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
 
-    val Success((_, status)) = eCSService.processNode(nodeId)
+    val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty)
     status should equal(
       ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId, nodeId2), Some(sampleArticle.id), false))
     verify(draftApiClient, times(1))

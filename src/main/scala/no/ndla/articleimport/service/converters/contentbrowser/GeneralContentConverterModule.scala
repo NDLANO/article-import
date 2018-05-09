@@ -25,12 +25,16 @@ trait GeneralContentConverterModule {
       val externalId = contentBrowser.get("nid")
       val contents =
         extractService.getNodeGeneralContent(externalId).sortBy(c => c.language)
+      val contentNodeData = extractService.getNodeData(externalId)
+
+      val licenseToInsert = contentNodeData.map(_.license).getOrElse(None)
+      val authorsToInsert = contentNodeData.map(_.authors).getOrElse(List.empty).toList
 
       contents.reverse.find(c => c.language == contentBrowser.language | c.language == Language.NoLanguage) match {
         case Some(content) =>
           insertContent(content.content, contentBrowser, importStatus) map {
             case (finalContent, status) =>
-              (finalContent, Seq.empty, status)
+              (finalContent, Seq.empty, status.addInsertedAuthors(authorsToInsert).addInsertedLicense(licenseToInsert))
           }
         case None =>
           Failure(

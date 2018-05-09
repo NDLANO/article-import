@@ -59,6 +59,7 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
   override def beforeEach = {
     when(extractConvertStoreContent.getMainNodeId(any[String]))
       .thenAnswer((invocation: InvocationOnMock) => Some(invocation.getArgumentAt(0, classOf[String])))
+    when(extractService.getNodeData(any[String])).thenReturn(Success(sampleNodeToConvert))
   }
 
   test("That GeneralContentConverter returns the contents according to language") {
@@ -188,7 +189,8 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
       generalContentConverter.convert(content, ImportStatus(Seq.empty, Set(nodeId2)))
 
     result should equal(expectedResult)
-    status should equal(ImportStatus(List(), Set(nodeId2, nodeId)))
+    status.messages should be(List.empty)
+    status.visitedNodes should be(Set(nodeId2, nodeId))
   }
 
   test("That GeneralContentConverter returns a Failure if node could not be imported") {

@@ -32,7 +32,13 @@ case class NodeToConvert(titles: Seq[ArticleTitle],
                          created: Date,
                          updated: Date,
                          articleType: ArticleType.Value,
-                         editorialKeywords: Seq[MigrationEditorialKeywords])
+                         editorialKeywords: Seq[MigrationEditorialKeywords]) {
+
+  def getMainNid: Option[String] = contents.find(_.isMainNode).map(_.nid)
+
+  def getNid: Option[String] = contents.headOption.map(_.nid)
+
+}
 
 case class NodeWithConvertedMeta(titles: Seq[ArticleTitle],
                                  contents: Seq[LanguageContent],
