@@ -50,6 +50,7 @@ trait HTMLCleaner {
       moveMisplacedAsideTags(element)
       unwrapDivsAroundDetailSummaryBox(element)
       unwrapDivsInAsideTags(element)
+      unwrapNestedPs(element)
 
       convertH3sToH2s(element)
       val finalCleanedDocument = allContentMustBeWrappedInSectionBlocks(element)
@@ -434,6 +435,15 @@ trait HTMLCleaner {
         child.unwrap()
         unwrapNestedDivs(firstChild)
       }
+    }
+
+    private def unwrapNestedPs(element: Element): Unit = {
+      val ps = element.select("p").asScala
+      ps.foreach(p => {
+        val childTags = p.children.asScala.map(_.tagName())
+        if (childTags.contains("p"))
+          p.unwrap()
+      })
     }
 
     private def moveMisplacedAsideTags(element: Element) = {
