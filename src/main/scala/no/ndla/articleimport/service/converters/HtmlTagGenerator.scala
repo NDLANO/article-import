@@ -141,10 +141,10 @@ trait HtmlTagGenerator {
       buildEmbedContent(attrs)
     }
 
-    def buildRelatedContent(articleIds: Set[Long]): String = {
+    def buildRelatedContent(articleIds: String): String = {
       val attrs = Map(
         TagAttributes.DataResource -> ResourceType.RelatedContent.toString,
-        TagAttributes.DataArticleIds -> articleIds.map(_.toString).mkString(",")
+        TagAttributes.DataArticleIds -> articleIds
       )
       buildEmbedContent(attrs)
     }

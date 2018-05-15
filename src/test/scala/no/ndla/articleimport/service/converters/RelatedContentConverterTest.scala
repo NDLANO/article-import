@@ -7,10 +7,12 @@
 
 package no.ndla.articleimport.service.converters
 
+import java.util.Date
+
 import no.ndla.articleimport.caching.Memoize
-import no.ndla.articleimport.integration.MigrationRelatedContent
-import no.ndla.articleimport.model.domain.ImportStatus
-import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
+import no.ndla.articleimport.integration.{MigrationEmbedMeta, MigrationRelatedContent}
+import no.ndla.articleimport.model.domain.{ArticleTitle, ArticleType, ImportStatus, NodeToConvert}
+import no.ndla.articleimport.{ArticleImportProperties, TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.validation.TagAttributes._
 import no.ndla.validation.ResourceType._
@@ -64,7 +66,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
           s"Related content with nid ${languageContent.nid} points to a concept. This should not be legal, no?")))
   }
 
-  test("convert should not add a new section if thre are no related contents") {
+  test("convert should not add a new section if there are no related contents") {
     val origContent = "<section><h1>hmm</h1></section>"
 
     val Success((result, _)) =
@@ -86,4 +88,41 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       RelatedContentConverter.convert(languageContent.copy(content = origContent), ImportStatus.empty)
     result.content should equal(expectedContent)
   }
+
+  test("convert should add related link node without embedcode as a direct link in the embed") {
+    val origContent = "<section><h1>hmm</h1></section>"
+
+    val url = "https://example.com"
+    val title = "Title is here"
+
+    when(extractService.getNodeType(any[String])).thenReturn(Some(ArticleImportProperties.nodeTypeLink))
+    when(extractService.getLinkEmbedMeta(any[String])).thenReturn(Success(MigrationEmbedMeta(Some(url), None)))
+    val relatedUrlNode = NodeToConvert(
+      titles = Seq(ArticleTitle(title, "nb")),
+      contents = Seq.empty,
+      license = None,
+      authors = Seq.empty,
+      tags = Seq.empty,
+      nodeType = ArticleImportProperties.nodeTypeLink,
+      contentType = "123",
+      created = new Date(),
+      updated = new Date(),
+      articleType = ArticleType.Standard,
+      editorialKeywords = Seq.empty
+    )
+    when(extractService.getNodeData(any[String])).thenReturn(Success(relatedUrlNode))
+
+    when(
+      extractConvertStoreContent
+        .processNode(any[String], any[ImportStatus]))
+      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1: Long), ImportStatus.empty)))
+      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
+
+    val expectedContent = origContent + s"""<section><$ResourceHtmlEmbedTag $DataArticleIds="{'title':'$title','url':'$url'}" $DataResource="$RelatedContent"></section>"""
+
+    val Success((result, _)) =
+      RelatedContentConverter.convert(languageContent.copy(content = origContent), ImportStatus.empty)
+    result.content should equal(expectedContent)
+  }
+
 }

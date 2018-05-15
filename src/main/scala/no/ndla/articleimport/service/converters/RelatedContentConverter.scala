@@ -9,11 +9,14 @@ package no.ndla.articleimport.service.converters
 
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
-import no.ndla.articleimport.integration.{ConverterModule, DraftApiClient, LanguageContent, MigrationApiClient}
+import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api.{Article, Concept, ImportException, ImportExceptions}
-import no.ndla.articleimport.model.domain.ImportStatus
+import no.ndla.articleimport.model.domain.{ImportStatus, Language}
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
-import no.ndla.articleimport.ArticleImportProperties.supportedContentTypes
+import no.ndla.articleimport.ArticleImportProperties.{nodeTypeLink, supportedContentTypes}
+import org.json4s._
+import org.json4s.JsonDSL._
+import org.json4s.native.JsonMethods._
 
 import scala.util.{Failure, Success, Try}
 
@@ -27,41 +30,50 @@ trait RelatedContentConverter {
 
   object RelatedContentConverter extends ConverterModule {
     override def convert(content: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
-      val allRelatedNids = content.relatedContent
-        .map(c => (c.nid, extractService.getNodeType(c.nid).getOrElse("unknown")))
-        .toSet
-      val nidsToImport = allRelatedNids
-        .filter {
-          case (_, nodeType) => supportedContentTypes.contains(nodeType)
-        }
-        .map { case (nid, _) => nid }
+      val allRelatedNids =
+        content.relatedContent.map(c => (c.nid, extractService.getNodeType(c.nid).getOrElse("unknown"))).toSet
+
+      val nidsToImportWithType = allRelatedNids.filter {
+        case (_, nodeType) => supportedContentTypes.contains(nodeType)
+      }
+
+      val linkNodesWithOnlyUrl: Set[(String, String, String)] =
+        getLinkNodesWithoutEmbed(nidsToImportWithType, content.language)
+      val nidsToImport = nidsToImportWithType.map { case (nid, _) => nid }.diff(linkNodesWithOnlyUrl.map(_._1))
+
       val excludedNids = allRelatedNids.filterNot {
-        case (nid, _) => nidsToImport.contains(nid)
+        case (nid, _) => nidsToImport.contains(nid) || linkNodesWithOnlyUrl.map(_._1).contains(nid)
       } map {
         case (nid, nodeType) =>
           (nid, s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
       }
 
-      if (nidsToImport.isEmpty) {
-        Success(content,
-                importStatus
-                  .copy(importRelatedArticles = false)
-                  .addMessages(excludedNids.map(_._2).toSeq))
-      } else {
-        val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] =
-          importRelatedContent(content.nid, _, _)
-        val handlerFunc =
-          if (importStatus.importRelatedArticles) importRelatedContentCb
-          else getRelatedContentFromDb _
+      val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] =
+        importRelatedContent(content.nid, _, _)
+      val importFunction =
+        if (importStatus.importRelatedArticles) importRelatedContentCb
+        else getRelatedContentFromDb _
 
-        handlerFunc(nidsToImport, importStatus) match {
-          case Success((ids, status)) if ids.nonEmpty =>
+      val statusWithExcluded =
+        importStatus.addMessages(excludedNids.map(_._2).toSeq).copy(importRelatedArticles = false)
+
+      if (nidsToImport.isEmpty && linkNodesWithOnlyUrl.isEmpty) {
+        Success(content, statusWithExcluded)
+      } else {
+        importFunction(nidsToImport, statusWithExcluded) match {
+          case Success((ids, status)) if ids.nonEmpty || linkNodesWithOnlyUrl.nonEmpty =>
+
+            val idsAsJInt = ids.map(JLong).toList
+            val urlsAsJObject = linkNodesWithOnlyUrl.map{case (_, title, url) => JObject(JField("title", JString(title)), JField("url", JString(url)))}
+            val json = JArray(idsAsJInt ++ urlsAsJObject)
+            val jsonString = compact(render(json))
+
             val element = stringToJsoupDocument(content.content)
-            element.append(s"<section>${HtmlTagGenerator.buildRelatedContent(ids)}</section>")
-            Success(content.copy(content = jsoupDocumentToString(element)),
-                    status.addMessages(excludedNids.map(_._2).toSeq))
+            element.append(s"<section>${HtmlTagGenerator.buildRelatedContent(jsonString)}</section>")
+
+            Success(content.copy(content = jsoupDocumentToString(element)), status)
           case Success((_, status)) =>
-            Success(content, status.addMessages(excludedNids.map(_._2).toSeq))
+            Success(content, status)
           case Failure(ex: ImportExceptions) =>
             val filteredOutNodes = excludedNids.map {
               case (_, message) =>
@@ -72,6 +84,29 @@ trait RelatedContentConverter {
         }
       }
 
+    }
+
+    /**
+      * @param nidsAndType
+      * @param language
+      * @return Returns set of nid, title and url for linknodes without embed codes listed in nidsAndType
+      */
+    private def getLinkNodesWithoutEmbed(nidsAndType: Set[(String, String)],
+                                         language: String): Set[(String, String, String)] = {
+      nidsAndType.filter(_._2 == nodeTypeLink).flatMap {
+        case (nid, _) =>
+          extractService.getLinkEmbedMeta(nid) match {
+            case Success(MigrationEmbedMeta(Some(url), None)) =>
+              extractService.getNodeData(nid) match {
+                case Success(node) =>
+                  val linkTitle =
+                    Language.findByLanguageOrBestEffort(node.titles, language).map(_.title).getOrElse("")
+                  Some((nid, linkTitle, url))
+                case _ => None
+              }
+            case _ => None
+          }
+      }
     }
   }
 
