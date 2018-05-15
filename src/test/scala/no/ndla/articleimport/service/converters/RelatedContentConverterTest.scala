@@ -41,7 +41,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1: Long), ImportStatus.empty)))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
 
-    val expectedContent = origContent + s"""<section><$ResourceHtmlEmbedTag $DataArticleIds="1,2" $DataResource="$RelatedContent"></section>"""
+    val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="1" $DataResource="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="2" $DataResource="$RelatedContent"></div></section>"""
 
     val Success((result, _)) =
       RelatedContentConverter.convert(languageContent.copy(content = origContent), ImportStatus.empty)
@@ -82,14 +82,14 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1), ImportStatus.empty)))
 
-    val expectedContent = origContent + s"""<section><$ResourceHtmlEmbedTag $DataArticleIds="1" $DataResource="$RelatedContent"></section>"""
+    val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="1" $DataResource="$RelatedContent"></div></section>"""
 
     val Success((result, _)) =
       RelatedContentConverter.convert(languageContent.copy(content = origContent), ImportStatus.empty)
     result.content should equal(expectedContent)
   }
 
-  test("convert should add related link node without embedcode as a direct link in the embed") {
+  test("Convert should add related link node without embedcode as a direct link in the embed") {
     val origContent = "<section><h1>hmm</h1></section>"
 
     val url = "https://example.com"
@@ -118,10 +118,10 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1: Long), ImportStatus.empty)))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
 
-    val expectedContent = origContent + s"""<section><$ResourceHtmlEmbedTag $DataArticleIds="{'title':'$title','url':'$url'}" $DataResource="$RelatedContent"></section>"""
+    val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataTitle="$title" $DataUrl="$url"></div></section>""" // TODO: Disable pretty printing? Removing \n with jsoup?
 
     val Success((result, _)) =
-      RelatedContentConverter.convert(languageContent.copy(content = origContent), ImportStatus.empty)
+      RelatedContentConverter.convert(languageContent.copy(content = origContent, relatedContent = languageContent.relatedContent.slice(0,1)), ImportStatus.empty)
     result.content should equal(expectedContent)
   }
 

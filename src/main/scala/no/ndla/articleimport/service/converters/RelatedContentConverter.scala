@@ -11,12 +11,12 @@ import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api.{Article, Concept, ImportException, ImportExceptions}
-import no.ndla.articleimport.model.domain.{ImportStatus, Language}
+import no.ndla.articleimport.model.domain.{ExternalEmbedMetaWithTitle, ImportStatus, Language}
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
 import no.ndla.articleimport.ArticleImportProperties.{nodeTypeLink, supportedContentTypes}
-import org.json4s._
-import org.json4s.JsonDSL._
-import org.json4s.native.JsonMethods._
+import no.ndla.validation.TagAttributes._
+import no.ndla.validation.ResourceType
+import org.jsoup.nodes.Element
 
 import scala.util.{Failure, Success, Try}
 
@@ -37,12 +37,11 @@ trait RelatedContentConverter {
         case (_, nodeType) => supportedContentTypes.contains(nodeType)
       }
 
-      val linkNodesWithOnlyUrl: Set[(String, String, String)] =
-        getLinkNodesWithoutEmbed(nidsToImportWithType, content.language)
-      val nidsToImport = nidsToImportWithType.map { case (nid, _) => nid }.diff(linkNodesWithOnlyUrl.map(_._1))
+      val linkNodesWithOnlyUrl = getLinkNodesWithoutEmbed(nidsToImportWithType, content.language)
+      val nidsToImport = nidsToImportWithType.map { case (nid, _) => nid }.diff(linkNodesWithOnlyUrl.map(_.nid))
 
       val excludedNids = allRelatedNids.filterNot {
-        case (nid, _) => nidsToImport.contains(nid) || linkNodesWithOnlyUrl.map(_._1).contains(nid)
+        case (nid, _) => nidsToImport.contains(nid) || linkNodesWithOnlyUrl.map(_.nid).contains(nid)
       } map {
         case (nid, nodeType) =>
           (nid, s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
@@ -63,13 +62,9 @@ trait RelatedContentConverter {
         importFunction(nidsToImport, statusWithExcluded) match {
           case Success((ids, status)) if ids.nonEmpty || linkNodesWithOnlyUrl.nonEmpty =>
 
-            val idsAsJInt = ids.map(JLong).toList
-            val urlsAsJObject = linkNodesWithOnlyUrl.map{case (_, title, url) => JObject(JField("title", JString(title)), JField("url", JString(url)))}
-            val json = JArray(idsAsJInt ++ urlsAsJObject)
-            val jsonString = compact(render(json))
-
+            val embedDiv = HtmlTagGenerator.buildRelatedContent(ids.toList, linkNodesWithOnlyUrl.toList)
             val element = stringToJsoupDocument(content.content)
-            element.append(s"<section>${HtmlTagGenerator.buildRelatedContent(jsonString)}</section>")
+            element.append(s"<section>${embedDiv.outerHtml()}</section>")
 
             Success(content.copy(content = jsoupDocumentToString(element)), status)
           case Success((_, status)) =>
@@ -92,7 +87,7 @@ trait RelatedContentConverter {
       * @return Returns set of nid, title and url for linknodes without embed codes listed in nidsAndType
       */
     private def getLinkNodesWithoutEmbed(nidsAndType: Set[(String, String)],
-                                         language: String): Set[(String, String, String)] = {
+                                         language: String): Set[ExternalEmbedMetaWithTitle] = {
       nidsAndType.filter(_._2 == nodeTypeLink).flatMap {
         case (nid, _) =>
           extractService.getLinkEmbedMeta(nid) match {
@@ -101,7 +96,7 @@ trait RelatedContentConverter {
                 case Success(node) =>
                   val linkTitle =
                     Language.findByLanguageOrBestEffort(node.titles, language).map(_.title).getOrElse("")
-                  Some((nid, linkTitle, url))
+                  Some(ExternalEmbedMetaWithTitle(nid, linkTitle, url))
                 case _ => None
               }
             case _ => None
