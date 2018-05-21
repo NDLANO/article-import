@@ -16,7 +16,9 @@ import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService
 import no.ndla.articleimport.ArticleImportProperties.{nodeTypeLink, supportedContentTypes}
 import no.ndla.validation.TagAttributes._
 import no.ndla.validation.ResourceType
+import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
+import org.jsoup.nodes.Entities.EscapeMode
 
 import scala.util.{Failure, Success, Try}
 
@@ -61,10 +63,9 @@ trait RelatedContentConverter {
       } else {
         importFunction(nidsToImport, statusWithExcluded) match {
           case Success((ids, status)) if ids.nonEmpty || linkNodesWithOnlyUrl.nonEmpty =>
-
             val embedDiv = HtmlTagGenerator.buildRelatedContent(ids.toList, linkNodesWithOnlyUrl.toList)
             val element = stringToJsoupDocument(content.content)
-            element.append(s"<section>${embedDiv.outerHtml()}</section>")
+            element.appendElement("section").appendChild(embedDiv)
 
             Success(content.copy(content = jsoupDocumentToString(element)), status)
           case Success((_, status)) =>

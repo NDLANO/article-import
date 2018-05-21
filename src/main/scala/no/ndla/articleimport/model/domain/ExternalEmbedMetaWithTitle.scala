@@ -8,4 +8,3 @@
 package no.ndla.articleimport.model.domain
 
 case class ExternalEmbedMetaWithTitle(nid: String, title: String, url: String)
-

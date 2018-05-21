@@ -10,7 +10,7 @@ package no.ndla.articleimport.service.converters
 import no.ndla.articleimport.model.domain.ExternalEmbedMetaWithTitle
 import no.ndla.validation.{ResourceType, TagAttributes}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
-import org.jsoup.nodes.Element
+import org.jsoup.nodes.{Document, Element}
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 
 trait HtmlTagGenerator {
@@ -145,9 +145,12 @@ trait HtmlTagGenerator {
     }
 
     def buildRelatedContent(articleIds: List[Long], externalUrlMeta: List[ExternalEmbedMetaWithTitle]): Element = {
-      val relatedDiv = new Element("div")
-        .attr(TagAttributes.DataType.toString, ResourceType.RelatedContent.toString)
+      val doc = Document.createShell("")
+      doc.outputSettings().prettyPrint(false).indentAmount(0)
 
+      val relatedDiv = doc.body
+        .appendElement("div")
+        .attr(TagAttributes.DataType.toString, ResourceType.RelatedContent.toString)
 
       val idEmbeds = articleIds.map(id => {
         val attrs = Map(
@@ -159,6 +162,7 @@ trait HtmlTagGenerator {
 
       val externalEmbeds = externalUrlMeta.map(meta => {
         val attrs = Map(
+          TagAttributes.DataResource -> ResourceType.RelatedContent.toString,
           TagAttributes.DataTitle -> meta.title,
           TagAttributes.DataUrl -> meta.url
         )

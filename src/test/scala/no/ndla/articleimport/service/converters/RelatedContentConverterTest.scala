@@ -118,10 +118,12 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1: Long), ImportStatus.empty)))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
 
-    val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataTitle="$title" $DataUrl="$url"></div></section>""" // TODO: Disable pretty printing? Removing \n with jsoup?
+    val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag data-resource="$RelatedContent" $DataTitle="$title" $DataUrl="$url"></div></section>"""
 
     val Success((result, _)) =
-      RelatedContentConverter.convert(languageContent.copy(content = origContent, relatedContent = languageContent.relatedContent.slice(0,1)), ImportStatus.empty)
+      RelatedContentConverter.convert(
+        languageContent.copy(content = origContent, relatedContent = languageContent.relatedContent.slice(0, 1)),
+        ImportStatus.empty)
     result.content should equal(expectedContent)
   }
 
