@@ -83,26 +83,24 @@ trait RelatedContentConverter {
     }
 
     /**
-      * @param nidsAndType
-      * @param language
-      * @return Returns set of nid, title and url for linknodes without embed codes listed in nidsAndType
+      * @param nidsWithType Set of tuples with (NodeId, NodeType)
+      * @param language Language in ISO639 format
+      * @return Returns set of nid, title and url for linknodes without embed codes listed in nidsWithType
       */
-    private def getLinkNodesWithoutEmbed(nidsAndType: Set[(String, String)],
+    private def getLinkNodesWithoutEmbed(nidsWithType: Set[(String, String)],
                                          language: String): Set[ExternalEmbedMetaWithTitle] = {
-      nidsAndType.filter(_._2 == nodeTypeLink).flatMap {
-        case (nid, _) =>
+      nidsWithType.collect {
+        case (nid, `nodeTypeLink`) =>
           extractService.getLinkEmbedMeta(nid) match {
             case Success(MigrationEmbedMeta(Some(url), None)) =>
-              extractService.getNodeData(nid) match {
-                case Success(node) =>
-                  val linkTitle =
-                    Language.findByLanguageOrBestEffort(node.titles, language).map(_.title).getOrElse("")
-                  Some(ExternalEmbedMetaWithTitle(nid, linkTitle, url))
-                case _ => None
+              extractService.getNodeData(nid).toOption.map { node =>
+                val linkTitle =
+                  Language.findByLanguageOrBestEffort(node.titles, language).map(_.title).getOrElse("")
+                ExternalEmbedMetaWithTitle(nid, linkTitle, url)
               }
             case _ => None
           }
-      }
+      }.flatten
     }
   }
 
