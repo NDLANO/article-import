@@ -21,7 +21,7 @@ import scala.util.{Success, Try}
     object FileDivConverter extends ConverterModule with LazyLogging {
       override def convert(content: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
         val element = ConverterModule.stringToJsoupDocument(content.content)
-
+        // TODO: write a test that tests that FileDivConverter runs after FileConverter (probably in ConverterServiceTest)
         moveFilesAfterText(element)
 
         Success((content.copy(content = ConverterModule.jsoupDocumentToString(element)), importStatus))
@@ -29,12 +29,14 @@ import scala.util.{Success, Try}
 
       private def moveFilesAfterText(element: Element): Unit = {
         element
-          .select(s"""div[${TagAttributes.DataType}="${ResourceType.File}"]""")
+          .select(s"""span[${TagAttributes.DataType}="${ResourceType.File}"]""")
           .asScala
           .foreach(d => {
+            val parent = d.parent()
             val n = d.clone()
-            d.parent().appendChild(n)
+            d.parent().after(n)
             d.remove()
+            n.tagName("div")
           })
       }
 

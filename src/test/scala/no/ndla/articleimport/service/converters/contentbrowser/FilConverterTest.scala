@@ -7,15 +7,14 @@
 
 package no.ndla.articleimport.service.converters.contentbrowser
 
+import no.ndla.articleimport.ArticleImportProperties.Domain
+import no.ndla.articleimport.model.domain.ContentFilMeta._
 import no.ndla.articleimport.model.domain.{ContentFilMeta, ImportStatus}
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
+import no.ndla.validation.ResourceType
 import org.mockito.Mockito._
-import no.ndla.articleimport.model.domain.ContentFilMeta._
-import no.ndla.articleimport.ArticleImportProperties.Domain
-import no.ndla.articleimport.model.api.ImportException
-import no.ndla.validation.{ResourceType, TagAttributes}
 
-import scala.util.{Failure, Success}
+import scala.util.Success
 
 class FilConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
@@ -47,14 +46,14 @@ class FilConverterTest extends UnitSuite with TestEnvironment {
       .uploadFileFromUrl(nodeId, fileMeta)
   }
 
-  test("FilConverter should return a div with file embeds if more than one file") {
+  test("FilConverter should return a tentative span with file embeds if more than one file") {
     val fileMeta =
       ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/files/title.pdf", "application/pdf", "1024")
     val fileMeta2 = fileMeta.copy(fileName = "title2.pdf", url = s"$Domain/files/title2.pdf")
     val filePath = s"$nodeId/${fileMeta.fileName}"
     val filePath2 = s"$nodeId/${fileMeta2.fileName}"
     val expectedResult =
-      s"""$title<div data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$filePath2"></div>"""
+      s"""$title<span data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$filePath2"></span>"""
 
     when(extractService.getNodeFilMeta(nodeId))
       .thenReturn(Success(Seq(fileMeta, fileMeta2)))

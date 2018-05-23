@@ -20,23 +20,22 @@ class FileDivConverterTest extends UnitSuite with TestEnvironment {
   private val nodeId = "1234"
   private val defaultImportStatus = ImportStatus.empty
 
-  test("A converted embed should be moved to bottom of p-tag") {
+  test("A span file embed should be moved to bottom of p-tag and be converted to div") {
     val fileMeta =
       ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/files/title.pdf", "application/pdf", "1024")
     val fileMeta2 = fileMeta.copy(fileName = "title2.pdf", url = s"$Domain/files/title2.pdf")
     val filePath = s"$nodeId/${fileMeta.fileName}"
     val filePath2 = s"$nodeId/${fileMeta2.fileName}"
 
-    val embedDiv =
-      s"""<div data-type="${ResourceType.File.toString}">
-         |<embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$filePath">
-         |<embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$filePath2">
-         |</div>""".stripMargin
+    val embeds =
+      s"""<embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$filePath">
+         |<embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$filePath2">""".stripMargin
+
 
     val originalContent =
-      s"""<section><h1>Article here</h1><p>Files for this can be found on this page: "melon$embedDiv" so please visit it :D</p></section>"""
+      s"""<section><h1>Article here</h1><p>Files for this can be found on this page: "melon<span data-type="${ResourceType.File.toString}">"$embeds</span>" so please visit it :D</p></section>"""
     val expectedContent =
-      s"""<section><h1>Article here</h1><p>Files for this can be found on this page: "melon" so please visit it :D$embedDiv</p></section>"""
+      s"""<section><h1>Article here</h1><p>Files for this can be found on this page: "melon" so please visit it :D</p><div data-type="${ResourceType.File.toString}">"$embeds</div></section>"""
 
     val content = TestData.sampleContent.copy(content = originalContent)
     val Success((result, _)) =

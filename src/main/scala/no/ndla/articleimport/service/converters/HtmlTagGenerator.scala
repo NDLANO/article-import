@@ -187,7 +187,7 @@ trait HtmlTagGenerator {
       doc.outputSettings().prettyPrint(false).indentAmount(0)
 
       val fileDiv = doc.body
-        .appendElement("div")
+        .appendElement("span")
         .attr(TagAttributes.DataType.toString, ResourceType.File.toString)
 
       files.foreach(f => {
