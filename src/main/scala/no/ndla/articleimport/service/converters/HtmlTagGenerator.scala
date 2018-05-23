@@ -7,11 +7,10 @@
 
 package no.ndla.articleimport.service.converters
 
-import no.ndla.articleimport.model.domain.ExternalEmbedMetaWithTitle
+import no.ndla.articleimport.model.domain.{ExternalEmbedMetaWithTitle, UploadedFile}
 import no.ndla.validation.{ResourceType, TagAttributes}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import org.jsoup.nodes.{Document, Element}
-import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 
 trait HtmlTagGenerator {
 
@@ -182,6 +181,27 @@ trait HtmlTagGenerator {
             s"""$key="${value.trim.replace("\"", "&quot;")}""""
         }
         .mkString(" ")
+
+    def buildFileEmbed(files: List[UploadedFile]): Element = {
+      val doc = Document.createShell("")
+      doc.outputSettings().prettyPrint(false).indentAmount(0)
+
+      val fileDiv = doc.body
+        .appendElement("div")
+        .attr(TagAttributes.DataType.toString, ResourceType.File.toString)
+
+      files.foreach(f => {
+        val attrs = Map(
+          TagAttributes.DataResource -> ResourceType.File.toString,
+          TagAttributes.DataUrl -> f.filePath,
+          TagAttributes.DataTitle -> f.fileMeta.title,
+          TagAttributes.DataType -> f.fileMeta.fileName.split('.').lastOption.getOrElse("")
+        )
+        fileDiv.append(buildEmbedContent(attrs))
+      })
+
+      fileDiv
+    }
 
   }
 

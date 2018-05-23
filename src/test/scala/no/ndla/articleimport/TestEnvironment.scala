@@ -43,6 +43,7 @@ trait TestEnvironment
     with ImageApiClient
     with TagsService
     with HtmlTagGenerator
+    with FileDivConverter
     with HTMLCleaner
     with Clock
     with User
@@ -70,7 +71,8 @@ trait TestEnvironment
                                    MathMLConverter,
                                    RelatedContentConverter,
                                    htmlCleaner,
-                                   VisualElementConverter)
+                                   VisualElementConverter,
+                                   FileDivConverter)
   )
   lazy val conceptConverter = ConverterPipeLine(
     mainConverters = List(contentBrowserConverter),

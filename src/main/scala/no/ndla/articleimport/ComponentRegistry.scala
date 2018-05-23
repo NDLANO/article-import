@@ -43,6 +43,7 @@ object ComponentRegistry
     with TagsService
     with HTMLCleaner
     with RelatedContentConverter
+    with FileDivConverter
     with HtmlTagGenerator
     with Clock
     with Role
@@ -78,7 +79,8 @@ object ComponentRegistry
                                    MathMLConverter,
                                    htmlCleaner,
                                    VisualElementConverter,
-                                   RelatedContentConverter)
+                                   RelatedContentConverter,
+                                   FileDivConverter)
   )
   override lazy val conceptConverter = ConverterPipeLine(
     mainConverters = List(contentBrowserConverter),

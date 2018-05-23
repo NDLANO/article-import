@@ -111,7 +111,7 @@ trait HTMLCleaner {
         .asScala
         .foreach(pTag => {
           pTag
-            .select(s"${ResourceHtmlEmbedTag}${embedTypeString}")
+            .select(s"$ResourceHtmlEmbedTag$embedTypeString")
             .asScala
             .toList
             .foreach(el => {
