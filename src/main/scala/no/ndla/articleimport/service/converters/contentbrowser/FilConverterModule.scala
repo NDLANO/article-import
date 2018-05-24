@@ -47,7 +47,7 @@ trait FilConverterModule {
 
     private def generateHtml(uploaded: UploadedFile,
                              importStatus: ImportStatus): (String, Seq[RequiredLibrary], ImportStatus) =
-      (HtmlTagGenerator.buildAnchor(s"$Domain/files/${uploaded.filePath}",
+      (HtmlTagGenerator.buildAnchor(uploaded.url,
                                     uploaded.fileMeta.fileName,
                                     uploaded.fileMeta.title,
                                     openInNewTab = false),

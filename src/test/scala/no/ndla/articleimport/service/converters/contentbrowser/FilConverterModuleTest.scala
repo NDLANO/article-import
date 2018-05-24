@@ -47,13 +47,13 @@ class FilConverterModuleTest extends UnitSuite with TestEnvironment {
   }
 
   test("FilConverter should return a tentative span with file embeds if more than one file") {
+    val filePath = s"$nodeId/test1.pdf"
+    val filePath2 = s"$nodeId/test2.pdf"
     val fileMeta =
-      ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/files/title.pdf", "application/pdf", "1024")
-    val fileMeta2 = fileMeta.copy(fileName = "title2.pdf", url = s"$Domain/files/title2.pdf")
-    val filePath = s"$nodeId/${fileMeta.fileName}"
-    val filePath2 = s"$nodeId/${fileMeta2.fileName}"
+      ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/$filePath", "application/pdf", "1024")
+    val fileMeta2 = fileMeta.copy(fileName = "title2.pdf", url = s"$Domain/$filePath2")
     val expectedResult =
-      s"""$title<span data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$filePath2"></span>"""
+      s"""$title<span data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$Domain/files/$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$Domain/files/$filePath2"></span>"""
 
     when(extractService.getNodeFilMeta(nodeId))
       .thenReturn(Success(Seq(fileMeta, fileMeta2)))

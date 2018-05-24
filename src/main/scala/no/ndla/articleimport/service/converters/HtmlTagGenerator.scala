@@ -8,6 +8,7 @@
 package no.ndla.articleimport.service.converters
 
 import no.ndla.articleimport.model.domain.{ExternalEmbedMetaWithTitle, UploadedFile}
+import no.ndla.articleimport.ArticleImportProperties.Domain
 import no.ndla.validation.{ResourceType, TagAttributes}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import org.jsoup.nodes.{Document, Element}
@@ -201,7 +202,7 @@ trait HtmlTagGenerator {
       files.foreach(f => {
         val attrs = Map(
           TagAttributes.DataResource -> ResourceType.File.toString,
-          TagAttributes.DataUrl -> f.filePath,
+          TagAttributes.DataUrl -> f.url,
           TagAttributes.DataTitle -> f.fileMeta.title,
           TagAttributes.DataType -> f.fileMeta.fileName.split('.').lastOption.getOrElse("")
         )

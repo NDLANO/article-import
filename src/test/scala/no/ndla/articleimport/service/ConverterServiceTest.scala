@@ -461,16 +461,14 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
   }
 
   test("That FilConverterModule + FileDivConverter converts contentbrowser to div in the correct position") {
-
     val title = "Full av trix"
-
+    val filePath = s"$nodeId/test1.pdf"
+    val filePath2 = s"$nodeId/test2.pdf"
     val fileMeta =
       ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/files/title.pdf", "application/pdf", "1024")
     val fileMeta2 = fileMeta.copy(fileName = "title2.pdf", url = s"$Domain/files/title2.pdf")
-    val filePath = s"$nodeId/${fileMeta.fileName}"
-    val filePath2 = s"$nodeId/${fileMeta2.fileName}"
     val expectedEmbed =
-      s"""<div data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$filePath2"></div>"""
+      s"""<div data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$Domain/files/$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$Domain/files/$filePath2"></div>"""
 
     when(extractService.getNodeFilMeta(nodeId))
       .thenReturn(Success(Seq(fileMeta, fileMeta2)))
