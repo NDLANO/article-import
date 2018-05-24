@@ -69,10 +69,10 @@ trait TestEnvironment
     postProcessorConverters = List(SimpleTagConverter,
                                    TableConverter,
                                    MathMLConverter,
-                                   RelatedContentConverter,
+                                   FileDivConverter,
                                    htmlCleaner,
                                    VisualElementConverter,
-                                   FileDivConverter)
+                                   RelatedContentConverter)
   )
   lazy val conceptConverter = ConverterPipeLine(
     mainConverters = List(contentBrowserConverter),

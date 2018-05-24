@@ -9,13 +9,17 @@ package no.ndla.articleimport.service
 
 import java.util.Date
 
+import no.ndla.articleimport.ArticleImportProperties.Domain
+import no.ndla.articleimport.model.domain.ContentFilMeta._
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.service.converters.TableConverter
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
+import no.ndla.validation.ResourceType
 import org.mockito.Mockito._
+
 import scala.util.{Success, Try}
 
 class ConverterServiceTest extends UnitSuite with TestEnvironment {
@@ -454,6 +458,44 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     copyright.processors should contain(Author("Linguistic", "F"))
     copyright.processors should contain(Author("Editorial", "B"))
     copyright.processors should contain(Author("Editorial", "C"))
+  }
+
+  test("That FilConverterModule + FileDivConverter produces correct result") {
+
+    val title = "Full av trix"
+
+    val fileMeta =
+      ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/files/title.pdf", "application/pdf", "1024")
+    val fileMeta2 = fileMeta.copy(fileName = "title2.pdf", url = s"$Domain/files/title2.pdf")
+    val filePath = s"$nodeId/${fileMeta.fileName}"
+    val filePath2 = s"$nodeId/${fileMeta2.fileName}"
+    val expectedEmbed =
+      s"""$title<div data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$filePath2"></div>"""
+
+    when(extractService.getNodeFilMeta(nodeId))
+      .thenReturn(Success(Seq(fileMeta, fileMeta2)))
+    when(attachmentStorageService.uploadFileFromUrl(nodeId, fileMeta))
+      .thenReturn(Success(filePath))
+    when(attachmentStorageService.uploadFileFromUrl(nodeId, fileMeta2))
+      .thenReturn(Success(filePath2))
+    when(extractService.getNodeType(nodeId)).thenReturn(Some("fil"))
+
+
+
+    val contentBrowser = s"""[contentbrowser ==nid=$nodeId==remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==width===insertion=link==link_title_text=$title==lightbox_size===link_text=$title==fid===text_align===css_class===alt===css_class=contentbrowser]"""
+
+    val originalContent = s"""<section><p>Hei her er det vanlig tekst, men så plutselig: "$contentBrowser" whapam!</p><div><strong>Og en til $contentBrowser da</div></section>"""
+    val expectedResult = s"""<section><p>Hei her er det vanlig tekst, men så plutselig: "$title" whapam!</p>$expectedEmbed<div><strong>Og en til $title da</div>$expectedEmbed</section>"""
+
+    val sampleLanguageContent: LanguageContent = TestData.sampleContent.copy(content = originalContent)
+    val node = sampleNode.copy(contents = List(sampleLanguageContent))
+
+    val result = service.toDomainArticle(node, ImportStatus.empty)
+    result.isSuccess should be(true)
+    val Success((resultContent: Article, _)) = result
+
+    resultContent.content.head.content should be(expectedResult)
+
   }
 
 }
