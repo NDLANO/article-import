@@ -64,24 +64,6 @@ trait TestEnvironment
   val contentBrowserConverter = new ContentBrowserConverter
   val htmlCleaner = new HTMLCleaner
 
-  lazy val articleConverter = ConverterPipeLine(
-    mainConverters = List(contentBrowserConverter),
-    postProcessorConverters = List(SimpleTagConverter,
-                                   TableConverter,
-                                   MathMLConverter,
-                                   FileDivConverter,
-                                   htmlCleaner,
-                                   VisualElementConverter,
-                                   RelatedContentConverter)
-  )
-  lazy val conceptConverter = ConverterPipeLine(
-    mainConverters = List(contentBrowserConverter),
-    postProcessorConverters = List(ConceptConverter)
-  )
-  override lazy val leafNodeConverter = ConverterPipeLine(
-    mainConverters = Seq(contentBrowserConverter),
-    postProcessorConverters = List(LeafNodeConverter) ++ articleConverter.postProcessorConverters
-  )
   val attachmentStorageService = mock[AmazonStorageService]
 
   val tagsService = mock[TagsService]

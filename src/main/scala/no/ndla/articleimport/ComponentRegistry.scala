@@ -72,25 +72,6 @@ object ComponentRegistry
   lazy val contentBrowserConverter = new ContentBrowserConverter
   lazy val htmlCleaner = new HTMLCleaner
 
-  override lazy val articleConverter = ConverterPipeLine(
-    mainConverters = List(contentBrowserConverter),
-    postProcessorConverters = List(SimpleTagConverter,
-                                   TableConverter,
-                                   MathMLConverter,
-                                   FileDivConverter,
-                                   htmlCleaner,
-                                   VisualElementConverter,
-                                   RelatedContentConverter)
-  )
-  override lazy val conceptConverter = ConverterPipeLine(
-    mainConverters = List(contentBrowserConverter),
-    postProcessorConverters = List(ConceptConverter)
-  )
-  override lazy val leafNodeConverter = ConverterPipeLine(
-    mainConverters = Seq(contentBrowserConverter),
-    postProcessorConverters = List(LeafNodeConverter) ++ articleConverter.postProcessorConverters
-  )
-
   lazy val clock = new SystemClock
   lazy val authRole = new AuthRole
   lazy val authUser = new AuthUser

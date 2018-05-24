@@ -11,16 +11,41 @@ import no.ndla.articleimport.integration.ConverterModule
 import no.ndla.articleimport.model.api.ImportExceptions
 import no.ndla.articleimport.model.domain.{ImportStatus, NodeToConvert}
 import no.ndla.articleimport.ArticleImportProperties.{nodeTypeBegrep, nodeTypeH5P, nodeTypeLink, nodeTypeVideo}
-import no.ndla.articleimport.service.converters.MetaInfoConverter
+import no.ndla.articleimport.service.converters._
+import no.ndla.articleimport.service.converters.contentbrowser.ContentBrowserConverter
 
 import scala.util.{Failure, Success, Try}
 
 case class ConverterPipeLine(mainConverters: Seq[ConverterModule], postProcessorConverters: Seq[ConverterModule])
 
 trait ConverterModules {
-  val articleConverter: ConverterPipeLine
-  val conceptConverter: ConverterPipeLine
-  val leafNodeConverter: ConverterPipeLine
+  this: ContentBrowserConverter
+    with LeafNodeConverter
+    with HTMLCleaner
+    with FileDivConverter
+    with VisualElementConverter
+    with RelatedContentConverter =>
+
+  lazy val articleConverter = ConverterPipeLine(
+    mainConverters = List(contentBrowserConverter),
+    postProcessorConverters = List(SimpleTagConverter,
+                                   TableConverter,
+                                   MathMLConverter,
+                                   FileDivConverter,
+                                   htmlCleaner,
+                                   VisualElementConverter,
+                                   RelatedContentConverter)
+  )
+
+  lazy val conceptConverter = ConverterPipeLine(
+    mainConverters = List(contentBrowserConverter),
+    postProcessorConverters = List(ConceptConverter)
+  )
+
+  lazy val leafNodeConverter = ConverterPipeLine(
+    mainConverters = Seq(contentBrowserConverter),
+    postProcessorConverters = List(LeafNodeConverter) ++ articleConverter.postProcessorConverters
+  )
 
   private lazy val Converters = Map(
     nodeTypeBegrep -> conceptConverter,
