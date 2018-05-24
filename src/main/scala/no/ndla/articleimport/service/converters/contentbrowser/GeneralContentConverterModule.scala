@@ -20,7 +20,7 @@ import scala.util.{Failure, Success, Try}
 trait GeneralContentConverterModule {
   this: ExtractService with ExtractConvertStoreContent with HtmlTagGenerator with DraftApiClient =>
 
-  abstract class GeneralContentConverter extends ContentBrowserConverterModule with LazyLogging {
+  abstract class GeneralContentConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override def convert(contentBrowser: ContentBrowser,
                          importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val externalId = contentBrowser.get("nid")

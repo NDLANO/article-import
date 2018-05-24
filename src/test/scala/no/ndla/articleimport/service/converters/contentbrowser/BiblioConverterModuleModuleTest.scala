@@ -14,7 +14,7 @@ import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import scala.util.Success
 import org.mockito.Mockito._
 
-class BiblioConverterModuleTest extends UnitSuite with TestEnvironment {
+class BiblioConverterModuleModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
 
@@ -36,7 +36,7 @@ class BiblioConverterModuleTest extends UnitSuite with TestEnvironment {
 
     when(extractService.getBiblioMeta(nodeId)).thenReturn(Some(biblio))
     val Success((result, requiredLibraries, importStatus)) =
-      BiblioConverter.convert(content, ImportStatus.empty)
+      BiblioConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     requiredLibraries.isEmpty should be(true)
@@ -57,7 +57,7 @@ class BiblioConverterModuleTest extends UnitSuite with TestEnvironment {
 
     when(extractService.getBiblioMeta(nodeId)).thenReturn(Some(biblio))
     val Success((result, requiredLibraries, importStatus)) =
-      BiblioConverter.convert(content, ImportStatus.empty)
+      BiblioConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     requiredLibraries.isEmpty should be(true)

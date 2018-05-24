@@ -17,7 +17,7 @@ import org.mockito.Mockito._
 
 import scala.util.{Failure, Success}
 
-class LenkeConverterTest extends UnitSuite with TestEnvironment {
+class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
   val linkUrl = "https://www.youtube.com/watch?v=1qN72LEQnaU"
@@ -35,7 +35,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
       TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
 
     val Success((result, requiredLibraries, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
     result should equal(s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="$linkUrl" />""")
     requiredLibraries.length should equal(0)
     errors.messages.length should equal(1)
@@ -52,7 +52,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
       """ <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
     val Success((result, requiredLibraries, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
     errors.messages.length should equal(0)
@@ -64,7 +64,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
       """ <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
     val Success((result, requiredLibraries, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
     errors.messages.length should equal(1)
@@ -81,7 +81,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
       """ <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
     val Success((result, requiredLibraries, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
     errors.messages.length should equal(0)
@@ -98,7 +98,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
       s""" <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
     val Success((result, requiredLibraries, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
@@ -120,7 +120,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(nrkLinkUrl), Some(nrkEmbedScript))))
     val Success((result, requiredLibraries, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     errors.messages.length should equal(1)
@@ -142,7 +142,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(preziUrl), Some(preziEmbedCode))))
     val Success((result, _, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     errors.messages.length should equal(1)
@@ -162,7 +162,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(CcraftUrl), Some(CcraftEmbedCode))))
     val Success((result, _, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     errors.messages.length should equal(1)
@@ -184,7 +184,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(NdlaFilmUrl), Some(NdlaFilmEmbedCode))))
     val Success((result, _, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     errors.messages.length should equal(1)
@@ -206,7 +206,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(KahootUrl), Some(KahootEmbedCode))))
     val Success((result, _, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     errors.messages.length should equal(1)
@@ -218,7 +218,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
       TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "link", "link_anchor" -> anchor)
 
     val Success((result, _, errors)) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(s""" <a href="$linkUrl#$anchor" rel="noopener noreferrer" target="_blank" title=""></a>""")
     errors.messages.length should equal(0)
@@ -230,7 +230,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(None, None)))
     val Failure(x: ImportException) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
     x.message.contains("External embed meta is missing url or embed code") should be(true)
   }
 
@@ -241,7 +241,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(None, Some("<h1>this makes no sense</h1>"))))
     val Failure(x: ImportException) =
-      LenkeConverter.convert(content, ImportStatus.empty)
+      LenkeConverterModule.convert(content, ImportStatus.empty)
     x.message.contains("External embed meta is missing url or embed code") should be(true)
   }
 
@@ -250,7 +250,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
 
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(None, Some("<script src='http://nrk.no'></script>"))))
-    val Success((result, _, errors)) = LenkeConverter.convert(content, ImportStatus.empty)
+    val Success((result, _, errors)) = LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(
       s"""<$ResourceHtmlEmbedTag data-nrk-video-id="" data-resource="${ResourceType.NRKContent}" data-url="http://nrk.no" />""")
@@ -260,7 +260,7 @@ class LenkeConverterTest extends UnitSuite with TestEnvironment {
     val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
     when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(
       Success(MigrationEmbedMeta(Some("http://obscure.stuff.gg"), Some("<script src='http://hmmm.biz.niz"))))
-    val Failure(ex: ImportException) = LenkeConverter.convert(content, ImportStatus.empty)
+    val Failure(ex: ImportException) = LenkeConverterModule.convert(content, ImportStatus.empty)
 
     ex.message.contains("not a whitelisted embed source") should be(true)
   }

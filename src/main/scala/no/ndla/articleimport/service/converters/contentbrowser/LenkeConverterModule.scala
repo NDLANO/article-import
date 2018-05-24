@@ -25,7 +25,7 @@ import scala.util.{Failure, Success, Try}
 trait LenkeConverterModule {
   this: ExtractService with HtmlTagGenerator =>
 
-  object LenkeConverter extends ContentBrowserConverterModule with LazyLogging {
+  object LenkeConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "lenke"
 
     override def convert(content: ContentBrowser,

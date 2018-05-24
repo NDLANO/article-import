@@ -10,12 +10,12 @@ package no.ndla.articleimport.service.converters.contentbrowser
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 
-class NonExistentNodeConverterTest extends UnitSuite with TestEnvironment {
+class NonExistentNodeConverterModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId)
 
   test("That NonExistentNodeConverter returns a Failure") {
-    NonExistentNodeConverter
+    NonExistentNodeConverterModule
       .convert(content, ImportStatus.empty)
       .isFailure should be(true)
   }

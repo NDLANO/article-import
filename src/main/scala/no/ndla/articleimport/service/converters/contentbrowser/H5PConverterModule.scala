@@ -20,7 +20,7 @@ import scala.util.{Failure, Success, Try}
 trait H5PConverterModule {
   this: ExtractService with HtmlTagGenerator with H5PApiClient =>
 
-  object H5PConverter extends ContentBrowserConverterModule with LazyLogging {
+  object H5PConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "h5p_content"
 
     override def convert(content: ContentBrowser,

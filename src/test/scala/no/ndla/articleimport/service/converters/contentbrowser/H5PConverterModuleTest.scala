@@ -14,7 +14,7 @@ import org.mockito.Mockito._
 
 import scala.util.Success
 
-class H5PConverterTest extends UnitSuite with TestEnvironment {
+class H5PConverterModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
 
@@ -26,7 +26,7 @@ class H5PConverterTest extends UnitSuite with TestEnvironment {
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="//ndla.no/h5p/embed/1234" />"""
     val Success((result, requiredLibraries, errors)) =
-      H5PConverter.convert(content, ImportStatus.empty)
+      H5PConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     errors.messages.length should equal(0)

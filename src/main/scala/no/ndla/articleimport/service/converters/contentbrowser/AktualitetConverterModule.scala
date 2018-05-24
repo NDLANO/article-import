@@ -14,7 +14,7 @@ import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService
 trait AktualitetConverterModule extends GeneralContentConverterModule {
   this: ExtractService with ExtractConvertStoreContent with HtmlTagGenerator with DraftApiClient =>
 
-  object AktualitetConverter extends GeneralContentConverter {
+  object AktualitetConverterModule extends GeneralContentConverterModule {
     override val typeName: String = "aktualitet"
   }
 }

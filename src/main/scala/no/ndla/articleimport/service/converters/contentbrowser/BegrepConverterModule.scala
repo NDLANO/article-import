@@ -19,7 +19,7 @@ import scala.util.{Failure, Success, Try}
 trait BegrepConverterModule {
   this: HtmlTagGenerator with ExtractConvertStoreContent =>
 
-  object BegrepConverter extends ContentBrowserConverterModule with LazyLogging {
+  object BegrepConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "begrep"
 
     override def convert(content: ContentBrowser,

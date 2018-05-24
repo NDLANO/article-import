@@ -16,7 +16,7 @@ import no.ndla.articleimport.model.api.ImportException
 
 import scala.util.{Failure, Success}
 
-class FilConverterTest extends UnitSuite with TestEnvironment {
+class FilConverterModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val title = "melon"
 
@@ -38,7 +38,7 @@ class FilConverterTest extends UnitSuite with TestEnvironment {
     when(attachmentStorageService.uploadFileFromUrl(nodeId, fileMeta))
       .thenReturn(Success(filePath))
     val Success((result, _, _)) =
-      FilConverter.convert(content, ImportStatus.empty)
+      FilConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     verify(extractService, times(1)).getNodeFilMeta(nodeId)
@@ -56,7 +56,7 @@ class FilConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeFilMeta(nodeId))
       .thenReturn(Success(Seq(fileMeta, fileMeta.copy(fileName = "title2.pdf"))))
     val Failure(result: ImportException) =
-      FilConverter.convert(content, ImportStatus.empty)
+      FilConverterModule.convert(content, ImportStatus.empty)
 
     result.getMessage.contains("File node contains more than one file") should be(true)
     verify(extractService, times(1)).getNodeFilMeta(nodeId)
