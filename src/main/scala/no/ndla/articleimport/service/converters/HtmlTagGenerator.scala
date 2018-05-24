@@ -182,6 +182,14 @@ trait HtmlTagGenerator {
         }
         .mkString(" ")
 
+    /**
+      * Builds a span with data-type [[ResourceType.File]] and a child embed-tag for each file
+      * Spans are used to allow them to be placed inline until they are
+      * parsed by a converter which moves them into box elements and converted to divs.
+      *
+      * @param files List of uploaded files
+      * @return Span [[Element]]
+      */
     def buildFileEmbed(files: List[UploadedFile]): Element = {
       val doc = Document.createShell("")
       doc.outputSettings().prettyPrint(false).indentAmount(0)

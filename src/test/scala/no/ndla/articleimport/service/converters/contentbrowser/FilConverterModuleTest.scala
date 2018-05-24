@@ -16,7 +16,7 @@ import org.mockito.Mockito._
 
 import scala.util.Success
 
-class FilConverterTest extends UnitSuite with TestEnvironment {
+class FilConverterModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val title = "melon"
 
@@ -38,7 +38,7 @@ class FilConverterTest extends UnitSuite with TestEnvironment {
     when(attachmentStorageService.uploadFileFromUrl(nodeId, fileMeta))
       .thenReturn(Success(filePath))
     val Success((result, _, _)) =
-      FilConverter.convert(content, ImportStatus.empty)
+      FilConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     verify(extractService, times(1)).getNodeFilMeta(nodeId)
@@ -63,7 +63,7 @@ class FilConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Success(filePath2))
 
     val Success((result, _, _)) =
-      FilConverter.convert(content, ImportStatus.empty)
+      FilConverterModule.convert(content, ImportStatus.empty)
 
     result should be(expectedResult)
     verify(extractService, times(1)).getNodeFilMeta(nodeId)

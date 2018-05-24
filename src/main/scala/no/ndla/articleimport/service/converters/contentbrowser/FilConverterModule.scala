@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 trait FilConverterModule {
   this: ExtractService with AttachmentStorageService with HtmlTagGenerator =>
 
-  object FilConverter extends ContentBrowserConverterModule with LazyLogging {
+  object FilConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "fil"
 
     override def convert(content: ContentBrowser,
@@ -36,9 +36,7 @@ trait FilConverterModule {
             Failure(failures.head)
           } else {
             val files = uploadedFiles.collect { case Success(f) => f }.toList
-
             val linkText = content.getOpt("link_text")
-
             val embed = generateFileEmbed(files, linkText, importStatus)
 
             Success(embed)

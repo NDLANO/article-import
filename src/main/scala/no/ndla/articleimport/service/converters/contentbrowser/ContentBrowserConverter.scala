@@ -35,7 +35,7 @@ trait ContentBrowserConverter {
         VideoConverter.typeName -> VideoConverter,
         VeiledningConverter.typeName -> VeiledningConverter,
         AudioConverter.typeName -> AudioConverter,
-        FilConverter.typeName -> FilConverter,
+        FilConverterModule.typeName -> FilConverterModule,
         BiblioConverter.typeName -> BiblioConverter,
         BegrepConverter.typeName -> BegrepConverter
       )
