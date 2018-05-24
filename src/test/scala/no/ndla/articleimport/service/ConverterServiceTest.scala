@@ -460,7 +460,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     copyright.processors should contain(Author("Editorial", "C"))
   }
 
-  test("That FilConverterModule + FileDivConverter produces correct result") {
+  test("That FilConverterModule + FileDivConverter converts contentbrowser to div in the correct position") {
 
     val title = "Full av trix"
 
@@ -470,7 +470,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     val filePath = s"$nodeId/${fileMeta.fileName}"
     val filePath2 = s"$nodeId/${fileMeta2.fileName}"
     val expectedEmbed =
-      s"""$title<div data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$filePath2"></div>"""
+      s"""<div data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$filePath2"></div>"""
 
     when(extractService.getNodeFilMeta(nodeId))
       .thenReturn(Success(Seq(fileMeta, fileMeta2)))
@@ -480,12 +480,13 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
       .thenReturn(Success(filePath2))
     when(extractService.getNodeType(nodeId)).thenReturn(Some("fil"))
 
+    val contentBrowser =
+      s"""[contentbrowser ==nid=$nodeId==remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==width===insertion=link==link_title_text=$title==lightbox_size===link_text=$title==fid===text_align===css_class===alt===css_class=contentbrowser]"""
 
-
-    val contentBrowser = s"""[contentbrowser ==nid=$nodeId==remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==width===insertion=link==link_title_text=$title==lightbox_size===link_text=$title==fid===text_align===css_class===alt===css_class=contentbrowser]"""
-
-    val originalContent = s"""<section><p>Hei her er det vanlig tekst, men så plutselig: "$contentBrowser" whapam!</p><div><strong>Og en til $contentBrowser da</div></section>"""
-    val expectedResult = s"""<section><p>Hei her er det vanlig tekst, men så plutselig: "$title" whapam!</p>$expectedEmbed<div><strong>Og en til $title da</div>$expectedEmbed</section>"""
+    val originalContent =
+      s"""<section><p>Hei her er det vanlig tekst, men så plutselig: "$contentBrowser" whapam!</p><div><p><strong>Og en til $contentBrowser da</strong></p></div></section>"""
+    val expectedResult =
+      s"""<section><p>Hei her er det vanlig tekst, men så plutselig: "$title" whapam!</p>$expectedEmbed<div><p><strong>Og en til $title da</strong></p>$expectedEmbed</div></section>"""
 
     val sampleLanguageContent: LanguageContent = TestData.sampleContent.copy(content = originalContent)
     val node = sampleNode.copy(contents = List(sampleLanguageContent))
