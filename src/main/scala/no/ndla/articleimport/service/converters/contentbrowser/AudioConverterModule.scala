@@ -19,7 +19,7 @@ import scala.util.{Failure, Success, Try}
 trait AudioConverterModule {
   this: ExtractService with AttachmentStorageService with AudioApiClient with HtmlTagGenerator =>
 
-  object AudioConverter extends ContentBrowserConverterModule with LazyLogging {
+  object AudioConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "audio"
 
     override def convert(content: ContentBrowser,

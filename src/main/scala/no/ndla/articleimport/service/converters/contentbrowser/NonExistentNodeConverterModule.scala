@@ -15,7 +15,7 @@ import scala.util.{Failure, Try}
 
 trait NonExistentNodeConverterModule {
 
-  object NonExistentNodeConverter extends ContentBrowserConverterModule with LazyLogging {
+  object NonExistentNodeConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "NodeDoesNotExist"
 
     override def convert(content: ContentBrowser,

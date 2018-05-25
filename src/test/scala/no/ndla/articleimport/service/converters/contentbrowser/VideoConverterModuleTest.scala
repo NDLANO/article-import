@@ -16,7 +16,7 @@ import org.mockito.Mockito._
 
 import scala.util.Success
 
-class VideoConverterTest extends UnitSuite with TestEnvironment {
+class VideoConverterModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
   val caption = "sample caption"
@@ -26,7 +26,7 @@ class VideoConverterTest extends UnitSuite with TestEnvironment {
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-account="$NDLABrightcoveAccountId" data-caption="" data-player="$NDLABrightcovePlayerId" data-resource="brightcove" data-videoid="ref:$nodeId" />"""
     val Success((result, requiredLibraries, _)) =
-      VideoConverter.convert(content, ImportStatus.empty)
+      VideoConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
@@ -38,7 +38,7 @@ class VideoConverterTest extends UnitSuite with TestEnvironment {
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-account="$NDLABrightcoveAccountId" data-caption="$caption" data-player="$NDLABrightcovePlayerId" data-resource="brightcove" data-videoid="ref:$nodeId" />"""
     val Success((result, requiredLibraries, _)) =
-      VideoConverter.convert(contentWithCaptions, ImportStatus.empty)
+      VideoConverterModule.convert(contentWithCaptions, ImportStatus.empty)
 
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
@@ -57,7 +57,7 @@ class VideoConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Success(TestData.sampleApiArticle, ImportStatus.empty))
 
     val Success((result, requiredLibraries, _)) =
-      VideoConverter.convert(contentWithInsertionLink, ImportStatus.empty)
+      VideoConverterModule.convert(contentWithInsertionLink, ImportStatus.empty)
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
   }

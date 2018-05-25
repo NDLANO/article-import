@@ -19,7 +19,7 @@ import org.mockito.Matchers._
 
 import scala.util.{Failure, Success, Try}
 
-class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
+class GeneralContentConverterModuleTest extends UnitSuite with TestEnvironment {
   val (nodeId, nodeId2) = ("1234", "4321")
   val insertion = "inline"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
@@ -52,7 +52,7 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
     TestData.sampleContent.copy(content = "<div>sample content</div>")
   val sampleArticle = TestData.sampleApiArticle
 
-  val generalContentConverter = new GeneralContentConverter {
+  val generalContentConverter = new GeneralContentConverterModule {
     override val typeName: String = "test"
   }
 

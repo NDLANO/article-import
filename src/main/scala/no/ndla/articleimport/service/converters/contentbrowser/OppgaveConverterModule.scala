@@ -18,7 +18,7 @@ trait OppgaveConverterModule extends GeneralContentConverterModule {
     with DraftApiClient
     with HtmlTagGenerator =>
 
-  object OppgaveConverter extends GeneralContentConverter {
+  object OppgaveConverterModule extends GeneralContentConverterModule {
     override val typeName: String = "oppgave"
   }
 }

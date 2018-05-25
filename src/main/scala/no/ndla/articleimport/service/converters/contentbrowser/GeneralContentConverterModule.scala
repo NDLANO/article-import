@@ -13,13 +13,14 @@ import no.ndla.articleimport.model.api.{Article, Concept, ImportException}
 import no.ndla.articleimport.model.domain.{ImportStatus, Language, RequiredLibrary}
 import no.ndla.articleimport.service.converters.HtmlTagGenerator
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
+import no.ndla.articleimport.ArticleImportProperties.supportedTextTypes
 
 import scala.util.{Failure, Success, Try}
 
 trait GeneralContentConverterModule {
   this: ExtractService with ExtractConvertStoreContent with HtmlTagGenerator with DraftApiClient =>
 
-  abstract class GeneralContentConverter extends ContentBrowserConverterModule with LazyLogging {
+  abstract class GeneralContentConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override def convert(contentBrowser: ContentBrowser,
                          importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val externalId = contentBrowser.get("nid")
@@ -27,14 +28,19 @@ trait GeneralContentConverterModule {
         extractService.getNodeGeneralContent(externalId).sortBy(c => c.language)
       val contentNodeData = extractService.getNodeData(externalId)
 
-      val licenseToInsert = contentNodeData.map(_.license).getOrElse(None)
-      val authorsToInsert = contentNodeData.map(_.authors).getOrElse(List.empty).toList
-
       contents.reverse.find(c => c.language == contentBrowser.language | c.language == Language.NoLanguage) match {
         case Some(content) =>
           insertContent(content.content, contentBrowser, importStatus) map {
             case (finalContent, status) =>
-              (finalContent, Seq.empty, status.addInsertedAuthors(authorsToInsert).addInsertedLicense(licenseToInsert))
+              val licenseToInsert = contentNodeData.map(_.license).getOrElse(None)
+              val authorsToInsert = contentNodeData.map(_.authors).getOrElse(List.empty).toList
+              val combineLicenses =
+                contentNodeData.map(n => supportedTextTypes.contains(n.contentType)).getOrElse(false)
+
+              val updatedStatus =
+                if (combineLicenses) status.addInsertedAuthors(authorsToInsert).addInsertedLicense(licenseToInsert)
+                else status
+              (finalContent, Seq.empty, updatedStatus)
           }
         case None =>
           Failure(

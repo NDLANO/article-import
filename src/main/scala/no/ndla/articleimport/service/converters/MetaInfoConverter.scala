@@ -12,7 +12,7 @@ import no.ndla.articleimport.ArticleImportProperties.nodeTypeLink
 import no.ndla.articleimport.integration.ImageApiClient
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.{ArticleMetaImage, ImportStatus, NodeToConvert, NodeWithConvertedMeta}
-
+import no.ndla.mapping.License.getLicenses
 import scala.util.{Failure, Success, Try}
 
 trait MetaInfoConverter {
@@ -23,7 +23,7 @@ trait MetaInfoConverter {
     def convert(nodeToConvert: NodeToConvert,
                 importStatus: ImportStatus): Try[(NodeWithConvertedMeta, ImportStatus)] = {
 
-      combineLicenses(nodeToConvert, importStatus).map {
+      handleLicenses(nodeToConvert, importStatus).map {
         case (license, updatedStatus) =>
           val authors = combineAuthors(nodeToConvert, updatedStatus)
 
@@ -49,8 +49,8 @@ trait MetaInfoConverter {
     private def combineAuthors(nodeToConvert: NodeToConvert, importStatus: ImportStatus) =
       (nodeToConvert.authors ++ importStatus.nodeLocalContext.insertedAuthors).toSet
 
-    private def combineLicenses(nodeToConvert: NodeToConvert,
-                                importStatus: ImportStatus): Try[(String, ImportStatus)] = {
+    private def handleLicenses(nodeToConvert: NodeToConvert,
+                               importStatus: ImportStatus): Try[(String, ImportStatus)] = {
 
       val license = nodeToConvert.license match {
         case Some(l) => l
@@ -60,24 +60,39 @@ trait MetaInfoConverter {
       val mainNid = nodeToConvert.getMainNid.orElse(nodeToConvert.getNid).getOrElse("")
       val allLicenses = (importStatus.nodeLocalContext.insertedLicenses :+ license).toSet
 
-      val combinableLicenses = Map(
-        Set("by-sa", "by-nc-sa") -> "by-nc-sa"
-      )
-
-      combinableLicenses.get(allLicenses) match {
-        case Some(combinedLicense) =>
-          Success(
-            (combinedLicense,
-             importStatus.addMessage(s"Successfully combined licenses: $allLicenses into $combinedLicense")))
-        case None if allLicenses.size == 1 =>
-          Success((license, importStatus))
-        case None =>
-          val msg =
-            s"Could not combine license $license with inserted licenses: ${importStatus.nodeLocalContext.insertedLicenses
-              .mkString(",")}."
-          logger.error(msg)
-          Failure(ImportException(mainNid, msg))
+      if (allLicenses.size == 1) {
+        Success((license, importStatus))
+      } else {
+        combineLicenses(allLicenses) match {
+          case Some(combinedLicense) =>
+            Success(
+              (combinedLicense,
+               importStatus.addMessage(s"Successfully combined licenses: $allLicenses into $combinedLicense")))
+          case None =>
+            val msg =
+              s"Could not combine license $license with inserted licenses: ${importStatus.nodeLocalContext.insertedLicenses
+                .mkString(",")}."
+            logger.error(msg)
+            Failure(ImportException(mainNid, msg))
+        }
       }
+    }
+
+    /**
+      * Combines set of cc licenses into a single cc license with components from all.
+      * For example 'by-sa' and 'by-nc' is combined into 'by-nc-sa'
+      * @param licenses Set of cc licenses
+      * @return Combined license
+      */
+    private def combineLicenses(licenses: Set[String]): Option[String] = {
+      val usedParts = licenses.flatMap(license => license.split('-'))
+      val combinedLicense = getLicenses.find(l => {
+        usedParts.forall(part => {
+          l.license.contains(part)
+        })
+      })
+
+      combinedLicense.map(_.license)
     }
 
     private def getMetaImages(nodeToConvert: NodeToConvert): Seq[ArticleMetaImage] = {

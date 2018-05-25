@@ -52,7 +52,7 @@ trait LeafNodeConverter {
     private def doLink(cont: LanguageContent): Try[LanguageContent] = {
       extractService.getLinkEmbedMeta(cont.nid) match {
         case Success(MigrationEmbedMeta(Some(url), embedCode)) =>
-          val inlineEmbed = LenkeConverter.insertInline(cont.nid, url, embedCode.getOrElse(""))
+          val inlineEmbed = LenkeConverterModule.insertInline(cont.nid, url, embedCode.getOrElse(""))
 
           inlineEmbed.map {
             case (embedTag, requiredLibraries, _) =>
@@ -69,13 +69,13 @@ trait LeafNodeConverter {
 
     private def doVideo(cont: LanguageContent): Try[LanguageContent] = {
       val el = stringToJsoupDocument(cont.content)
-      el.prepend(s"<section>${VideoConverter.toInlineVideo("", cont.nid)}</section>")
+      el.prepend(s"<section>${VideoConverterModule.toInlineVideo("", cont.nid)}</section>")
       Success(cont.copy(content = jsoupDocumentToString(el), metaDescription = defaultMetaDescription))
     }
 
     private def doH5P(cont: LanguageContent): Try[LanguageContent] = {
       val el = stringToJsoupDocument(cont.content)
-      H5PConverter
+      H5PConverterModule
         .toH5PEmbed(cont.nid)
         .map(html => {
           el.append(s"<section>$html</section>")

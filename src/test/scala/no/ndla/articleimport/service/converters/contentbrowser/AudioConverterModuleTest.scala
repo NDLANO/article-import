@@ -14,7 +14,7 @@ import org.mockito.Mockito._
 
 import scala.util.{Failure, Success}
 
-class AudioConverterTest extends UnitSuite with TestEnvironment {
+class AudioConverterModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
   val caption = "This is caption"
@@ -29,7 +29,7 @@ class AudioConverterTest extends UnitSuite with TestEnvironment {
     when(audioApiClient.getOrImportAudio(nodeId)).thenReturn(Success(audioId))
 
     val Success((result, requiredLibraries, status)) =
-      AudioConverter.convert(content, ImportStatus.empty)
+      AudioConverterModule.convert(content, ImportStatus.empty)
     val strippedResult = " +".r.replaceAllIn(result.replace("\n", ""), " ")
 
     status.messages.isEmpty should be(true)
@@ -49,7 +49,7 @@ class AudioConverterTest extends UnitSuite with TestEnvironment {
     when(audioApiClient.getOrImportAudio(nodeId)).thenReturn(Success(audioId))
 
     val Success((result, requiredLibraries, status)) =
-      AudioConverter.convert(contentInsideTable, ImportStatus.empty)
+      AudioConverterModule.convert(contentInsideTable, ImportStatus.empty)
     val strippedResult = " +".r.replaceAllIn(result.replace("\n", ""), " ")
 
     status.messages.isEmpty should be(true)
@@ -60,6 +60,6 @@ class AudioConverterTest extends UnitSuite with TestEnvironment {
   test("That AudioConverter returns a Failure if the audio was not found") {
     when(audioApiClient.getOrImportAudio(nodeId))
       .thenReturn(Failure(new RuntimeException("error")))
-    AudioConverter.convert(content, ImportStatus.empty).isFailure should be(true)
+    AudioConverterModule.convert(content, ImportStatus.empty).isFailure should be(true)
   }
 }

@@ -25,26 +25,26 @@ trait ContentBrowserConverter {
   class ContentBrowserConverter extends ConverterModule with LazyLogging {
     private val contentBrowserModules =
       Map[String, ContentBrowserConverterModule](
-        ImageConverter.typeName -> ImageConverter,
-        H5PConverter.typeName -> H5PConverter,
-        LenkeConverter.typeName -> LenkeConverter,
-        OppgaveConverter.typeName -> OppgaveConverter,
-        FagstoffConverter.typeName -> FagstoffConverter,
-        AktualitetConverter.typeName -> AktualitetConverter,
-        NonExistentNodeConverter.typeName -> NonExistentNodeConverter,
-        VideoConverter.typeName -> VideoConverter,
-        VeiledningConverter.typeName -> VeiledningConverter,
-        AudioConverter.typeName -> AudioConverter,
-        FilConverter.typeName -> FilConverter,
-        BiblioConverter.typeName -> BiblioConverter,
-        BegrepConverter.typeName -> BegrepConverter
+        ImageConverterModule.typeName -> ImageConverterModule,
+        H5PConverterModule.typeName -> H5PConverterModule,
+        LenkeConverterModule.typeName -> LenkeConverterModule,
+        OppgaveConverterModule.typeName -> OppgaveConverterModule,
+        FagstoffConverterModule.typeName -> FagstoffConverterModule,
+        AktualitetConverterModule.typeName -> AktualitetConverterModule,
+        NonExistentNodeConverterModule.typeName -> NonExistentNodeConverterModule,
+        VideoConverterModule.typeName -> VideoConverterModule,
+        VeiledningConverterModule.typeName -> VeiledningConverterModule,
+        AudioConverterModule.typeName -> AudioConverterModule,
+        FilConverterModule.typeName -> FilConverterModule,
+        BiblioConverterModule.typeName -> BiblioConverterModule,
+        BegrepConverterModule.typeName -> BegrepConverterModule
       )
 
     private def getConverterModule(contentBrowser: ContentBrowser) = {
       val nodeType = extractService
         .getNodeType(contentBrowser.get("nid"))
-        .getOrElse(NonExistentNodeConverter.typeName)
-      contentBrowserModules.getOrElse(nodeType, UnsupportedContentConverter)
+        .getOrElse(NonExistentNodeConverterModule.typeName)
+      contentBrowserModules.getOrElse(nodeType, UnsupportedContentConverterModule)
     }
 
     def replaceHtmlInElement(element: Element, start: Int, end: Int, replacement: String) = {
