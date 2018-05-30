@@ -86,13 +86,21 @@ class ContentBrowserStringTest extends UnitSuite with TestEnvironment {
     content.DOMPath should equal(List("p", "div", "section", "body", "html"))
   }
 
-  test("DOMPath should work even if contentbrowser contains parenthesis") {
+  test("DOMPath should work even if contentbrowser contains unmatched parenthesis") {
     val contentStringWithParenthesis =
       s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text=DuckQuack)==text_align===css_class=contentbrowser contentbrowser]"
+    val contentStringWithQuote =
+      s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$altText==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text=DuckQuack's==text_align===css_class=contentbrowser contentbrowser]"
+
     val content =
       ContentBrowserString(stringToJsoupDocument(s"<section><div><p>$contentStringWithParenthesis</p></div></section>"),
                            "nb")
     content.DOMPath should equal(List("p", "div", "section", "body", "html"))
+
+    val content2 =
+      ContentBrowserString(stringToJsoupDocument(s"<section><div><p>$contentStringWithQuote</p></div></section>"), "nb")
+
+    content2.DOMPath should equal(List("p", "div", "section", "body", "html"))
 
   }
 
