@@ -8,10 +8,11 @@
 package no.ndla.articleimport.service.converters
 
 import no.ndla.articleimport.integration.LanguageContent
+import no.ndla.articleimport.model.api.ImportExceptions
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.{TestData, UnitSuite}
 
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class SimpleTagConverterTest extends UnitSuite {
   val nodeId = "1234"
@@ -239,6 +240,24 @@ class SimpleTagConverterTest extends UnitSuite {
       SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
 
     result.content should equal(expectedContentResult)
+  }
+
+  test("That embed-tags from old ndla makes converter fail") {
+    val content =
+      """
+        |<section>
+        |<div>
+        |<p>Test</p>
+        |<embed type="application/x-shockwave-flash" src="http://example.com/test.swf" />
+        |</div>
+        |</section>
+      """.stripMargin
+
+    val Failure(ex: ImportExceptions) =
+      SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
+
+    ex.errors.map(_.getMessage) should be(Seq(
+      "Failed to import node with invalid embed, src was: 'http://example.com/test.swf', and type was: 'application/x-shockwave-flash'."))
   }
 
 }
