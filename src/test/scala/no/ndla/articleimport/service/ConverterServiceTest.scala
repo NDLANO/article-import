@@ -138,14 +138,14 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
   test("ingress is extracted when wrapped in <p> tags") {
     val content =
       s"""<section>
-        |<$ResourceHtmlEmbedTag data-size="fullbredde" data-url="http://image-api/images/5359" data-align="" data-resource="image" data-alt="To personer" data-caption="capt.">
+        |<$ResourceHtmlEmbedTag data-size="fullbredde" data-align="" data-resource="image" data-alt="To personer" data-resource_id="5359" data-caption="capt.">
         |<p><strong>Når man driver med medieproduksjon, er det mye arbeid som må gjøres<br></strong></p>
         |</section>
         |<section> <p>Det som kan gi helse- og sikkerhetsproblemer på en dataarbeidsplass, er:</section>""".stripMargin
         .replace("\n", "")
     val expectedContentResult = ArticleContent(
       s"""<section>
-         |<$ResourceHtmlEmbedTag data-size="fullbredde" data-url="http://image-api/images/5359" data-align="" data-resource="image" data-alt="To personer" data-caption="capt.">
+         |<$ResourceHtmlEmbedTag data-size="fullbredde" data-align="" data-resource="image" data-alt="To personer" data-resource_id="5359" data-caption="capt.">
          |<p><strong>Når man driver med medieproduksjon, er det mye arbeid som må gjøres<br></strong></p>
          |</section>
          |<section><p>Det som kan gi helse- og sikkerhetsproblemer på en dataarbeidsplass, er:</p></section>""".stripMargin
@@ -258,11 +258,11 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
 
   test("That empty html tags are removed") {
     val contentNodeBokmal =
-      sampleLanguageContent.copy(
-        content =
-          s"""<section> <div></div><p><div></div></p><$ResourceHtmlEmbedTag ></$ResourceHtmlEmbedTag></section>""")
+      sampleLanguageContent.copy(content =
+        s"""<section> <div></div><p><div></div></p><$ResourceHtmlEmbedTag data-resource="external" data-url="example.com"></$ResourceHtmlEmbedTag></section>""")
     val node = sampleNode.copy(contents = List(contentNodeBokmal))
-    val expectedResult = s"""<section><$ResourceHtmlEmbedTag></section>"""
+    val expectedResult =
+      s"""<section><$ResourceHtmlEmbedTag data-resource="external" data-url="example.com"></section>"""
 
     val Success((result: Article, status)) =
       service.toDomainArticle(node, ImportStatus.empty)

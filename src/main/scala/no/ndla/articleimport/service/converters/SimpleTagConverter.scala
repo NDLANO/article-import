@@ -9,12 +9,14 @@ package no.ndla.articleimport.service.converters
 
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration.{ConverterModule, LanguageContent}
+import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.TagAttributes.DataSize
+import no.ndla.validation.TextValidator
 import org.jsoup.nodes.Element
 
 import scala.collection.JavaConverters._
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 object SimpleTagConverter extends ConverterModule {
 
@@ -24,7 +26,32 @@ object SimpleTagConverter extends ConverterModule {
     convertPres(element)
     convertHeadings(element)
     convertSpans(element)
-    Success(content.copy(content = jsoupDocumentToString(element)), importStatus)
+
+    handleEmbed(content, element).map(_ => (content.copy(content = jsoupDocumentToString(element)), importStatus))
+  }
+
+  private def handleEmbed(content: LanguageContent, el: Element): Try[_] = {
+    val allEmbeds = el.select("embed").asScala.toList
+    val HtmlValidator = new TextValidator(allowHtml = true)
+
+    val invalidEmbeds = allEmbeds.filterNot(e => {
+      HtmlValidator.validate("", e.outerHtml()).isEmpty
+    })
+
+    val errors = invalidEmbeds.map(e => {
+      val attrsToIncludeInError = List("src", "type")
+      val attrMessages = attrsToIncludeInError.map(a => (a, e.attr(a))).filter(_._2.trim.nonEmpty).map {
+        case (attr, value) => s"$attr was: '$value'"
+      }
+      val msg = s"Failed to import node with invalid embed${attrMessages.mkString(", ", ", and ", ".")}"
+
+      ImportException(content.nid, msg)
+    })
+    if (errors.nonEmpty) {
+      Failure(ImportExceptions(Set(content.nid, content.tnid), errors))
+    } else {
+      Success(el)
+    }
   }
 
   def convertDivs(el: Element) {
