@@ -28,7 +28,7 @@ case class ImportStatus(messages: Seq[String],
   def setArticleId(id: Long): ImportStatus = this.copy(articleId = Some(id))
 
   def withNewNodeLocalContext(): ImportStatus =
-    this.copy(nodeLocalContext = NodeLocalImportStatus(List.empty, List.empty))
+    this.copy(nodeLocalContext = NodeLocalImportStatus(List.empty, List.empty, this.nodeLocalContext.depth + 1))
 
   def resetNodeLocalContext(originalContext: NodeLocalImportStatus): ImportStatus =
     this.copy(nodeLocalContext = originalContext)
@@ -58,7 +58,8 @@ object ImportStatus {
 }
 
 case class NodeLocalImportStatus(insertedLicenses: List[String] = List.empty,
-                                 insertedAuthors: List[Author] = List.empty) {
+                                 insertedAuthors: List[Author] = List.empty,
+                                 depth: Int = 0) {
 
   def addInsertedLicense(license: Option[String]): NodeLocalImportStatus = {
     this.copy(insertedLicenses = this.insertedLicenses ++ license.toList)

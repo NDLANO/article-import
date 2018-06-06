@@ -51,8 +51,8 @@ trait RelatedContentConverter {
         val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] =
           importRelatedContent(content.nid, _, _)
         val handlerFunc =
-          if (importStatus.importRelatedArticles) importRelatedContentCb
-          else getRelatedContentFromDb _
+          if (importStatus.nodeLocalContext.depth > 1) getRelatedContentFromDb _
+          else importRelatedContentCb
 
         handlerFunc(nidsToImport, importStatus) match {
           case Success((ids, status)) if ids.nonEmpty =>

@@ -9,7 +9,7 @@ package no.ndla.articleimport.service
 
 import java.util.Date
 
-import no.ndla.articleimport.integration.{ContentId, LanguageIngress, MigrationSubjectMeta}
+import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api.{ArticleStatus, OptimisticLockException}
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
@@ -75,7 +75,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
   test("That ETL extracts, translates and loads a node correctly") {
     val sampleArticle = TestData.sampleApiArticle
-    when(extractConvertStoreContent.processNode(nodeId2, ImportStatus(Seq(), Set(nodeId))))
+    when(extractConvertStoreContent.processNode(nodeId2, ImportStatus(Seq(), Set(nodeId)).withNewNodeLocalContext()))
       .thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2)))))
     when(draftApiClient.getConceptIdFromExternalId(any[String]))
       .thenReturn(None)
