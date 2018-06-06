@@ -8,9 +8,8 @@
 package no.ndla.articleimport.model.domain
 
 case class ImportStatus(messages: Seq[String],
-                        visitedNodes: Set[String] = Set(),
+                        visitedNodes: Set[String] = Set.empty,
                         articleId: Option[Long] = None,
-                        importRelatedArticles: Boolean = true,
                         forceUpdateArticles: Boolean = false,
                         nodeLocalContext: NodeLocalImportStatus = NodeLocalImportStatus()) {
 

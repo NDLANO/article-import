@@ -462,16 +462,25 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
   test("That related articles are included in all languages") {
 
     val relatedContent = Seq(
-      MigrationRelatedContent("5555", "Heisann", "", 1),
-      MigrationRelatedContent("5556", "Hopsann", "", 1),
-      MigrationRelatedContent("5557", "Tralala", "", 1)
+      MigrationRelatedContent("1", "Heisann", "", 1),
+      MigrationRelatedContent("2", "Hopsann", "", 1),
+      MigrationRelatedContent("3", "Tralala", "", 1)
     )
 
     when(extractService.getNodeType(any[String])).thenReturn(Some("fagstoff"))
+    when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
+      val nid = i.getArgumentAt(0, "".getClass)
+      Success(
+        TestData.sampleNodeToConvert.copy(
+          contents = Seq(
+            TestData.sampleContent.copy(nid = nid, tnid = nid)
+          )))
+    })
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus])).thenAnswer((i: InvocationOnMock) => {
-      val id = i.getArgumentAt(0, "".getClass)
-      val st = i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]
-      Success((TestData.sampleApiArticle.copy(id = ("1" + id).toInt), st))
+      val externalId = i.getArgumentAt(0, "".getClass)
+      val status = i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]
+      val importedId = ("1" + externalId).toInt
+      Success((TestData.sampleApiArticle.copy(id = importedId), status))
     })
 
     val nbLanguageContent = TestData.sampleContent.copy(language = "nb",
@@ -482,7 +491,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
                                                         relatedContent = relatedContent)
 
     val relatedSection =
-      """<section><embed data-article-ids="15555,15556,15557" data-resource="related-content"></section>"""
+      """<section><embed data-article-ids="11,12,13" data-resource="related-content"></section>"""
     val expectedNbContent = s"<section><p>Hei hå</p></section>$relatedSection"
     val expectedEnContent = s"<section><p>Hey ho</p></section>$relatedSection"
 
