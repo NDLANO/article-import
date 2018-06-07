@@ -16,6 +16,9 @@ import no.ndla.articleimport.service.converters.TableConverter
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import org.mockito.Mockito._
+import org.mockito.Matchers._
+import org.mockito.invocation.InvocationOnMock
+
 import scala.util.{Success, Try}
 
 class ConverterServiceTest extends UnitSuite with TestEnvironment {
@@ -454,6 +457,47 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     copyright.processors should contain(Author("Linguistic", "F"))
     copyright.processors should contain(Author("Editorial", "B"))
     copyright.processors should contain(Author("Editorial", "C"))
+  }
+
+  test("That related articles are included in all languages") {
+
+    val relatedContent = Seq(
+      MigrationRelatedContent("1", "Heisann", "", 1),
+      MigrationRelatedContent("2", "Hopsann", "", 1),
+      MigrationRelatedContent("3", "Tralala", "", 1)
+    )
+
+    when(extractService.getNodeType(any[String])).thenReturn(Some("fagstoff"))
+    when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
+      val nid = i.getArgumentAt(0, "".getClass)
+      Success(
+        TestData.sampleNodeToConvert.copy(
+          contents = Seq(
+            TestData.sampleContent.copy(nid = nid, tnid = nid)
+          )))
+    })
+    when(extractConvertStoreContent.processNode(any[String], any[ImportStatus])).thenAnswer((i: InvocationOnMock) => {
+      val externalId = i.getArgumentAt(0, "".getClass)
+      val status = i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]
+      val importedId = ("1" + externalId).toInt
+      Success((TestData.sampleApiArticle.copy(id = importedId), status))
+    })
+
+    val nbLanguageContent = TestData.sampleContent.copy(language = "nb",
+                                                        content = "<section><p>Hei hå</p></section>",
+                                                        relatedContent = relatedContent)
+    val enLanguageContent = TestData.sampleContent.copy(language = "en",
+                                                        content = "<section><p>Hey ho</p></section>",
+                                                        relatedContent = relatedContent)
+
+    val relatedSection =
+      """<section><embed data-article-ids="11,12,13" data-resource="related-content"></section>"""
+    val expectedNbContent = s"<section><p>Hei hå</p></section>$relatedSection"
+    val expectedEnContent = s"<section><p>Hey ho</p></section>$relatedSection"
+
+    val node = sampleNode.copy(contents = List(nbLanguageContent, enLanguageContent))
+    val Success((result: Article, _)) = service.toDomainArticle(node, ImportStatus.empty.withNewNodeLocalContext())
+    result.content.map(_.content) should be(Seq(expectedNbContent, expectedEnContent))
   }
 
 }

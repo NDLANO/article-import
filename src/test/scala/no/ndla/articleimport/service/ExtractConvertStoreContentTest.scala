@@ -9,7 +9,7 @@ package no.ndla.articleimport.service
 
 import java.util.Date
 
-import no.ndla.articleimport.integration.{ContentId, LanguageIngress, MigrationSubjectMeta}
+import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api.{ArticleStatus, OptimisticLockException}
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
@@ -75,7 +75,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
   test("That ETL extracts, translates and loads a node correctly") {
     val sampleArticle = TestData.sampleApiArticle
-    when(extractConvertStoreContent.processNode(nodeId2, ImportStatus(Seq(), Set(nodeId))))
+    when(extractConvertStoreContent.processNode(nodeId2, ImportStatus(Seq(), Set(nodeId)).withNewNodeLocalContext()))
       .thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2)))))
     when(draftApiClient.getConceptIdFromExternalId(any[String]))
       .thenReturn(None)
@@ -88,7 +88,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
     val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty)
     status should equal(
-      ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId, nodeId2), Some(sampleArticle.id), false))
+      ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId, nodeId2), Some(sampleArticle.id)))
     verify(draftApiClient, times(1))
       .newArticle(any[Article], any[String], any[Set[String]])
   }
@@ -111,7 +111,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     val Success((_, status)) =
       eCSService.processNode(nodeId, ImportStatus(Seq(), Set("9876")))
     status should equal(
-      ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set("9876", nodeId), Some(sampleArticle.id), false))
+      ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set("9876", nodeId), Some(sampleArticle.id)))
   }
 
   test("That ETL returns a Failure if the node was not found") {
@@ -180,7 +180,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     reset(draftApiClient)
     val sampleArticle = TestData.sampleApiArticle.copy(revision = Some(10))
     when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty(forceUpdate = true).addVisitedNode(nodeId)))
-      .thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2), Some(1), false, true))))
+      .thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2), Some(1), forceUpdateArticles = true))))
     when(draftApiClient.getArticleIdFromExternalId(any[String]))
       .thenReturn(Some(1: Long))
     when(draftApiClient.getContentByExternalId(any[String]))
@@ -196,7 +196,10 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     val Success((_, status)) =
       eCSService.processNode(nodeId, ImportStatus.empty(forceUpdate = true))
     status should equal(
-      ImportStatus(List(s"Successfully imported node $nodeId: 1"), Set(nodeId), Some(sampleArticle.id), false, true))
+      ImportStatus(List(s"Successfully imported node $nodeId: 1"),
+                   Set(nodeId),
+                   Some(sampleArticle.id),
+                   forceUpdateArticles = true))
 
     verify(draftApiClient, times(1))
       .updateArticle(any[Article], any[String], any[Set[String]])
@@ -207,7 +210,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     reset(draftApiClient)
     when(
       extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty(forceUpdate = false).addVisitedNode(nodeId)))
-      .thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2), Some(1), false, false))))
+      .thenReturn(Try((sampleArticle, ImportStatus(Seq(), Set(nodeId, nodeId2), Some(1), forceUpdateArticles = false))))
     when(draftApiClient.getArticleIdFromExternalId(any[String]))
       .thenReturn(Some(1: Long))
     when(draftApiClient.getContentByExternalId(any[String]))
@@ -229,7 +232,6 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
         List(s"$nodeId has been updated since import, refusing to import.", s"Successfully imported node $nodeId: 1"),
         Set(nodeId),
         Some(sampleArticle.id),
-        false,
         false
       ))
     verify(draftApiClient, times(0))

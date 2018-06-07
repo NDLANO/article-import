@@ -25,13 +25,16 @@ trait ExtractConvertStoreContent {
   class ExtractConvertStoreContent extends LazyLogging {
 
     def processNode(externalId: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
-      if (importStatus.visitedNodes.contains(externalId)) {
-        return getMainNodeId(externalId).flatMap(draftApiClient.getContentByExternalId) match {
+      val mainNid = getMainNodeId(externalId)
+      if (importStatus.visitedNodes.contains(mainNid.getOrElse(externalId))) {
+        logger.info(s"Skipping node '$externalId' since main nid '${mainNid.getOrElse(0)}' is already imported.")
+        return mainNid.flatMap(draftApiClient.getContentByExternalId) match {
           case Some(content) => Success(content, importStatus)
           case None =>
             Failure(NotFoundException(s"Content with external id $externalId was not found"))
         }
       }
+      logger.info(s"Importing node '$externalId' with main nid: '${mainNid.getOrElse(0)}'")
 
       val (node, mainNodeId) = extract(externalId) match {
         case Success((n, mnid)) => (n, mnid)

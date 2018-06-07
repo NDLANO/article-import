@@ -13,7 +13,7 @@ import no.ndla.articleimport.integration.{ConverterModule, DraftApiClient, Langu
 import no.ndla.articleimport.model.api.{Article, Concept, ImportException, ImportExceptions}
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
-import no.ndla.articleimport.ArticleImportProperties.supportedContentTypes
+import no.ndla.articleimport.ArticleImportProperties.{supportedContentTypes, importRelatedNodesMaxDepth}
 
 import scala.util.{Failure, Success, Try}
 
@@ -30,29 +30,26 @@ trait RelatedContentConverter {
       val allRelatedNids = content.relatedContent
         .map(c => (c.nid, extractService.getNodeType(c.nid).getOrElse("unknown")))
         .toSet
-      val nidsToImport = allRelatedNids
-        .filter {
-          case (_, nodeType) => supportedContentTypes.contains(nodeType)
-        }
-        .map { case (nid, _) => nid }
-      val excludedNids = allRelatedNids.filterNot {
-        case (nid, _) => nidsToImport.contains(nid)
-      } map {
-        case (nid, nodeType) =>
+
+      val nidsToImport = allRelatedNids.collect {
+        case (nid, nodeType) if supportedContentTypes.contains(nodeType) => nid
+      }
+
+      val excludedNids = allRelatedNids.collect {
+        case (nid, nodeType) if !nidsToImport.contains(nid) =>
           (nid, s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
       }
 
       if (nidsToImport.isEmpty) {
         Success(content,
                 importStatus
-                  .copy(importRelatedArticles = false)
                   .addMessages(excludedNids.map(_._2).toSeq))
       } else {
         val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] =
           importRelatedContent(content.nid, _, _)
         val handlerFunc =
-          if (importStatus.importRelatedArticles) importRelatedContentCb
-          else getRelatedContentFromDb _
+          if (importStatus.nodeLocalContext.depth > importRelatedNodesMaxDepth) getRelatedContentFromDb _
+          else importRelatedContentCb
 
         handlerFunc(nidsToImport, importStatus) match {
           case Success((ids, status)) if ids.nonEmpty =>
@@ -79,7 +76,7 @@ trait RelatedContentConverter {
                                    relatedNids: Set[String],
                                    importStatus: ImportStatus): Try[(Set[Long], ImportStatus)] = {
     val (importedArticles, updatedStatus) =
-      relatedNids.foldLeft((Seq[Try[Article]](), importStatus.copy(importRelatedArticles = false)))((result, nid) => {
+      relatedNids.foldLeft((Seq[Try[Article]](), importStatus))((result, nid) => {
         val (articles, status) = result
 
         extractConvertStoreContent.processNode(nid, status) match {

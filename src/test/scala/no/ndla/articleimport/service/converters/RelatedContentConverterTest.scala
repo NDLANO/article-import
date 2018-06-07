@@ -17,6 +17,7 @@ import no.ndla.validation.ResourceType._
 import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
 import org.mockito.Mockito._
 import org.mockito.Matchers._
+import org.mockito.invocation.InvocationOnMock
 
 import scala.util.{Failure, Success}
 
@@ -28,11 +29,18 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
   override def beforeEach() {
     when(extractService.getNodeType("1234")).thenReturn(Some("fagstoff"))
     when(extractService.getNodeType("5678")).thenReturn(Some("fagstoff"))
+    when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
+      val nid = i.getArgumentAt(0, "".getClass)
+      Success(
+        TestData.sampleNodeToConvert.copy(
+          contents = Seq(
+            TestData.sampleContent.copy(nid = nid, tnid = nid)
+          )))
+    })
   }
 
   test("convert should insert a new section with an related-content embed tag") {
     val origContent = "<section><h1>hmm</h1></section>"
-
     when(
       extractConvertStoreContent
         .processNode(any[String], any[ImportStatus]))

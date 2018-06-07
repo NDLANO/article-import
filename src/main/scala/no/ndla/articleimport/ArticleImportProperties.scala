@@ -85,6 +85,7 @@ object ArticleImportProperties extends LazyLogging {
   // When converting a content node, the converter may run several times over the content to make sure
   // everything is converted. This value defines a maximum number of times the converter runs on a node
   val maxConvertionRounds = 5
+  val importRelatedNodesMaxDepth = 1
 
   lazy val Domain = Domains.get(Environment)
 
