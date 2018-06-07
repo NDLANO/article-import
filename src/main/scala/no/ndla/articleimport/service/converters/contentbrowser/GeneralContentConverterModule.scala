@@ -35,7 +35,7 @@ trait GeneralContentConverterModule {
               val licenseToInsert = contentNodeData.map(_.license).getOrElse(None)
               val authorsToInsert = contentNodeData.map(_.authors).getOrElse(List.empty).toList
               val combineLicenses =
-                contentNodeData.map(n => supportedTextTypes.contains(n.contentType)).getOrElse(false)
+                contentNodeData.map(n => supportedTextTypes.contains(n.nodeType)).getOrElse(false)
 
               val updatedStatus =
                 if (combineLicenses) status.addInsertedAuthors(authorsToInsert).addInsertedLicense(licenseToInsert)
