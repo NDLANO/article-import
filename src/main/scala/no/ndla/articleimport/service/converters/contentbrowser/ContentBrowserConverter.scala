@@ -65,7 +65,7 @@ trait ContentBrowserConverter {
         getConverterModule(cont).convert(cont, importStatus) match {
           case Failure(x) =>
             val (start, end) = cont.StartEndIndex
-            replaceHtmlInElement(element, start, end, HtmlTagGenerator.buildErrorContent("Hurr dirr")) // TODO: Better message
+            replaceHtmlInElement(element, start, end, HtmlTagGenerator.buildErrorContent("Innhold mangler."))
             convert(element, languageContent, importStatus, exceptions :+ x)
           case Success((newContent, reqLibs, status)) =>
             val (start, end) = cont.StartEndIndex

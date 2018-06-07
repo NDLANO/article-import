@@ -313,19 +313,24 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     content.content.head.content should equal(expectedContent)
   }
 
-  test("toDomainArticle should return Success with an error if convertion fails") {
+  test("toDomainArticle should return Success with an error if conversion fails") {
     val nodeId = 123123
     val contentString =
       s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$sampleAlt==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
     val contentNodeBokmal = sampleLanguageContent.copy(content = contentString)
     val node = sampleNode.copy(contents = List(contentNodeBokmal))
+    val expectedError = s"Failed to import image with node id $nodeId"
+    val expectedResult =
+      s"""<section><$ResourceHtmlEmbedTag data-message="Innhold mangler." data-resource="error"></section>"""
 
     when(extractService.getNodeType(s"$nodeId")).thenReturn(Some("image"))
     when(imageApiClient.importImage(s"$nodeId")).thenReturn(None)
 
-    val Success((_, status)) = service.toDomainArticle(node, ImportStatus.empty)
+    val Success((result: Article, status)) = service.toDomainArticle(node, ImportStatus.empty)
 
-    status.errors should be(Seq(s"Failed to import image with node id $nodeId"))
+    status.errors.size should be(1)
+    status.errors should be(Seq(expectedError))
+    result.content.map(_.content) should be(Seq(expectedResult))
   }
 
   test("toApiLicense defaults to unknown if the license was not found") {
