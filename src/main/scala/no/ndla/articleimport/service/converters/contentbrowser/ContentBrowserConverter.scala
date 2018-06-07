@@ -65,7 +65,7 @@ trait ContentBrowserConverter {
         getConverterModule(cont).convert(cont, importStatus) match {
           case Failure(x) =>
             val (start, end) = cont.StartEndIndex
-            replaceHtmlInElement(element, start, end, "")
+            replaceHtmlInElement(element, start, end, HtmlTagGenerator.buildErrorContent("Hurr dirr")) // TODO: Better message
             convert(element, languageContent, importStatus, exceptions :+ x)
           case Success((newContent, reqLibs, status)) =>
             val (start, end) = cont.StartEndIndex
@@ -85,17 +85,13 @@ trait ContentBrowserConverter {
         convert(metaDescriptionElement, updatedLanguageContent, updatedImportStatus, Seq())
 
       val converterExceptions = contentExceptions ++ migrationContentExceptions
-      converterExceptions.headOption match {
-        case Some(_) =>
-          Failure(ImportExceptions(Set(languageContent.nid, languageContent.tnid), converterExceptions))
-        case None =>
-          Success(
-            finalLanguageContent.copy(content = jsoupDocumentToString(contentElement),
-                                      metaDescription = jsoupDocumentToString(metaDescriptionElement)),
-            finalImportStatus
-          )
-      }
+      Success(
+        (
+          finalLanguageContent.copy(content = jsoupDocumentToString(contentElement),
+                                    metaDescription = jsoupDocumentToString(metaDescriptionElement)),
+          finalImportStatus.addErrors(converterExceptions.map(_.getMessage))
+        )
+      )
     }
-
   }
 }
