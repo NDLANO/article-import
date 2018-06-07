@@ -13,7 +13,7 @@ import no.ndla.articleimport.integration.{ConverterModule, DraftApiClient, Langu
 import no.ndla.articleimport.model.api.{Article, Concept, ImportException, ImportExceptions}
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
-import no.ndla.articleimport.ArticleImportProperties.supportedContentTypes
+import no.ndla.articleimport.ArticleImportProperties.{supportedContentTypes, importRelatedNodesMaxDepth}
 
 import scala.util.{Failure, Success, Try}
 
@@ -48,7 +48,7 @@ trait RelatedContentConverter {
         val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] =
           importRelatedContent(content.nid, _, _)
         val handlerFunc =
-          if (importStatus.nodeLocalContext.depth > 1) getRelatedContentFromDb _
+          if (importStatus.nodeLocalContext.depth > importRelatedNodesMaxDepth) getRelatedContentFromDb _
           else importRelatedContentCb
 
         handlerFunc(nidsToImport, importStatus) match {
