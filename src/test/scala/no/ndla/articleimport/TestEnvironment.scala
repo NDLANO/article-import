@@ -24,6 +24,7 @@ trait TestEnvironment
     with HealthController
     with NdlaController
     with MockitoSugar
+    with SimpleTagConverter
     with ExtractService
     with ConverterModules
     with ConverterService

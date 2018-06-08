@@ -10,11 +10,11 @@ package no.ndla.articleimport.service.converters
 import no.ndla.articleimport.integration.LanguageContent
 import no.ndla.articleimport.model.api.ImportExceptions
 import no.ndla.articleimport.model.domain.ImportStatus
-import no.ndla.articleimport.{TestData, UnitSuite}
+import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 
 import scala.util.{Failure, Success}
 
-class SimpleTagConverterTest extends UnitSuite {
+class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
 
   test("That divs with class 'paragraph' are replaced with section") {
@@ -242,7 +242,7 @@ class SimpleTagConverterTest extends UnitSuite {
     result.content should equal(expectedContentResult)
   }
 
-  test("That embed-tags from old ndla makes converter fail") {
+  test("That embed-tags from old ndla makes converter insert error-embed and succeed") {
     val content =
       """
         |<section>
@@ -253,10 +253,21 @@ class SimpleTagConverterTest extends UnitSuite {
         |</section>
       """.stripMargin
 
-    val Failure(ex: ImportExceptions) =
+    val expectedContent =
+      """
+        |<section>
+        |<div>
+        |<p>Test</p>
+        |<embed data-message="Innhold mangler." data-resource="error">
+        |</div>
+        |</section>
+      """.stripMargin
+
+    val Success((result, status)) =
       SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
 
-    ex.errors.map(_.getMessage) should be(Seq(
+    result.content should be(expectedContent)
+    status.errors should be(Seq(
       "Failed to import node with invalid embed, src was: 'http://example.com/test.swf', and type was: 'application/x-shockwave-flash'."))
   }
 
