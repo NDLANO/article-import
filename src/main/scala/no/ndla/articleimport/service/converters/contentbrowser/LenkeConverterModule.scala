@@ -34,7 +34,7 @@ trait LenkeConverterModule {
 
       convertLink(content) match {
         case Success((linkHtml, requiredLibraries, errors)) =>
-          Success(linkHtml, requiredLibraries, importStatus.addMessages(errors))
+          Success(linkHtml, requiredLibraries, importStatus.addErrors(errors))
         case Failure(x) => Failure(x)
       }
     }

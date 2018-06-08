@@ -12,18 +12,14 @@ import no.ndla.articleimport.integration.{AudioApiClient, ConverterModule, Image
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
 import no.ndla.articleimport.service.ExtractService
-import no.ndla.articleimport.service.converters.contentbrowser.{
-  AudioConverterModule,
-  H5PConverterModule,
-  ImageConverterModule,
-  VideoConverterModule
-}
+import no.ndla.articleimport.service.converters.contentbrowser.{AudioConverterModule, H5PConverterModule, ImageConverterModule, VideoConverterModule}
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
 trait VisualElementConverter {
   this: ExtractService
+    with HtmlTagGenerator
     with ImageApiClient
     with AudioApiClient
     with H5PConverterModule
@@ -47,7 +43,9 @@ trait VisualElementConverter {
             importStatus
           )
         case None =>
-          Failure(ImportException(content.nid, s"Failed to convert node id ${content.visualElement.get}"))
+          Success(
+            (content.copy(visualElement = Some(HtmlTagGenerator.buildErrorContent("Innhold mangler."))),
+             importStatus.addError(s"Failed to convert visual element node ${content.visualElement.getOrElse("")}")))
       }
     }
 
