@@ -8,7 +8,7 @@
 package no.ndla.articleimport.service.converters
 
 import no.ndla.articleimport.integration.LanguageContent
-import no.ndla.articleimport.model.api.ImportExceptions
+import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 
@@ -267,8 +267,12 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
       SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
 
     result.content should be(expectedContent)
-    status.errors should be(Seq(
-      "Failed to import node with invalid embed, src was: 'http://example.com/test.swf', and type was: 'application/x-shockwave-flash'."))
+    status.errors should be(
+      Seq(
+        ImportException(
+          "1234",
+          "Failed to import node with invalid embed, src was: 'http://example.com/test.swf', and type was: 'application/x-shockwave-flash'.")
+      ))
   }
 
 }

@@ -37,10 +37,11 @@ trait RelatedContentConverter {
 
       val excludedNids = allRelatedNids.collect {
         case (nid, nodeType) if !nidsToImport.contains(nid) =>
-          (nid, s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
+          ImportException(nid,
+                          s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
       }
 
-      val updatedStatus = importStatus.addErrors(excludedNids.map(_._2).toSeq)
+      val updatedStatus = importStatus.addErrors(excludedNids.toSeq)
 
       if (nidsToImport.isEmpty) {
         Success(content, updatedStatus)
@@ -59,9 +60,19 @@ trait RelatedContentConverter {
           case Success((_, status)) =>
             Success(content, status)
           case Failure(ex: ImportExceptions) =>
-            Success(content, updatedStatus.addErrors(ex.errors.map(_.getMessage)))
+            val importExceptions = ex.errors.collect { case ex: ImportException => ex }
+            val otherExceptions = ex.errors.diff(importExceptions)
+            val finalStatus = updatedStatus
+              .addErrors(importExceptions)
+              .addErrors(
+                otherExceptions.map(
+                  e =>
+                    ImportException(content.nid,
+                                    "Something unexpected went wrong while importing related nodes.",
+                                    Some(e))))
+            Success((content, finalStatus))
           case Failure(ex) =>
-            Success((content, updatedStatus.addError(ex.getMessage)))
+            Success((content, updatedStatus.addError(ImportException(content.nid, ex.getMessage, Some(ex)))))
         }
       }
 
@@ -94,7 +105,7 @@ trait RelatedContentConverter {
       importedArticles.partition(_.isSuccess)
     if (importFailures.isEmpty) {
       val ids = importSuccesses.map(_.get.id).toSet
-      Success(ids, updatedStatus)
+      Success(ids, updatedStatus) // TODO: If one of three fails, we want to disaply the two imported.
     } else {
       val nodeIds = migrationApiClient
         .getAllTranslationNids(mainNodeId)

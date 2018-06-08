@@ -10,6 +10,7 @@ package no.ndla.articleimport.service.converters.contentbrowser
 import no.ndla.articleimport.ArticleImportProperties._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.{ImageCopyright, ImageLicense, ImageMetaInformation, ImageTag}
+import no.ndla.articleimport.model.api.ImportException
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.model.domain._
 import org.mockito.Mockito._
@@ -39,7 +40,12 @@ class ContentBrowserConverterTest extends UnitSuite with TestEnvironment {
     val Success((result, status)) = contentBrowserConverter.convert(sampleContent, ImportStatus.empty)
 
     status.errors.size should be(1)
-    status.errors should be(Seq(s"Unsupported content unsupported type in node with id $nodeId"))
+    status.errors should be(
+      Seq(
+        ImportException(
+          s"$nodeId",
+          "ContentBrowserConverter failed",
+          Some(ImportException(s"$nodeId", s"Unsupported content unsupported type in node with id $nodeId")))))
     result.content should be(expectedResult)
   }
 

@@ -7,8 +7,10 @@
 
 package no.ndla.articleimport.model.domain
 
+import no.ndla.articleimport.model.api.ImportException
+
 case class ImportStatus(messages: Seq[String],
-                        errors: Seq[String],
+                        errors: Seq[ImportException],
                         visitedNodes: Set[String] = Set.empty,
                         articleId: Option[Long] = None,
                         forceUpdateArticles: Boolean = false,
@@ -20,10 +22,10 @@ case class ImportStatus(messages: Seq[String],
   def addMessages(messages: Seq[String]): ImportStatus =
     this.copy(messages = this.messages ++ messages)
 
-  def addErrors(errorMessages: Seq[String]): ImportStatus =
+  def addErrors(errorMessages: Seq[ImportException]): ImportStatus =
     this.copy(errors = this.errors ++ errorMessages)
 
-  def addError(errorMessage: String): ImportStatus =
+  def addError(errorMessage: ImportException): ImportStatus =
     this.copy(errors = this.errors :+ errorMessage)
 
   def addVisitedNode(nodeID: String): ImportStatus =

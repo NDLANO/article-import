@@ -76,8 +76,9 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     result.content should be(languageContent.content)
     status.errors should be(
       List(
-        s"Related content with nid ${languageContent.nid} points to a concept. This should not be legal, no?"
-      ))
+        ImportException(
+          languageContent.nid,
+          s"Related content with nid ${languageContent.nid} points to a concept. This should not be legal, no?")))
   }
 
   test("convert should return a success with error in importStatus if unsupported link as related") {
@@ -103,10 +104,14 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       RelatedContentConverter.convert(languageContent, ImportStatus.empty)
 
     result.content should be(languageContent.content)
-    status.errors should be(List(
-      s"Related content with node node id 1234 (unsupported) is unsupported and will not be imported",
-      s"Related content with node node id 5678 (unsupported) is unsupported and will not be imported"
-    ))
+    status.errors should be(
+      List(
+        ImportException(
+          "1234",
+          s"Related content with node node id 1234 (unsupported) is unsupported and will not be imported"),
+        ImportException("5678",
+                        s"Related content with node node id 5678 (unsupported) is unsupported and will not be imported")
+      ))
   }
 
   test("convert should not add a new section if there are no related contents") {

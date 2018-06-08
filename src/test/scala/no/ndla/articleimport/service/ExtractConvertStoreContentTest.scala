@@ -10,7 +10,7 @@ package no.ndla.articleimport.service
 import java.util.Date
 
 import no.ndla.articleimport.integration._
-import no.ndla.articleimport.model.api.{ArticleStatus, OptimisticLockException}
+import no.ndla.articleimport.model.api.{ArticleStatus, ImportException, OptimisticLockException}
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.network.model.HttpRequestException
@@ -237,11 +237,11 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       eCSService.processNode(nodeId, ImportStatus.empty(forceUpdate = false))
     status should equal(
       ImportStatus(
-        List(s"$nodeId has been updated since import, refusing to import.", s"Successfully imported node $nodeId: 1"),
-        Seq.empty,
+        List(s"Successfully imported node $nodeId: 1"),
+        List(ImportException(nodeId, s"$nodeId has been updated since import, refusing to import.")),
         Set(nodeId),
         Some(sampleArticle.id),
-        false
+        forceUpdateArticles = false
       ))
     verify(draftApiClient, times(0))
       .updateArticle(any[Article], any[String], any[Set[String]])

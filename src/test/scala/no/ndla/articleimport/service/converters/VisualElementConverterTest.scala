@@ -7,6 +7,7 @@
 
 package no.ndla.articleimport.service.converters
 
+import no.ndla.articleimport.model.api.ImportException
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
@@ -37,7 +38,7 @@ class VisualElementConverterTest extends UnitSuite with TestEnvironment {
 
     val Success((result, status)) = VisualElementConverter.convert(sampleArticle, ImportStatus.empty)
 
-    status.errors should be(Seq(s"Failed to convert visual element node $nodeId"))
+    status.errors should be(Seq(ImportException(nodeId, s"Failed to convert visual element node $nodeId")))
     result.visualElement should be(Some("""<embed data-message="Innhold mangler." data-resource="error" />"""))
   }
 
@@ -60,7 +61,7 @@ class VisualElementConverterTest extends UnitSuite with TestEnvironment {
 
     val Success((result, status)) = VisualElementConverter.convert(sampleArticle, ImportStatus.empty)
     result.visualElement should be(Some("""<embed data-message="Innhold mangler." data-resource="error" />"""))
-    status.errors should be(Seq(s"Failed to convert visual element node $nodeId"))
+    status.errors should be(Seq(ImportException(nodeId, s"Failed to convert visual element node $nodeId")))
   }
 
   test("visual element of type video should be converted to embed tag") {

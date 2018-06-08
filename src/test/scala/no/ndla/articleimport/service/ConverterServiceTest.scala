@@ -11,6 +11,7 @@ import java.util.Date
 
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api
+import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.service.converters.TableConverter
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
@@ -322,7 +323,10 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
       s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$sampleAlt==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
     val contentNodeBokmal = sampleLanguageContent.copy(content = contentString)
     val node = sampleNode.copy(contents = List(contentNodeBokmal))
-    val expectedError = s"Failed to import image with node id $nodeId"
+    val expectedError =
+      ImportException(nodeId.toString,
+                      "ContentBrowserConverter failed",
+                      Some(ImportException(s"$nodeId", s"Failed to import image with node id $nodeId")))
     val expectedResult =
       s"""<section><$ResourceHtmlEmbedTag data-message="Innhold mangler." data-resource="error"></section>"""
 
@@ -332,7 +336,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     val Success((result: Article, status)) = service.toDomainArticle(node, ImportStatus.empty)
 
     status.errors.size should be(1)
-    status.errors should be(Seq(expectedError))
+    status.errors should equal(Seq(expectedError))
     result.content.map(_.content) should be(Seq(expectedResult))
   }
 

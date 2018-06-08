@@ -54,7 +54,9 @@ trait SimpleTagConverter {
         s"Failed to import node with invalid embed${attrMessages.mkString(", ", ", and ", ".")}"
       })
 
-      Success((content.copy(content = jsoupDocumentToString(element)), importStatus.addErrors(errorMessages)))
+      Success(
+        (content.copy(content = jsoupDocumentToString(element)),
+         importStatus.addErrors(errorMessages.map(err => ImportException(content.nid, err)))))
     }
 
     def convertDivs(el: Element) {
