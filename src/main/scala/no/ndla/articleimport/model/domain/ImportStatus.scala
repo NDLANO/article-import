@@ -23,6 +23,9 @@ case class ImportStatus(messages: Seq[String],
   def addErrors(errorMessages: Seq[String]): ImportStatus =
     this.copy(errors = this.errors ++ errorMessages)
 
+  def addError(errorMessage: String): ImportStatus =
+    this.copy(errors = this.errors :+ errorMessage)
+
   def addVisitedNode(nodeID: String): ImportStatus =
     this.copy(visitedNodes = this.visitedNodes + nodeID)
 

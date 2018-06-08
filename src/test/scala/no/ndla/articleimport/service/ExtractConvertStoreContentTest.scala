@@ -75,7 +75,9 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
   test("That ETL extracts, translates and loads a node correctly") {
     val sampleArticle = TestData.sampleApiArticle
-    when(extractConvertStoreContent.processNode(nodeId2, ImportStatus(Seq(), Seq(), Set(nodeId)).withNewNodeLocalContext()))
+    when(
+      extractConvertStoreContent.processNode(nodeId2,
+                                             ImportStatus(Seq(), Seq(), Set(nodeId)).withNewNodeLocalContext()))
       .thenReturn(Try((sampleArticle, ImportStatus(Seq(), Seq(), Set(nodeId, nodeId2)))))
     when(draftApiClient.getConceptIdFromExternalId(any[String]))
       .thenReturn(None)
@@ -88,7 +90,10 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
     val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty)
     status should equal(
-      ImportStatus(List(s"Successfully imported node $nodeId: 1"), Seq.empty, Set(nodeId, nodeId2), Some(sampleArticle.id)))
+      ImportStatus(List(s"Successfully imported node $nodeId: 1"),
+                   Seq.empty,
+                   Set(nodeId, nodeId2),
+                   Some(sampleArticle.id)))
     verify(draftApiClient, times(1))
       .newArticle(any[Article], any[String], any[Set[String]])
   }
@@ -180,7 +185,8 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     reset(draftApiClient)
     val sampleArticle = TestData.sampleApiArticle.copy(revision = Some(10))
     when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty(forceUpdate = true).addVisitedNode(nodeId)))
-      .thenReturn(Try((sampleArticle, ImportStatus(Seq(), Seq(), Set(nodeId, nodeId2), Some(1), forceUpdateArticles = true))))
+      .thenReturn(
+        Try((sampleArticle, ImportStatus(Seq(), Seq(), Set(nodeId, nodeId2), Some(1), forceUpdateArticles = true))))
     when(draftApiClient.getArticleIdFromExternalId(any[String]))
       .thenReturn(Some(1: Long))
     when(draftApiClient.getContentByExternalId(any[String]))
@@ -196,7 +202,11 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     val Success((_, status)) =
       eCSService.processNode(nodeId, ImportStatus.empty(forceUpdate = true))
     status should equal(
-      ImportStatus(List(s"Successfully imported node $nodeId: 1"),Seq(), Set(nodeId), Some(sampleArticle.id), forceUpdateArticles = true))
+      ImportStatus(List(s"Successfully imported node $nodeId: 1"),
+                   Seq(),
+                   Set(nodeId),
+                   Some(sampleArticle.id),
+                   forceUpdateArticles = true))
 
     verify(draftApiClient, times(1))
       .updateArticle(any[Article], any[String], any[Set[String]])
@@ -207,7 +217,8 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     reset(draftApiClient)
     when(
       extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty(forceUpdate = false).addVisitedNode(nodeId)))
-      .thenReturn(Try((sampleArticle, ImportStatus(Seq(), Seq(), Set(nodeId, nodeId2), Some(1), forceUpdateArticles = false))))
+      .thenReturn(
+        Try((sampleArticle, ImportStatus(Seq(), Seq(), Set(nodeId, nodeId2), Some(1), forceUpdateArticles = false))))
     when(draftApiClient.getArticleIdFromExternalId(any[String]))
       .thenReturn(Some(1: Long))
     when(draftApiClient.getContentByExternalId(any[String]))

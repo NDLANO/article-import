@@ -56,21 +56,60 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
 
   test("convert should return a Success with error in importStatus if trying to link to a concept as related content") {
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
-      .thenReturn(Success((TestData.sampleApiConcept.copy(id = 1), ImportStatus.empty)))
-      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiConcept.copy(id = 1),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiArticle.copy(id = 2),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
 
     when(migrationApiClient.getAllTranslationNids(languageContent.nid))
       .thenReturn(Success(Set(languageContent.nid)))
 
-    val Success((_, status)) =
+    val Success((result, status)) =
       RelatedContentConverter.convert(languageContent, ImportStatus.empty)
 
+    result.content should be(languageContent.content)
+    status.errors should be(
+      List(
+        s"Related content with nid ${languageContent.nid} points to a concept. This should not be legal, no?"
+      ))
+  }
+
+  test("convert should return a success with error in importStatus if unsupported link as related") {
+
+    when(extractService.getNodeType(any[String])).thenReturn(Some("unsupported"))
+
+    when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiArticle.copy(id = 1),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiArticle.copy(id = 2),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
+
+    when(migrationApiClient.getAllTranslationNids(languageContent.nid))
+      .thenReturn(Success(Set(languageContent.nid)))
+
+    val Success((result, status)) =
+      RelatedContentConverter.convert(languageContent, ImportStatus.empty)
+
+    result.content should be(languageContent.content)
     status.errors should be(List(
-      s"Related content with nid ${languageContent.nid} points to a concept. This should not be legal, no?"
+      s"Related content with node node id 1234 (unsupported) is unsupported and will not be imported",
+      s"Related content with node node id 5678 (unsupported) is unsupported and will not be imported"
     ))
   }
 
-  test("convert should not add a new section if thre are no related contents") {
+  test("convert should not add a new section if there are no related contents") {
     val origContent = "<section><h1>hmm</h1></section>"
 
     val Success((result, _)) =

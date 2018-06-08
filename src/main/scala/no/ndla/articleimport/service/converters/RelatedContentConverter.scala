@@ -40,44 +40,28 @@ trait RelatedContentConverter {
           (nid, s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
       }
 
+      val updatedStatus = importStatus.addErrors(excludedNids.map(_._2).toSeq)
+
       if (nidsToImport.isEmpty) {
-        Success(content,
-                importStatus
-                  .addMessages(excludedNids.map(_._2).toSeq))
+        Success(content, updatedStatus)
       } else {
         val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] =
           importRelatedContent(content.nid, _, _)
         val handlerFunc =
-          if (importStatus.nodeLocalContext.depth > importRelatedNodesMaxDepth) getRelatedContentFromDb _
+          if (updatedStatus.nodeLocalContext.depth > importRelatedNodesMaxDepth) getRelatedContentFromDb _
           else importRelatedContentCb
 
-        handlerFunc(nidsToImport, importStatus) match {
+        handlerFunc(nidsToImport, updatedStatus) match {
           case Success((ids, status)) if ids.nonEmpty =>
             val element = stringToJsoupDocument(content.content)
             element.append(s"<section>${HtmlTagGenerator.buildRelatedContent(ids)}</section>")
-            Success(content.copy(content = jsoupDocumentToString(element)),
-                    status.addMessages(excludedNids.map(_._2).toSeq))
-
+            Success(content.copy(content = jsoupDocumentToString(element)), status)
           case Success((_, status)) =>
-            Success(content, status.addMessages(excludedNids.map(_._2).toSeq))
-
+            Success(content, status)
           case Failure(ex: ImportExceptions) =>
-            val filteredOutNodes = excludedNids.map {
-              case (_, message) =>
-                ImportException(content.nid, message, Some(ex))
-            }
-
-            val errorMessages = (ex.errors ++ filteredOutNodes).map(_.getMessage)
-            Success(content, importStatus.addErrors(errorMessages))
-
+            Success(content, updatedStatus.addErrors(ex.errors.map(_.getMessage)))
           case Failure(ex) =>
-            val filteredOutNodes = excludedNids.map {
-              case (_, message) =>
-                ImportException(content.nid, message, Some(ex))
-            }.toSeq
-
-            val errorMessages = (filteredOutNodes :+ ex).map(_.getMessage)
-            Success((content, importStatus.addErrors(errorMessages)))
+            Success((content, updatedStatus.addError(ex.getMessage)))
         }
       }
 

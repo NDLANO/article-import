@@ -183,7 +183,8 @@ class GeneralContentConverterModuleTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
     when(draftApiClient.getConceptIdFromExternalId(nodeId)).thenReturn(None)
     when(extractConvertStoreContent.processNode(nodeId, ImportStatus(Seq(), Seq(), Set(nodeId2))))
-      .thenReturn(Try((TestData.sampleApiArticle.copy(id = newNodeid), ImportStatus(Seq(), Seq(), Set(nodeId2, nodeId)))))
+      .thenReturn(
+        Try((TestData.sampleApiArticle.copy(id = newNodeid), ImportStatus(Seq(), Seq(), Set(nodeId2, nodeId)))))
 
     val Success((result, _, status)) =
       generalContentConverter.convert(content, ImportStatus(Seq.empty, Seq.empty, Set(nodeId2)))
