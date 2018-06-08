@@ -17,6 +17,7 @@ import no.ndla.validation.ResourceType._
 import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
 import org.mockito.Mockito._
 import org.mockito.Matchers._
+import org.mockito.invocation.InvocationOnMock
 
 import scala.util.{Failure, Success}
 
@@ -28,11 +29,18 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
   override def beforeEach() {
     when(extractService.getNodeType("1234")).thenReturn(Some("fagstoff"))
     when(extractService.getNodeType("5678")).thenReturn(Some("fagstoff"))
+    when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
+      val nid = i.getArgumentAt(0, "".getClass)
+      Success(
+        TestData.sampleNodeToConvert.copy(
+          contents = Seq(
+            TestData.sampleContent.copy(nid = nid, tnid = nid)
+          )))
+    })
   }
 
   test("convert should insert a new section with an related-content embed tag") {
     val origContent = "<section><h1>hmm</h1></section>"
-
     when(
       extractConvertStoreContent
         .processNode(any[String], any[ImportStatus]))
@@ -46,7 +54,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     result.content should equal(expectedContent)
   }
 
-  test("convert should return a Failure if trying to link to a concept as related content") {
+  test("convert should return a Success with error in importStatus if trying to link to a concept as related content") {
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
       .thenReturn(Success((TestData.sampleApiConcept.copy(id = 1), ImportStatus.empty)))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
@@ -54,14 +62,12 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     when(migrationApiClient.getAllTranslationNids(languageContent.nid))
       .thenReturn(Success(Set(languageContent.nid)))
 
-    val Failure(result: ImportExceptions) =
+    val Success((_, status)) =
       RelatedContentConverter.convert(languageContent, ImportStatus.empty)
-    result.getMessage should equal(s"Failed to import node(s) with id(s) ${languageContent.nid}")
-    result.errors should equal(
-      List(
-        ImportException(
-          languageContent.nid,
-          s"Related content with nid ${languageContent.nid} points to a concept. This should not be legal, no?")))
+
+    status.errors should be(List(
+      s"Related content with nid ${languageContent.nid} points to a concept. This should not be legal, no?"
+    ))
   }
 
   test("convert should not add a new section if thre are no related contents") {

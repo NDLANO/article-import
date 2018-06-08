@@ -9,9 +9,8 @@ package no.ndla.articleimport.model.domain
 
 case class ImportStatus(messages: Seq[String],
                         errors: Seq[String],
-                        visitedNodes: Set[String] = Set(),
+                        visitedNodes: Set[String] = Set.empty,
                         articleId: Option[Long] = None,
-                        importRelatedArticles: Boolean = true,
                         forceUpdateArticles: Boolean = false,
                         nodeLocalContext: NodeLocalImportStatus = NodeLocalImportStatus()) {
 
@@ -32,7 +31,7 @@ case class ImportStatus(messages: Seq[String],
   def setArticleId(id: Long): ImportStatus = this.copy(articleId = Some(id))
 
   def withNewNodeLocalContext(): ImportStatus =
-    this.copy(nodeLocalContext = NodeLocalImportStatus(List.empty, List.empty))
+    this.copy(nodeLocalContext = NodeLocalImportStatus(List.empty, List.empty, this.nodeLocalContext.depth + 1))
 
   def resetNodeLocalContext(originalContext: NodeLocalImportStatus): ImportStatus =
     this.copy(nodeLocalContext = originalContext)
@@ -55,7 +54,8 @@ object ImportStatus {
 }
 
 case class NodeLocalImportStatus(insertedLicenses: List[String] = List.empty,
-                                 insertedAuthors: List[Author] = List.empty) {
+                                 insertedAuthors: List[Author] = List.empty,
+                                 depth: Int = 0) {
 
   def addInsertedLicense(license: Option[String]): NodeLocalImportStatus = {
     this.copy(insertedLicenses = this.insertedLicenses ++ license.toList)
