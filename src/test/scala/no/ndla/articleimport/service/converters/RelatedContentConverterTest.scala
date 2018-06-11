@@ -17,6 +17,7 @@ import no.ndla.validation.ResourceType._
 import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
 import org.mockito.Mockito._
 import org.mockito.Matchers._
+import org.mockito.Matchers
 import org.mockito.invocation.InvocationOnMock
 
 import scala.util.{Failure, Success}
@@ -73,7 +74,10 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     val Success((result, status)) =
       RelatedContentConverter.convert(languageContent, ImportStatus.empty)
 
-    result.content should be(languageContent.content)
+    val expectedContent =
+      s"""${languageContent.content}<section><embed data-article-ids="2" data-resource="related-content"></section>"""
+
+    result.content should be(expectedContent)
     status.errors should be(
       List(
         ImportException(
@@ -112,6 +116,41 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
         ImportException("5678",
                         s"Related content with node node id 5678 (unsupported) is unsupported and will not be imported")
       ))
+  }
+
+  test("convert should still import one if one out of two related fails") {
+    when(extractService.getNodeType("1234")).thenReturn(Some("unsupported"))
+    when(extractService.getNodeType("5678")).thenReturn(Some("fagstoff"))
+
+    when(extractConvertStoreContent.processNode(Matchers.eq("1234"), any[ImportStatus]))
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiArticle.copy(id = 1),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
+    when(extractConvertStoreContent.processNode(Matchers.eq("5678"), any[ImportStatus]))
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiArticle.copy(id = 2),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
+
+    when(migrationApiClient.getAllTranslationNids(languageContent.nid))
+      .thenReturn(Success(Set(languageContent.nid)))
+
+    val Success((result, status)) =
+      RelatedContentConverter.convert(languageContent, ImportStatus.empty)
+
+    val expectedContent =
+      s"""${languageContent.content}<section><embed data-article-ids="2" data-resource="related-content"></section>"""
+
+    result.content should be(expectedContent)
+    status.errors should be(
+      List(
+        ImportException("1234",
+                        s"Related content with node node id 1234 (unsupported) is unsupported and will not be imported")
+      ))
+
   }
 
   test("convert should not add a new section if there are no related contents") {

@@ -90,29 +90,27 @@ trait RelatedContentConverter {
           case Success((content: Article, st)) =>
             (articles :+ Success(content), st)
           case Success((_: Concept, _)) =>
-            (articles :+ Failure(
-               ImportException(mainNodeId,
-                               s"Related content with nid $nid points to a concept. This should not be legal, no?")),
-             status)
+            val msg = s"Related content with nid $nid points to a concept. This should not be legal, no?"
+            logger.error(msg)
+            (articles :+ Failure(ImportException(nid, msg)), status)
           case Failure(ex) =>
-            (articles :+ Failure(
-               ImportException(mainNodeId, s"Failed to import related content with nid $nid", Some(ex))),
-             status)
+            val msg = s"Failed to import related content with nid $nid"
+            logger.error(msg)
+            (articles :+ Failure(ImportException(nid, msg, Some(ex))), status)
         }
       })
 
-    val (importSuccesses, importFailures) =
-      importedArticles.partition(_.isSuccess)
-    if (importFailures.isEmpty) {
-      val ids = importSuccesses.map(_.get.id).toSet
-      Success(ids, updatedStatus) // TODO: If one of three fails, we want to disaply the two imported.
-    } else {
-      val nodeIds = migrationApiClient
-        .getAllTranslationNids(mainNodeId)
-        .getOrElse(Set(mainNodeId))
-      logger.info(s"Failed to import one or more related contents for node(s) ${nodeIds.mkString(",")}")
-      Failure(ImportExceptions(nodeIds, importFailures.map(_.failed.get)))
+    val importSuccesses = importedArticles.collect { case Success(s) => s }
+    val importFailures = importedArticles.collect { case Failure(ex) => ex }
+
+    val x = importFailures.map {
+      case fail: ImportException => fail
+      case fail                  => ImportException(mainNodeId, "Something went wrong when importing related content", Some(fail))
     }
+
+    val finalStatus = updatedStatus.addErrors(x)
+
+    Success((importSuccesses.map(_.id).toSet, finalStatus))
   }
 
   private def getRelatedContentFromDb(nids: Set[String], importStatus: ImportStatus): Try[(Set[Long], ImportStatus)] = {
