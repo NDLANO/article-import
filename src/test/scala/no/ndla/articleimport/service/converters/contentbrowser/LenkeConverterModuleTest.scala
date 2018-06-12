@@ -123,7 +123,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    status.messages should be(Seq("External resource to be embedded: http://nrk.no/skole/klippdetalj?topic=urn%3Ax-mediadb%3A18745"))
+    status.messages should be(
+      Seq("External resource to be embedded: http://nrk.no/skole/klippdetalj?topic=urn%3Ax-mediadb%3A18745"))
     requiredLibraries.length should equal(1)
     requiredLibraries.head.url should equal(nrkScriptUrl.replace("https:", ""))
   }
@@ -187,7 +188,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    status.messages should be(Seq("External resource to be embedded: https://ndla.filmiundervisning.no/film/ndlafilm.aspx?filmId=12412"))
+    status.messages should be(
+      Seq("External resource to be embedded: https://ndla.filmiundervisning.no/film/ndlafilm.aspx?filmId=12412"))
   }
 
   test("That LenkeConverter returns a iframe embed for kahoot resources") {
@@ -209,7 +211,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    status.messages should be(Seq("External resource to be embedded: https://play.kahoot.it/#/k/e577f7e9-59ff-4a80-89a1-c95acf04815d"))
+    status.messages should be(
+      Seq("External resource to be embedded: https://play.kahoot.it/#/k/e577f7e9-59ff-4a80-89a1-c95acf04815d"))
   }
 
   test("LenkeConverter should include an url fragment if defined in contentbrowser") {

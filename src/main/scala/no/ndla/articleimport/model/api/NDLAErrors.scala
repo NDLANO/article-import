@@ -44,10 +44,10 @@ object Error {
 }
 
 case class NotFoundException(message: String) extends RuntimeException(message)
-case class ImportException(nid: String, message: String, ex: Option[Throwable] = None)
+case class ImportException(nid: String, message: String, exception: Option[Throwable] = None)
     extends RuntimeException(message) {
   override def toString: String = {
-    val exMsg = ex.map(e => s" (${e.getMessage})").getOrElse("")
+    val exMsg = exception.map(e => s" (${e.getMessage})").getOrElse("")
     s"$nid: $message$exMsg"
   }
 }
