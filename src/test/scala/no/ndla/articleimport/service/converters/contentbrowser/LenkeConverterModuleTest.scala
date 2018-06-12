@@ -38,7 +38,7 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       LenkeConverterModule.convert(content, ImportStatus.empty)
     result should equal(s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="$linkUrl" />""")
     requiredLibraries.length should equal(0)
-    status.errors.length should equal(1)
+    status.messages should be(Seq("External resource to be embedded: https://www.youtube.com/watch?v=1qN72LEQnaU"))
   }
 
   test("That LenkeConverter returns an a-tag if insertion method is 'link'") {
@@ -67,7 +67,7 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       LenkeConverterModule.convert(content, ImportStatus.empty)
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
-    status.errors.length should equal(1)
+    status.messages should be(Seq("Unhandled insertion method '' on ' '. Defaulting to link."))
   }
 
   test("That LenkeConverter returns an a-tag if insertion method is 'lightbox_large'") {
@@ -123,7 +123,7 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    status.errors.length should equal(1)
+    status.messages should be(Seq("External resource to be embedded: http://nrk.no/skole/klippdetalj?topic=urn%3Ax-mediadb%3A18745"))
     requiredLibraries.length should equal(1)
     requiredLibraries.head.url should equal(nrkScriptUrl.replace("https:", ""))
   }
@@ -145,7 +145,7 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    status.errors.length should equal(1)
+    status.messages should be(Seq("External resource to be embedded: http://prezi.com/123123123"))
   }
 
   test("That LenkeConverter returns a iframe embed for commoncraft resources") {
@@ -165,7 +165,7 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    status.errors.length should equal(1)
+    status.messages should be(Seq("External resource to be embedded: http://www.commoncraft.com/123123123"))
   }
 
   test("That LenkeConverter returns a iframe embed for ndla.filmundervisningen resources") {
@@ -187,7 +187,7 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    status.errors.length should equal(1)
+    status.messages should be(Seq("External resource to be embedded: https://ndla.filmiundervisning.no/film/ndlafilm.aspx?filmId=12412"))
   }
 
   test("That LenkeConverter returns a iframe embed for kahoot resources") {
@@ -209,7 +209,7 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    status.errors.length should equal(1)
+    status.messages should be(Seq("External resource to be embedded: https://play.kahoot.it/#/k/e577f7e9-59ff-4a80-89a1-c95acf04815d"))
   }
 
   test("LenkeConverter should include an url fragment if defined in contentbrowser") {
