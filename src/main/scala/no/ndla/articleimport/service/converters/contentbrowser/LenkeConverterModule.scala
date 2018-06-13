@@ -33,8 +33,8 @@ trait LenkeConverterModule {
       logger.info(s"Converting lenke with nid ${content.get("nid")}")
 
       convertLink(content) match {
-        case Success((linkHtml, requiredLibraries, errors)) =>
-          Success(linkHtml, requiredLibraries, importStatus.addMessages(errors))
+        case Success((linkHtml, requiredLibraries, messages)) =>
+          Success(linkHtml, requiredLibraries, importStatus.addMessages(messages))
         case Failure(x) => Failure(x)
       }
     }
@@ -63,8 +63,8 @@ trait LenkeConverterModule {
           warnings.foreach(msg => logger.warn(msg))
 
           inserted.map {
-            case (htmlTag, requiredLibrary, errors) =>
-              (htmlTag, requiredLibrary.toList, errors ++ warnings)
+            case (htmlTag, requiredLibrary, messages) =>
+              (htmlTag, requiredLibrary.toList, messages ++ warnings)
           }
         case Success(MigrationEmbedMeta(url, embedCode)) =>
           Failure(

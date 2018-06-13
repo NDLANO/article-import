@@ -139,7 +139,9 @@ trait ExtractConvertStoreContent {
                   } else {
                     logger.info("Article has been updated since import, refusing to import...")
                     val storeImportStatus =
-                      importStatus.addMessage(s"$mainNodeNid has been updated since import, refusing to import.")
+                      importStatus.addError(
+                        ImportException(mainNodeNid,
+                                        s"$mainNodeNid has been updated since import, refusing to import."))
                     Success(storedArticle, storeImportStatus)
                   }
                 case _ =>

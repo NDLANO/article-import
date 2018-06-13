@@ -7,7 +7,10 @@
 
 package no.ndla.articleimport.model.domain
 
+import no.ndla.articleimport.model.api.ImportException
+
 case class ImportStatus(messages: Seq[String],
+                        errors: Seq[ImportException],
                         visitedNodes: Set[String] = Set.empty,
                         articleId: Option[Long] = None,
                         forceUpdateArticles: Boolean = false,
@@ -18,6 +21,12 @@ case class ImportStatus(messages: Seq[String],
 
   def addMessages(messages: Seq[String]): ImportStatus =
     this.copy(messages = this.messages ++ messages)
+
+  def addErrors(errorMessages: Seq[ImportException]): ImportStatus =
+    this.copy(errors = this.errors ++ errorMessages)
+
+  def addError(errorMessage: ImportException): ImportStatus =
+    this.copy(errors = this.errors :+ errorMessage)
 
   def addVisitedNode(nodeID: String): ImportStatus =
     this.copy(visitedNodes = this.visitedNodes + nodeID)
@@ -40,20 +49,13 @@ case class ImportStatus(messages: Seq[String],
 }
 
 object ImportStatus {
-  def empty = ImportStatus(Seq.empty, Set.empty, None)
+  def empty = ImportStatus(Seq.empty, Seq.empty, Set.empty, None)
 
   def empty(forceUpdate: Boolean) =
-    ImportStatus(Seq.empty, Set.empty, None, forceUpdateArticles = forceUpdate)
+    ImportStatus(Seq.empty, Seq.empty, Set.empty, None, forceUpdateArticles = forceUpdate)
 
   def apply(message: String, visitedNodes: Set[String]): ImportStatus =
-    ImportStatus(Seq(message), visitedNodes, None)
-
-  def apply(importStatuses: Seq[ImportStatus]): ImportStatus = {
-    val (messages, visitedNodes, articleIds) =
-      importStatuses.map(x => (x.messages, x.visitedNodes, x.articleId)).unzip3
-    ImportStatus(messages.flatten.distinct, visitedNodes.flatten.toSet, articleIds.lastOption.flatten)
-  }
-
+    ImportStatus(Seq(message), Seq.empty, visitedNodes, None)
 }
 
 case class NodeLocalImportStatus(insertedLicenses: List[String] = List.empty,

@@ -44,7 +44,13 @@ object Error {
 }
 
 case class NotFoundException(message: String) extends RuntimeException(message)
-case class ImportException(nid: String, message: String, ex: Option[Throwable] = None) extends RuntimeException(message)
+case class ImportException(nid: String, message: String, exception: Option[Throwable] = None)
+    extends RuntimeException(message) {
+  override def toString: String = {
+    val exMsg = exception.map(e => s" (${e.getMessage})").getOrElse("")
+    s"$nid: $message$exMsg"
+  }
+}
 case class ImportExceptions(failedNodeIds: Set[String], errors: Seq[Throwable])
     extends RuntimeException(s"Failed to import node(s) with id(s) ${failedNodeIds.mkString(",")}")
 

@@ -24,6 +24,7 @@ import scala.util.{Failure, Success, Try}
 
 trait VisualElementConverter {
   this: ExtractService
+    with HtmlTagGenerator
     with ImageApiClient
     with AudioApiClient
     with H5PConverterModule
@@ -47,7 +48,12 @@ trait VisualElementConverter {
             importStatus
           )
         case None =>
-          Failure(ImportException(content.nid, s"Failed to convert node id ${content.visualElement.get}"))
+          Success(
+            (content.copy(visualElement = Some(HtmlTagGenerator.buildErrorContent("Innhold mangler."))),
+             importStatus.addError(
+               ImportException(content.nid,
+                               s"Failed to convert visual element node ${content.visualElement.getOrElse("")}")
+             )))
       }
     }
 

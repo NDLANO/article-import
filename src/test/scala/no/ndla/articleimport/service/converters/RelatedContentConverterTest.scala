@@ -17,6 +17,7 @@ import no.ndla.validation.ResourceType._
 import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
 import org.mockito.Mockito._
 import org.mockito.Matchers._
+import org.mockito.Matchers
 import org.mockito.invocation.InvocationOnMock
 
 import scala.util.{Failure, Success}
@@ -54,25 +55,105 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     result.content should equal(expectedContent)
   }
 
-  test("convert should return a Failure if trying to link to a concept as related content") {
+  test("convert should return a Success with error in importStatus if trying to link to a concept as related content") {
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
-      .thenReturn(Success((TestData.sampleApiConcept.copy(id = 1), ImportStatus.empty)))
-      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiConcept.copy(id = 1),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiArticle.copy(id = 2),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
 
     when(migrationApiClient.getAllTranslationNids(languageContent.nid))
       .thenReturn(Success(Set(languageContent.nid)))
 
-    val Failure(result: ImportExceptions) =
+    val Success((result, status)) =
       RelatedContentConverter.convert(languageContent, ImportStatus.empty)
-    result.getMessage should equal(s"Failed to import node(s) with id(s) ${languageContent.nid}")
-    result.errors should equal(
+
+    val expectedContent =
+      s"""${languageContent.content}<section><embed data-article-ids="2" data-resource="related-content"></section>"""
+
+    result.content should be(expectedContent)
+    status.errors should be(
       List(
         ImportException(
           languageContent.nid,
           s"Related content with nid ${languageContent.nid} points to a concept. This should not be legal, no?")))
   }
 
-  test("convert should not add a new section if thre are no related contents") {
+  test("convert should return a success with error in importStatus if unsupported link as related") {
+
+    when(extractService.getNodeType(any[String])).thenReturn(Some("unsupported"))
+
+    when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiArticle.copy(id = 1),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiArticle.copy(id = 2),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
+
+    when(migrationApiClient.getAllTranslationNids(languageContent.nid))
+      .thenReturn(Success(Set(languageContent.nid)))
+
+    val Success((result, status)) =
+      RelatedContentConverter.convert(languageContent, ImportStatus.empty)
+
+    result.content should be(languageContent.content)
+    status.errors should be(
+      List(
+        ImportException(
+          "1234",
+          s"Related content with node node id 1234 (unsupported) is unsupported and will not be imported"),
+        ImportException("5678",
+                        s"Related content with node node id 5678 (unsupported) is unsupported and will not be imported")
+      ))
+  }
+
+  test("convert should still import one if one out of two related fails") {
+    when(extractService.getNodeType("1234")).thenReturn(Some("unsupported"))
+    when(extractService.getNodeType("5678")).thenReturn(Some("fagstoff"))
+
+    when(extractConvertStoreContent.processNode(Matchers.eq("1234"), any[ImportStatus]))
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiArticle.copy(id = 1),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
+    when(extractConvertStoreContent.processNode(Matchers.eq("5678"), any[ImportStatus]))
+      .thenAnswer((i: InvocationOnMock) => {
+        Success(
+          (TestData.sampleApiArticle.copy(id = 2),
+           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+      })
+
+    when(migrationApiClient.getAllTranslationNids(languageContent.nid))
+      .thenReturn(Success(Set(languageContent.nid)))
+
+    val Success((result, status)) =
+      RelatedContentConverter.convert(languageContent, ImportStatus.empty)
+
+    val expectedContent =
+      s"""${languageContent.content}<section><embed data-article-ids="2" data-resource="related-content"></section>"""
+
+    result.content should be(expectedContent)
+    status.errors should be(
+      List(
+        ImportException("1234",
+                        s"Related content with node node id 1234 (unsupported) is unsupported and will not be imported")
+      ))
+
+  }
+
+  test("convert should not add a new section if there are no related contents") {
     val origContent = "<section><h1>hmm</h1></section>"
 
     val Success((result, _)) =

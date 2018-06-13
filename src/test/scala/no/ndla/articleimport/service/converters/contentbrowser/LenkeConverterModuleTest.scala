@@ -34,11 +34,11 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     val content =
       TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
 
-    val Success((result, requiredLibraries, errors)) =
+    val Success((result, requiredLibraries, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
     result should equal(s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="$linkUrl" />""")
     requiredLibraries.length should equal(0)
-    errors.messages.length should equal(1)
+    status.messages should be(Seq("External resource to be embedded: https://www.youtube.com/watch?v=1qN72LEQnaU"))
   }
 
   test("That LenkeConverter returns an a-tag if insertion method is 'link'") {
@@ -63,11 +63,11 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     val expectedResult =
       """ <a href="https://www.youtube.com/watch?v=1qN72LEQnaU" rel="noopener noreferrer" target="_blank" title=""> </a>"""
 
-    val Success((result, requiredLibraries, errors)) =
+    val Success((result, requiredLibraries, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
-    errors.messages.length should equal(1)
+    status.messages should be(Seq("Unhandled insertion method '' on ' '. Defaulting to link."))
   }
 
   test("That LenkeConverter returns an a-tag if insertion method is 'lightbox_large'") {
@@ -119,11 +119,12 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
 
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(nrkLinkUrl), Some(nrkEmbedScript))))
-    val Success((result, requiredLibraries, errors)) =
+    val Success((result, requiredLibraries, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    errors.messages.length should equal(1)
+    status.messages should be(
+      Seq("External resource to be embedded: http://nrk.no/skole/klippdetalj?topic=urn%3Ax-mediadb%3A18745"))
     requiredLibraries.length should equal(1)
     requiredLibraries.head.url should equal(nrkScriptUrl.replace("https:", ""))
   }
@@ -141,11 +142,11 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
 
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(preziUrl), Some(preziEmbedCode))))
-    val Success((result, _, errors)) =
+    val Success((result, _, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    errors.messages.length should equal(1)
+    status.messages should be(Seq("External resource to be embedded: http://prezi.com/123123123"))
   }
 
   test("That LenkeConverter returns a iframe embed for commoncraft resources") {
@@ -161,11 +162,11 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
 
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(CcraftUrl), Some(CcraftEmbedCode))))
-    val Success((result, _, errors)) =
+    val Success((result, _, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    errors.messages.length should equal(1)
+    status.messages should be(Seq("External resource to be embedded: http://www.commoncraft.com/123123123"))
   }
 
   test("That LenkeConverter returns a iframe embed for ndla.filmundervisningen resources") {
@@ -183,11 +184,12 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
 
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(NdlaFilmUrl), Some(NdlaFilmEmbedCode))))
-    val Success((result, _, errors)) =
+    val Success((result, _, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    errors.messages.length should equal(1)
+    status.messages should be(
+      Seq("External resource to be embedded: https://ndla.filmiundervisning.no/film/ndlafilm.aspx?filmId=12412"))
   }
 
   test("That LenkeConverter returns a iframe embed for kahoot resources") {
@@ -205,11 +207,12 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
 
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(KahootUrl), Some(KahootEmbedCode))))
-    val Success((result, _, errors)) =
+    val Success((result, _, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    errors.messages.length should equal(1)
+    status.messages should be(
+      Seq("External resource to be embedded: https://play.kahoot.it/#/k/e577f7e9-59ff-4a80-89a1-c95acf04815d"))
   }
 
   test("LenkeConverter should include an url fragment if defined in contentbrowser") {
