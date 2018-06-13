@@ -53,6 +53,7 @@ case class ImportException(nid: String, message: String, exception: Option[Throw
 }
 case class ImportExceptions(failedNodeIds: Set[String], errors: Seq[Throwable])
     extends RuntimeException(s"Failed to import node(s) with id(s) ${failedNodeIds.mkString(",")}")
+case class TaxonomyException(message: String) extends RuntimeException(message)
 
 class AccessDeniedException(message: String) extends RuntimeException(message)
 class OptimisticLockException(message: String = Error.RESOURCE_OUTDATED_DESCRIPTION) extends RuntimeException(message)
