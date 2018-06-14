@@ -7,6 +7,7 @@
 
 package no.ndla.articleimport.service.converters
 
+import no.ndla.articleimport.model.api.ImportException
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
@@ -31,13 +32,14 @@ class VisualElementConverterTest extends UnitSuite with TestEnvironment {
     res.visualElement should equal(Some(expectedResult))
   }
 
-  test("Visual element of type image that cannot be found should return a Failure") {
+  test("Visual element of type image that cannot be found should return a Success with an error message") {
     when(extractService.getNodeType(nodeId)).thenReturn(Some("image"))
     when(imageApiClient.importImage(nodeId)).thenReturn(None)
 
-    VisualElementConverter
-      .convert(sampleArticle, ImportStatus.empty)
-      .isFailure should be(true)
+    val Success((result, status)) = VisualElementConverter.convert(sampleArticle, ImportStatus.empty)
+
+    status.errors should be(Seq(ImportException(nodeId, s"Failed to convert visual element node $nodeId")))
+    result.visualElement should be(Some("""<embed data-message="Innhold mangler." data-resource="error" />"""))
   }
 
   test("visual element of type audio should be converted to embed tag") {
@@ -52,14 +54,14 @@ class VisualElementConverterTest extends UnitSuite with TestEnvironment {
     res.visualElement should equal(Some(expectedResult))
   }
 
-  test("Visual element of type audio that cannot be found should return a failure") {
+  test("Visual element of type audio that cannot be found should return a success with an error message") {
     when(extractService.getNodeType(nodeId)).thenReturn(Some("audio"))
     when(audioApiClient.getOrImportAudio(nodeId))
       .thenReturn(Failure(new RuntimeException()))
 
-    VisualElementConverter
-      .convert(sampleArticle, ImportStatus.empty)
-      .isFailure should be(true)
+    val Success((result, status)) = VisualElementConverter.convert(sampleArticle, ImportStatus.empty)
+    result.visualElement should be(Some("""<embed data-message="Innhold mangler." data-resource="error" />"""))
+    status.errors should be(Seq(ImportException(nodeId, s"Failed to convert visual element node $nodeId")))
   }
 
   test("visual element of type video should be converted to embed tag") {

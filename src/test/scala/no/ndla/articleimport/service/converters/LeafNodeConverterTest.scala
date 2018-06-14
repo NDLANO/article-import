@@ -83,7 +83,23 @@ class LeafNodeConverterTest extends UnitSuite with TestEnvironment {
     val Failure(exception: ImportException) = result
     exception.message should be(s"'$UnsupportedUrl' is not a whitelisted embed source")
     exception.nid should be(nid)
+  }
 
+  test("LeafNodeConverter should succeed with error if h5p fails") {
+    when(h5pApiClient.getViewFromOldId("1234"))
+      .thenReturn(None)
+    val sampleLanguageContent = TestData.sampleContent
+      .copy(content = "<div><h1>hi</h1></div>", nodeType = "h5p_content")
+    val expectedResult =
+      s"""${sampleLanguageContent.content}"""
+    val Success((result, status)) =
+      LeafNodeConverter.convert(sampleLanguageContent, ImportStatus.empty)
+
+    result.content should equal(expectedResult)
+    result.metaDescription should equal("Beskrivelse mangler")
+    result.requiredLibraries.size should equal(0)
+    status.errors should be(
+      Seq(ImportException("1234", "Failed to import H5P with id 1234: Not yet exported to new H5P service")))
   }
 
 }
