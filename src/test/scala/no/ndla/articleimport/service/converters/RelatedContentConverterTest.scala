@@ -208,11 +208,13 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
 
     val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag data-resource="$RelatedContent" $DataTitle="$title" $DataUrl="$url"></div></section>"""
 
-    val Success((result, _)) =
+    val Success((result, status)) =
       RelatedContentConverter.convert(
         languageContent.copy(content = origContent, relatedContent = languageContent.relatedContent.slice(0, 1)),
         ImportStatus.empty)
     result.content should equal(expectedContent)
+    status.errors should be(Seq.empty)
+
   }
 
 }

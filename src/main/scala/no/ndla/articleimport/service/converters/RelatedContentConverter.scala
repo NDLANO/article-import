@@ -44,7 +44,7 @@ trait RelatedContentConverter {
       val nidsToImport = nidsToImportWithType.map { case (nid, _) => nid }.diff(linkNodesWithOnlyUrl.map(_.nid))
 
       val excludedNids = allRelatedNids.collect {
-        case (nid, nodeType) if !nidsToImport.contains(nid) || linkNodesWithOnlyUrl.map(_.nid).contains(nid) =>
+        case (nid, nodeType) if !nidsToImport.contains(nid) && !linkNodesWithOnlyUrl.map(_.nid).contains(nid) =>
           ImportException(nid, s"Related content with node id $nid ($nodeType) is unsupported and will not be imported")
       }
 
