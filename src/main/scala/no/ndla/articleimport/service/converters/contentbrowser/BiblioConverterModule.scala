@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 trait BiblioConverterModule {
   this: ExtractService with ExtractConvertStoreContent with HtmlTagGenerator =>
 
-  object BiblioConverter extends ContentBrowserConverterModule with LazyLogging {
+  object BiblioConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "biblio"
 
     override def convert(content: ContentBrowser,

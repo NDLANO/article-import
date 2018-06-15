@@ -13,12 +13,15 @@ import no.ndla.articleimport.ArticleImportProperties.Domain
 import no.ndla.articleimport.model.domain.ContentFilMeta._
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api
+import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.service.converters.TableConverter
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.ResourceType
 import org.mockito.Mockito._
+import org.mockito.Matchers._
+import org.mockito.invocation.InvocationOnMock
 
 import scala.util.{Success, Try}
 
@@ -142,14 +145,14 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
   test("ingress is extracted when wrapped in <p> tags") {
     val content =
       s"""<section>
-        |<$ResourceHtmlEmbedTag data-size="fullbredde" data-url="http://image-api/images/5359" data-align="" data-resource="image" data-alt="To personer" data-caption="capt.">
+        |<$ResourceHtmlEmbedTag data-size="fullbredde" data-align="" data-resource="image" data-alt="To personer" data-resource_id="5359" data-caption="capt.">
         |<p><strong>Når man driver med medieproduksjon, er det mye arbeid som må gjøres<br></strong></p>
         |</section>
         |<section> <p>Det som kan gi helse- og sikkerhetsproblemer på en dataarbeidsplass, er:</section>""".stripMargin
         .replace("\n", "")
     val expectedContentResult = ArticleContent(
       s"""<section>
-         |<$ResourceHtmlEmbedTag data-size="fullbredde" data-url="http://image-api/images/5359" data-align="" data-resource="image" data-alt="To personer" data-caption="capt.">
+         |<$ResourceHtmlEmbedTag data-size="fullbredde" data-align="" data-resource="image" data-alt="To personer" data-resource_id="5359" data-caption="capt.">
          |<p><strong>Når man driver med medieproduksjon, er det mye arbeid som må gjøres<br></strong></p>
          |</section>
          |<section><p>Det som kan gi helse- og sikkerhetsproblemer på en dataarbeidsplass, er:</p></section>""".stripMargin
@@ -262,11 +265,11 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
 
   test("That empty html tags are removed") {
     val contentNodeBokmal =
-      sampleLanguageContent.copy(
-        content =
-          s"""<section> <div></div><p><div></div></p><$ResourceHtmlEmbedTag ></$ResourceHtmlEmbedTag></section>""")
+      sampleLanguageContent.copy(content =
+        s"""<section> <div></div><p><div></div></p><$ResourceHtmlEmbedTag data-resource="external" data-url="example.com"></$ResourceHtmlEmbedTag></section>""")
     val node = sampleNode.copy(contents = List(contentNodeBokmal))
-    val expectedResult = s"""<section><$ResourceHtmlEmbedTag></section>"""
+    val expectedResult =
+      s"""<section><$ResourceHtmlEmbedTag data-resource="external" data-url="example.com"></section>"""
 
     val Success((result: Article, status)) =
       service.toDomainArticle(node, ImportStatus.empty)
@@ -317,17 +320,27 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     content.content.head.content should equal(expectedContent)
   }
 
-  test("toDomainArticle should return Failure if convertion fails") {
+  test("toDomainArticle should return Success with an error if conversion fails") {
     val nodeId = 123123
     val contentString =
       s"[contentbrowser ==nid=$nodeId==imagecache=Fullbredde==width===alt=$sampleAlt==link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text= ==text_align===css_class=contentbrowser contentbrowser]"
     val contentNodeBokmal = sampleLanguageContent.copy(content = contentString)
     val node = sampleNode.copy(contents = List(contentNodeBokmal))
+    val expectedError =
+      ImportException(nodeId.toString,
+                      "ContentBrowserConverter failed",
+                      Some(ImportException(s"$nodeId", s"Failed to import image with node id $nodeId")))
+    val expectedResult =
+      s"""<section><$ResourceHtmlEmbedTag data-message="Innhold mangler." data-resource="error"></section>"""
 
     when(extractService.getNodeType(s"$nodeId")).thenReturn(Some("image"))
     when(imageApiClient.importImage(s"$nodeId")).thenReturn(None)
 
-    service.toDomainArticle(node, ImportStatus.empty).isFailure should be(true)
+    val Success((result: Article, status)) = service.toDomainArticle(node, ImportStatus.empty)
+
+    status.errors.size should be(1)
+    status.errors should equal(Seq(expectedError))
+    result.content.map(_.content) should be(Seq(expectedResult))
   }
 
   test("toApiLicense defaults to unknown if the license was not found") {
@@ -494,7 +507,52 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     val Success((resultContent: Article, _)) = result
 
     resultContent.content.head.content should be(expectedResult)
+  }
 
+  test("That related articles are included in all languages") {
+    val relatedContent = Seq(
+      MigrationRelatedContent("1", "Heisann", "", 1),
+      MigrationRelatedContent("2", "Hopsann", "", 1),
+      MigrationRelatedContent("3", "Tralala", "", 1)
+    )
+
+    when(extractService.getNodeType(any[String])).thenReturn(Some("fagstoff"))
+    when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
+      val nid = i.getArgumentAt(0, "".getClass)
+      Success(
+        TestData.sampleNodeToConvert.copy(
+          contents = Seq(
+            TestData.sampleContent.copy(nid = nid, tnid = nid)
+          )))
+    })
+    when(extractConvertStoreContent.processNode(any[String], any[ImportStatus])).thenAnswer((i: InvocationOnMock) => {
+      val externalId = i.getArgumentAt(0, "".getClass)
+      val status = i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]
+      val importedId = ("1" + externalId).toInt
+      Success((TestData.sampleApiArticle.copy(id = importedId), status))
+    })
+
+    val nbLanguageContent = TestData.sampleContent.copy(language = "nb",
+                                                        content = "<section><p>Hei hå</p></section>",
+                                                        relatedContent = relatedContent)
+    val enLanguageContent = TestData.sampleContent.copy(language = "en",
+                                                        content = "<section><p>Hey ho</p></section>",
+                                                        relatedContent = relatedContent)
+
+    val relatedSection =
+      """<section>
+        |<div data-type="related-content">
+        |<embed data-article-id="11" data-resource="related-content">
+        |<embed data-article-id="12" data-resource="related-content">
+        |<embed data-article-id="13" data-resource="related-content">
+        |</div>
+        |</section>""".stripMargin.replace("\n", "")
+    val expectedNbContent = s"<section><p>Hei hå</p></section>$relatedSection"
+    val expectedEnContent = s"<section><p>Hey ho</p></section>$relatedSection"
+
+    val node = sampleNode.copy(contents = List(nbLanguageContent, enLanguageContent))
+    val Success((result: Article, _)) = service.toDomainArticle(node, ImportStatus.empty.withNewNodeLocalContext())
+    result.content.map(_.content) should be(Seq(expectedNbContent, expectedEnContent))
   }
 
 }

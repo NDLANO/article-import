@@ -19,7 +19,7 @@ import org.mockito.Matchers._
 
 import scala.util.{Failure, Success, Try}
 
-class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
+class GeneralContentConverterModuleTest extends UnitSuite with TestEnvironment {
   val (nodeId, nodeId2) = ("1234", "4321")
   val insertion = "inline"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
@@ -52,7 +52,7 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
     TestData.sampleContent.copy(content = "<div>sample content</div>")
   val sampleArticle = TestData.sampleApiArticle
 
-  val generalContentConverter = new GeneralContentConverter {
+  val generalContentConverter = new GeneralContentConverterModule {
     override val typeName: String = "test"
   }
 
@@ -182,11 +182,12 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Seq(sampleFagstoff1, sampleFagstoff2))
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
     when(draftApiClient.getConceptIdFromExternalId(nodeId)).thenReturn(None)
-    when(extractConvertStoreContent.processNode(nodeId, ImportStatus(Seq(), Set(nodeId2))))
-      .thenReturn(Try((TestData.sampleApiArticle.copy(id = newNodeid), ImportStatus(Seq(), Set(nodeId2, nodeId)))))
+    when(extractConvertStoreContent.processNode(nodeId, ImportStatus(Seq(), Seq(), Set(nodeId2))))
+      .thenReturn(
+        Try((TestData.sampleApiArticle.copy(id = newNodeid), ImportStatus(Seq(), Seq(), Set(nodeId2, nodeId)))))
 
     val Success((result, _, status)) =
-      generalContentConverter.convert(content, ImportStatus(Seq.empty, Set(nodeId2)))
+      generalContentConverter.convert(content, ImportStatus(Seq.empty, Seq.empty, Set(nodeId2)))
 
     result should equal(expectedResult)
     status.messages should be(List.empty)
@@ -206,11 +207,11 @@ class GeneralContentConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Seq(sampleFagstoff1, sampleFagstoff2))
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
     when(draftApiClient.getConceptIdFromExternalId(nodeId)).thenReturn(None)
-    when(extractConvertStoreContent.processNode(nodeId, ImportStatus(Seq(), Set(nodeId2))))
+    when(extractConvertStoreContent.processNode(nodeId, ImportStatus(Seq(), Seq(), Set(nodeId2))))
       .thenReturn(Failure(NotFoundException("Node was not found")))
 
     generalContentConverter
-      .convert(content, ImportStatus(Seq.empty, Set(nodeId2)))
+      .convert(content, ImportStatus(Seq.empty, Seq.empty, Set(nodeId2)))
       .isFailure should be(true)
   }
 

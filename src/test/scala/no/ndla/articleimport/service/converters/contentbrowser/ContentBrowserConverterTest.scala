@@ -10,6 +10,7 @@ package no.ndla.articleimport.service.converters.contentbrowser
 import no.ndla.articleimport.ArticleImportProperties._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.{ImageCopyright, ImageLicense, ImageMetaInformation, ImageTag}
+import no.ndla.articleimport.model.api.ImportException
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.model.domain._
 import org.mockito.Mockito._
@@ -29,15 +30,23 @@ class ContentBrowserConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeData(any[String])).thenReturn(Success(TestData.sampleNodeToConvert))
   }
 
-  test("contentbrowser strings of unsupported causes a Failure to be returned") {
+  test("contentbrowser strings of unsupported causes a Success to be returned with an error in ImportStatus") {
     val expectedResult =
-      s"""<article><$ResourceHtmlEmbedTag data-message="Unsupported content (unsupported type): $nodeId" data-resource="error" /></article>"""
+      s"""<article><$ResourceHtmlEmbedTag data-message="Innhold mangler." data-resource="error"></article>"""
 
     when(extractService.getNodeType(nodeId))
       .thenReturn(Some("unsupported type"))
-    contentBrowserConverter
-      .convert(sampleContent, ImportStatus.empty)
-      .isFailure should be(true)
+
+    val Success((result, status)) = contentBrowserConverter.convert(sampleContent, ImportStatus.empty)
+
+    status.errors.size should be(1)
+    status.errors should be(
+      Seq(
+        ImportException(
+          s"$nodeId",
+          "ContentBrowserConverter failed",
+          Some(ImportException(s"$nodeId", s"Unsupported content unsupported type in node with id $nodeId")))))
+    result.content should be(expectedResult)
   }
 
   test("That Content-browser strings of type image are converted into HTML img tags") {

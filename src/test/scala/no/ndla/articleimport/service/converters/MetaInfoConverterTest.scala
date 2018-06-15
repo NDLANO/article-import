@@ -67,6 +67,20 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
     val Success((converted4, _)) =
       MetaInfoConverter.convert(sampleNodeToConvert.copy(license = Some("copyrighted")), status4)
     converted4.license should be("copyrighted")
+
+    val status5 = ImportStatus.empty
+      .addInsertedLicense(Some("by"))
+      .addInsertedLicense(Some("by-nd"))
+      .addInsertedLicense(Some("by-nc"))
+    val Success((converted5, _)) = MetaInfoConverter.convert(sampleNodeToConvert.copy(license = Some("by")), status5)
+    converted5.license should be("by-nc-nd")
+
+    val status6 = ImportStatus.empty
+      .addInsertedLicense(Some("by-sa"))
+      .addInsertedLicense(Some("by-nd"))
+      .addInsertedLicense(Some("by-nc"))
+    val Failure(ex6: ImportException) = MetaInfoConverter.convert(sampleNodeToConvert, status6)
+    ex6.message should be(s"Could not combine license by-sa with inserted licenses: by-sa,by-nd,by-nc.")
   }
 
   test("That import should combine license and authors from inserted nodes") {
@@ -80,6 +94,12 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
 
     converted.license should be("by-nc-sa")
     converted.authors.map(_.name).sorted should be(Seq("Christian", "Henrik", "Jonas"))
+  }
+
+  test("That license combination does not break other licenses") {
+    val status1 = ImportStatus.empty.addInsertedLicense(Some("pd"))
+    val Success((converted1, _)) = MetaInfoConverter.convert(sampleNodeToConvert.copy(license = Some("pd")), status1)
+    converted1.license should be("pd")
   }
 
 }

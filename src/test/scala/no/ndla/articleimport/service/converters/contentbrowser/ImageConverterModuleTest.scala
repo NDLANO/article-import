@@ -15,7 +15,7 @@ import org.mockito.Mockito._
 
 import scala.util.Success
 
-class ImageConverterTest extends UnitSuite with TestEnvironment {
+class ImageConverterModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
   val caption = "sample \"image\" ; <> æøå ~ é õ caption"
@@ -42,7 +42,7 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
     when(imageApiClient.importImage(nodeId)).thenReturn(Some(image))
 
     val Success((result, requiredLibraries, errors)) =
-      ImageConverter.convert(content, ImportStatus.empty)
+      ImageConverterModule.convert(content, ImportStatus.empty)
     result should equal(expectedResult)
     errors.messages.length should equal(0)
     requiredLibraries.length should equal(0)
@@ -56,7 +56,7 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
 
     when(imageApiClient.importImage(nodeId)).thenReturn(Some(image))
     val Success((result, requiredLibraries, errors)) =
-      ImageConverter.convert(contentEmptyCaption, ImportStatus.empty)
+      ImageConverterModule.convert(contentEmptyCaption, ImportStatus.empty)
 
     result should equal(expectedResult)
     errors.messages.length should equal(0)
@@ -68,7 +68,7 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
       s"""<img src='stock.jpeg' alt='The image with id $nodeId was not not found' />"""
 
     when(imageApiClient.importImage(nodeId)).thenReturn(None)
-    ImageConverter.convert(content, ImportStatus.empty).isFailure should be(true)
+    ImageConverterModule.convert(content, ImportStatus.empty).isFailure should be(true)
   }
 
   test("That a the html tag contains an alignment attribute with the correct value") {
@@ -83,7 +83,7 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
 
     when(imageApiClient.importImage(nodeId)).thenReturn(Some(image))
     val Success((result, requiredLibraries, errors)) =
-      ImageConverter.convert(contentWithLeftMargin, ImportStatus.empty)
+      ImageConverterModule.convert(contentWithLeftMargin, ImportStatus.empty)
 
     result should equal(expectedResult)
     errors.messages.length should equal(0)
@@ -94,20 +94,20 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
     when(imageApiClient.importImage(nodeId)).thenReturn(Some(image))
 
     val Success((result, _, _)) =
-      ImageConverter.convert(TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "width" -> "50"),
-                             ImportStatus.empty)
+      ImageConverterModule.convert(TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "width" -> "50"),
+                                   ImportStatus.empty)
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-align="" data-alt="" data-caption="" data-resource="image" data-resource_id="1234" data-size="xsmall" />"""
     result should equal(expectedResult)
 
     val Success((result2, _, _)) =
-      ImageConverter.convert(TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "width" -> "100"),
-                             ImportStatus.empty)
+      ImageConverterModule.convert(TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "width" -> "100"),
+                                   ImportStatus.empty)
     val expectedResult2 =
       s"""<$ResourceHtmlEmbedTag data-align="" data-alt="" data-caption="" data-resource="image" data-resource_id="1234" data-size="small" />"""
     result2 should equal(expectedResult2)
 
-    val Success((result3, _, _)) = ImageConverter.convert(
+    val Success((result3, _, _)) = ImageConverterModule.convert(
       TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "width" -> "300", "imagecache" -> "Hoyrespalte"),
       ImportStatus.empty)
     val expectedResult3 =
@@ -119,14 +119,15 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
     when(imageApiClient.importImage(nodeId)).thenReturn(Some(image))
 
     val Success((result, _, _)) =
-      ImageConverter.convert(TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "imagecache" -> "Liten"),
-                             ImportStatus.empty)
+      ImageConverterModule.convert(
+        TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "imagecache" -> "Liten"),
+        ImportStatus.empty)
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-align="" data-alt="" data-caption="" data-resource="image" data-resource_id="1234" data-size="xsmall" />"""
     result should equal(expectedResult)
 
     val Success((result2, _, _)) =
-      ImageConverter.convert(
+      ImageConverterModule.convert(
         TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "imagecache" -> "Hoyrespalte"),
         ImportStatus.empty)
     val expectedResult2 =
@@ -134,7 +135,7 @@ class ImageConverterTest extends UnitSuite with TestEnvironment {
     result2 should equal(expectedResult2)
 
     val Success((result3, _, _)) =
-      ImageConverter.convert(
+      ImageConverterModule.convert(
         TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "imagecache" -> "Fullbredde"),
         ImportStatus.empty)
     val expectedResult3 =

@@ -13,6 +13,7 @@ import no.ndla.articleimport.model.domain.{ImportStatus, NodeToConvert}
 import no.ndla.articleimport.ArticleImportProperties.{nodeTypeBegrep, nodeTypeH5P, nodeTypeLink, nodeTypeVideo}
 import no.ndla.articleimport.service.converters._
 import no.ndla.articleimport.service.converters.contentbrowser.ContentBrowserConverter
+import no.ndla.articleimport.service.converters.SimpleTagConverter
 
 import scala.util.{Failure, Success, Try}
 
@@ -24,14 +25,15 @@ trait ConverterModules {
     with HTMLCleaner
     with FileDivConverter
     with VisualElementConverter
+    with SimpleTagConverter
     with RelatedContentConverter =>
 
   lazy val articleConverter = ConverterPipeLine(
     mainConverters = List(contentBrowserConverter),
-    postProcessorConverters = List(SimpleTagConverter,
+    postProcessorConverters = List(FileDivConverter,
+                                   SimpleTagConverter,
                                    TableConverter,
                                    MathMLConverter,
-                                   FileDivConverter,
                                    htmlCleaner,
                                    VisualElementConverter,
                                    RelatedContentConverter)

@@ -28,6 +28,7 @@ trait ContentBrowserConverterModules
     with AmazonClient
     with ConverterModules
     with FileDivConverter
+    with SimpleTagConverter
     with VisualElementConverter
     with RelatedContentConverter
     with ContentBrowserConverter
@@ -59,5 +60,5 @@ trait ContentBrowserConverterModules
     with MigrationApiClient
     with DraftApiClient
     with HtmlTagGenerator
-    with UnsupportedContentConverter
+    with UnsupportedContentConverterModule
     with User

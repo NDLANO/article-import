@@ -16,7 +16,7 @@ import org.mockito.Mockito._
 
 import scala.util.Success
 
-class FilConverterModuleTest extends UnitSuite with TestEnvironment {
+class FilConverterModuleModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
   val title = "melon"
 

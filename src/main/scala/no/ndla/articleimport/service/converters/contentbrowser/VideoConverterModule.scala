@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 trait VideoConverterModule {
   this: HtmlTagGenerator with ExtractConvertStoreContent =>
 
-  object VideoConverter extends ContentBrowserConverterModule with LazyLogging {
+  object VideoConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "video"
 
     override def convert(content: ContentBrowser,

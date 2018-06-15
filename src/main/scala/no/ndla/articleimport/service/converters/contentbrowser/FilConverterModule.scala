@@ -41,7 +41,8 @@ trait FilConverterModule {
 
             Success(embed)
           }
-        case Failure(e) => Failure(e)
+        case Failure(e) =>
+          Failure(e)
       }
     }
 

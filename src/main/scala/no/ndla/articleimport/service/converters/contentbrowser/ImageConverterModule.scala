@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
 trait ImageConverterModule {
   this: ImageApiClient with HtmlTagGenerator =>
 
-  object ImageConverter extends ContentBrowserConverterModule with LazyLogging {
+  object ImageConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "image"
 
     override def convert(content: ContentBrowser,

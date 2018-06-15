@@ -24,6 +24,7 @@ import scala.util.{Failure, Success, Try}
 
 trait VisualElementConverter {
   this: ExtractService
+    with HtmlTagGenerator
     with ImageApiClient
     with AudioApiClient
     with H5PConverterModule
@@ -47,7 +48,12 @@ trait VisualElementConverter {
             importStatus
           )
         case None =>
-          Failure(ImportException(content.nid, s"Failed to convert node id ${content.visualElement.get}"))
+          Success(
+            (content.copy(visualElement = Some(HtmlTagGenerator.buildErrorContent("Innhold mangler."))),
+             importStatus.addError(
+               ImportException(content.nid,
+                               s"Failed to convert visual element node ${content.visualElement.getOrElse("")}")
+             )))
       }
     }
 
@@ -69,10 +75,10 @@ trait VisualElementConverter {
     private def nodeIdToVisualElement(nodeId: String): Option[(String, Seq[RequiredLibrary])] = {
       val converters =
         Map[String, String => Option[(String, Seq[RequiredLibrary])]](
-          ImageConverter.typeName -> toImage,
-          AudioConverter.typeName -> toAudio,
-          H5PConverter.typeName -> toH5P,
-          VideoConverter.typeName -> toVideo
+          ImageConverterModule.typeName -> toImage,
+          AudioConverterModule.typeName -> toAudio,
+          H5PConverterModule.typeName -> toH5P,
+          VideoConverterModule.typeName -> toVideo
         )
 
       extractService
@@ -83,22 +89,22 @@ trait VisualElementConverter {
     }
 
     private def toImage(nodeId: String): Option[(String, Seq[RequiredLibrary])] =
-      ImageConverter
+      ImageConverterModule
         .toImageEmbed(nodeId, "", "", "", "")
         .map(imageEmbed => (imageEmbed, Seq.empty))
         .toOption
 
     private def toH5P(nodeId: String): Option[(String, Seq[RequiredLibrary])] =
-      H5PConverter
+      H5PConverterModule
         .toH5PEmbed(nodeId)
         .map(h5pEmbed => (h5pEmbed, Seq.empty))
         .toOption
 
     private def toVideo(nodeId: String): Option[(String, Seq[RequiredLibrary])] =
-      Some((VideoConverter.toInlineVideo("", nodeId), Seq.empty))
+      Some((VideoConverterModule.toInlineVideo("", nodeId), Seq.empty))
 
     private def toAudio(nodeId: String): Option[(String, Seq[RequiredLibrary])] =
-      AudioConverter
+      AudioConverterModule
         .toAudio(nodeId, "", false)
         .map(audioEmbed => (audioEmbed, Seq.empty))
         .toOption

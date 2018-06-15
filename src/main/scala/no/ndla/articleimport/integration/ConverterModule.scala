@@ -66,8 +66,8 @@ case class LanguageContent(nid: String,
                            metaImage: Option[String],
                            requiredLibraries: Set[RequiredLibrary] = Set[RequiredLibrary](),
                            ingress: Option[LanguageIngress] = None) {
-  def isMainNode = nid == tnid || tnid == "0"
-  def isTranslation = !isMainNode
+  def isMainNode: Boolean = nid == tnid || tnid == "0"
+  def isTranslation: Boolean = !isMainNode
 
   def asContent: ArticleContent = ArticleContent(content, language)
 

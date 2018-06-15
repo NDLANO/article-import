@@ -42,16 +42,11 @@ object ArticleImportProperties extends LazyLogging {
   val nodeTypeH5P: String = "h5p_content"
   val nodeTypeLink: String = "lenke"
 
+  val supportedTextTypes = Set("fagstoff", "oppgave", "veiledning", "aktualitet", "emneartikkel")
+
   val supportedContentTypes =
-    Set("fagstoff",
-        "oppgave",
-        "veiledning",
-        "aktualitet",
-        "emneartikkel",
-        nodeTypeBegrep,
-        nodeTypeVideo,
-        nodeTypeH5P,
-        nodeTypeLink)
+    supportedTextTypes ++
+      Set(nodeTypeBegrep, nodeTypeVideo, nodeTypeH5P, nodeTypeLink)
 
   val oldCreatorTypes = List("opphavsmann",
                              "fotograf",
@@ -90,6 +85,7 @@ object ArticleImportProperties extends LazyLogging {
   // When converting a content node, the converter may run several times over the content to make sure
   // everything is converted. This value defines a maximum number of times the converter runs on a node
   val maxConvertionRounds = 5
+  val importRelatedNodesMaxDepth = 1
 
   lazy val Domain = Domains.get(Environment)
 

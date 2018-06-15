@@ -40,23 +40,24 @@ trait LeafNodeConverter {
     def convert(content: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
 
       val newContent = content.nodeType match {
-        case `nodeTypeVideo` => doVideo(content)
-        case `nodeTypeH5P`   => doH5P(content)
-        case `nodeTypeLink`  => doLink(content)
-        case _               => Success(content)
+        case `nodeTypeVideo` => doVideo(content, importStatus)
+        case `nodeTypeH5P`   => doH5P(content, importStatus)
+        case `nodeTypeLink`  => doLink(content, importStatus)
+        case _               => Success(content, importStatus)
       }
 
-      newContent.map(cont => (cont, importStatus))
+      newContent.map { case (cont, updatedStatus) => (cont, updatedStatus) }
     }
 
-    private def doLink(cont: LanguageContent): Try[LanguageContent] = {
+    private def doLink(cont: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
       extractService.getLinkEmbedMeta(cont.nid) match {
         case Success(MigrationEmbedMeta(Some(url), embedCode)) =>
-          val inlineEmbed = LenkeConverter.insertInline(cont.nid, url, embedCode.getOrElse(""))
+          val inlineEmbed = LenkeConverterModule.insertInline(cont.nid, url, embedCode.getOrElse(""))
 
           inlineEmbed.map {
             case (embedTag, requiredLibraries, _) =>
-              cont.copy(content = embedTag, requiredLibraries = requiredLibraries.toSet, metaDescription = url)
+              (cont.copy(content = embedTag, requiredLibraries = requiredLibraries.toSet, metaDescription = url),
+               importStatus)
           }
 
         case Success(MigrationEmbedMeta(url, embedCode)) =>
@@ -67,20 +68,28 @@ trait LeafNodeConverter {
       }
     }
 
-    private def doVideo(cont: LanguageContent): Try[LanguageContent] = {
+    private def doVideo(cont: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
       val el = stringToJsoupDocument(cont.content)
-      el.prepend(s"<section>${VideoConverter.toInlineVideo("", cont.nid)}</section>")
-      Success(cont.copy(content = jsoupDocumentToString(el), metaDescription = defaultMetaDescription))
+      el.prepend(s"<section>${VideoConverterModule.toInlineVideo("", cont.nid)}</section>")
+      Success((cont.copy(content = jsoupDocumentToString(el), metaDescription = defaultMetaDescription), importStatus))
     }
 
-    private def doH5P(cont: LanguageContent): Try[LanguageContent] = {
+    private def doH5P(cont: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
       val el = stringToJsoupDocument(cont.content)
-      H5PConverter
-        .toH5PEmbed(cont.nid)
-        .map(html => {
+      H5PConverterModule
+        .toH5PEmbed(cont.nid) match {
+        case Success(html) =>
           el.append(s"<section>$html</section>")
-          cont.copy(content = jsoupDocumentToString(el), metaDescription = defaultMetaDescription)
-        })
+          Success(
+            (cont.copy(content = jsoupDocumentToString(el), metaDescription = defaultMetaDescription), importStatus))
+        case Failure(ex) =>
+          if (el.text().length > 0) {
+            Success(cont.copy(content = jsoupDocumentToString(el), metaDescription = defaultMetaDescription),
+                    importStatus.addError(ImportException(cont.nid, ex.getMessage)))
+          } else {
+            Failure(ex)
+          }
+      }
     }
 
   }

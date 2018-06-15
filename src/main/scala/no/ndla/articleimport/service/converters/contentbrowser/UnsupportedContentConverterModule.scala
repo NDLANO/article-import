@@ -15,10 +15,10 @@ import no.ndla.articleimport.service.converters.HtmlTagGenerator
 
 import scala.util.{Failure, Try}
 
-trait UnsupportedContentConverter {
+trait UnsupportedContentConverterModule {
   this: ExtractService with HtmlTagGenerator =>
 
-  object UnsupportedContentConverter extends ContentBrowserConverterModule with LazyLogging {
+  object UnsupportedContentConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "unsupported content"
 
     override def convert(content: ContentBrowser,
