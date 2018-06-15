@@ -44,6 +44,7 @@ object ComponentRegistry
     with TagsService
     with HTMLCleaner
     with RelatedContentConverter
+    with FileDivConverter
     with HtmlTagGenerator
     with Clock
     with Role
@@ -71,24 +72,6 @@ object ComponentRegistry
   lazy val tagsService = new TagsService
   lazy val contentBrowserConverter = new ContentBrowserConverter
   lazy val htmlCleaner = new HTMLCleaner
-
-  override lazy val articleConverter = ConverterPipeLine(
-    mainConverters = List(contentBrowserConverter),
-    postProcessorConverters = List(SimpleTagConverter,
-                                   TableConverter,
-                                   MathMLConverter,
-                                   htmlCleaner,
-                                   VisualElementConverter,
-                                   RelatedContentConverter)
-  )
-  override lazy val conceptConverter = ConverterPipeLine(
-    mainConverters = List(contentBrowserConverter),
-    postProcessorConverters = List(ConceptConverter)
-  )
-  override lazy val leafNodeConverter = ConverterPipeLine(
-    mainConverters = Seq(contentBrowserConverter),
-    postProcessorConverters = List(LeafNodeConverter) ++ articleConverter.postProcessorConverters
-  )
 
   lazy val clock = new SystemClock
   lazy val authRole = new AuthRole

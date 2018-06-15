@@ -7,11 +7,11 @@
 
 package no.ndla.articleimport.service.converters
 
-import no.ndla.articleimport.model.domain.ExternalEmbedMetaWithTitle
+import no.ndla.articleimport.model.domain.{ExternalEmbedMetaWithTitle, UploadedFile}
+import no.ndla.articleimport.ArticleImportProperties.Domain
 import no.ndla.validation.{ResourceType, TagAttributes}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import org.jsoup.nodes.{Document, Element}
-import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 
 trait HtmlTagGenerator {
 
@@ -182,6 +182,35 @@ trait HtmlTagGenerator {
             s"""$key="${value.trim.replace("\"", "&quot;")}""""
         }
         .mkString(" ")
+
+    /**
+      * Builds a span with data-type [[ResourceType.File]] and a child embed-tag for each file
+      * Spans are used to allow them to be placed inline until they are
+      * parsed by a converter which moves them into box elements and converted to divs.
+      *
+      * @param files List of uploaded files
+      * @return Span [[Element]]
+      */
+    def buildFileEmbed(files: List[UploadedFile]): Element = {
+      val doc = Document.createShell("")
+      doc.outputSettings().prettyPrint(false).indentAmount(0)
+
+      val fileDiv = doc.body
+        .appendElement("FileListEntries")
+        .attr(TagAttributes.DataType.toString, ResourceType.File.toString)
+
+      files.foreach(f => {
+        val attrs = Map(
+          TagAttributes.DataResource -> ResourceType.File.toString,
+          TagAttributes.DataUrl -> f.url,
+          TagAttributes.DataTitle -> f.fileMeta.title,
+          TagAttributes.DataType -> f.fileMeta.fileName.split('.').lastOption.getOrElse("")
+        )
+        fileDiv.append(buildEmbedContent(attrs))
+      })
+
+      fileDiv
+    }
 
   }
 
