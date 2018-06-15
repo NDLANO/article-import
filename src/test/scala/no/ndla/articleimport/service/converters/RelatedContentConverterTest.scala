@@ -206,7 +206,8 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     when(extractConvertStoreContent.processNode(Matchers.eq("5678"), any[ImportStatus]))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
 
-    val Success((result, _)) = RelatedContentConverter.convert(languageContent.copy(content = origContent), ImportStatus.empty)
+    val Success((result, _)) =
+      RelatedContentConverter.convert(languageContent.copy(content = origContent), ImportStatus.empty)
     result.content should equal(expectedContent)
   }
 
