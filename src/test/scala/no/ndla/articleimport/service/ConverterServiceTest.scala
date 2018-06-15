@@ -502,7 +502,13 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
                                                         relatedContent = relatedContent)
 
     val relatedSection =
-      """<section><embed data-article-ids="11,12,13" data-resource="related-content"></section>"""
+      """<section>
+        |<div data-type="related-content">
+        |<embed data-article-id="11" data-resource="related-content">
+        |<embed data-article-id="12" data-resource="related-content">
+        |<embed data-article-id="13" data-resource="related-content">
+        |</div>
+        |</section>""".stripMargin.replace("\n", "")
     val expectedNbContent = s"<section><p>Hei hå</p></section>$relatedSection"
     val expectedEnContent = s"<section><p>Hey ho</p></section>$relatedSection"
 

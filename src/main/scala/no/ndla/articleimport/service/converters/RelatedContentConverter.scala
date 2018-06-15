@@ -9,11 +9,16 @@ package no.ndla.articleimport.service.converters
 
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
-import no.ndla.articleimport.integration.{ConverterModule, DraftApiClient, LanguageContent, MigrationApiClient}
+import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api.{Article, Concept, ImportException, ImportExceptions}
-import no.ndla.articleimport.model.domain.ImportStatus
+import no.ndla.articleimport.model.domain.{ExternalEmbedMetaWithTitle, ImportStatus, Language}
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
-import no.ndla.articleimport.ArticleImportProperties.{supportedContentTypes, importRelatedNodesMaxDepth}
+import no.ndla.validation.TagAttributes._
+import no.ndla.validation.ResourceType
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
+import org.jsoup.nodes.Entities.EscapeMode
+import no.ndla.articleimport.ArticleImportProperties.{nodeTypeLink, supportedContentTypes, importRelatedNodesMaxDepth}
 
 import scala.util.{Failure, Success, Try}
 
@@ -31,19 +36,21 @@ trait RelatedContentConverter {
         .map(c => (c.nid, extractService.getNodeType(c.nid).getOrElse("unknown")))
         .toSet
 
-      val nidsToImport = allRelatedNids.collect {
-        case (nid, nodeType) if supportedContentTypes.contains(nodeType) => nid
+      val nidsToImportWithType = allRelatedNids.collect {
+        case (nid, nodeType) if supportedContentTypes.contains(nodeType) => (nid, nodeType)
       }
 
+      val linkNodesWithOnlyUrl = getLinkNodesWithoutEmbed(nidsToImportWithType, content.language)
+      val nidsToImport = nidsToImportWithType.map { case (nid, _) => nid }.diff(linkNodesWithOnlyUrl.map(_.nid))
+
       val excludedNids = allRelatedNids.collect {
-        case (nid, nodeType) if !nidsToImport.contains(nid) =>
-          ImportException(nid,
-                          s"Related content with node node id $nid ($nodeType) is unsupported and will not be imported")
+        case (nid, nodeType) if !nidsToImport.contains(nid) || linkNodesWithOnlyUrl.map(_.nid).contains(nid) =>
+          ImportException(nid, s"Related content with node id $nid ($nodeType) is unsupported and will not be imported")
       }
 
       val updatedStatus = importStatus.addErrors(excludedNids.toSeq)
 
-      if (nidsToImport.isEmpty) {
+      if (nidsToImport.isEmpty && linkNodesWithOnlyUrl.isEmpty) {
         Success(content, updatedStatus)
       } else {
         val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] =
@@ -53,9 +60,11 @@ trait RelatedContentConverter {
           else importRelatedContentCb
 
         handlerFunc(nidsToImport, updatedStatus) match {
-          case Success((ids, status)) if ids.nonEmpty =>
+          case Success((ids, status)) if ids.nonEmpty || linkNodesWithOnlyUrl.nonEmpty =>
             val element = stringToJsoupDocument(content.content)
-            element.append(s"<section>${HtmlTagGenerator.buildRelatedContent(ids)}</section>")
+            element.append(
+              s"<section>${HtmlTagGenerator.buildRelatedContent(ids.toList, linkNodesWithOnlyUrl.toList)}</section>")
+
             Success(content.copy(content = jsoupDocumentToString(element)), status)
           case Success((_, status)) =>
             Success(content, status)
@@ -76,6 +85,27 @@ trait RelatedContentConverter {
         }
       }
 
+    }
+
+    /**
+      * @param nidsWithType Set of tuples with (NodeId, NodeType)
+      * @param language Language in ISO639 format
+      * @return Returns set of nid, title and url for linknodes without embed codes listed in nidsWithType
+      */
+    private def getLinkNodesWithoutEmbed(nidsWithType: Set[(String, String)],
+                                         language: String): Set[ExternalEmbedMetaWithTitle] = {
+      nidsWithType.collect {
+        case (nid, `nodeTypeLink`) =>
+          extractService.getLinkEmbedMeta(nid) match {
+            case Success(MigrationEmbedMeta(Some(url), None)) =>
+              extractService.getNodeData(nid).toOption.map { node =>
+                val linkTitle =
+                  Language.findByLanguageOrBestEffort(node.titles, language).map(_.title).getOrElse("")
+                ExternalEmbedMetaWithTitle(nid, linkTitle, url)
+              }
+            case _ => None
+          }
+      }.flatten
     }
   }
 
