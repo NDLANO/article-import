@@ -41,7 +41,7 @@ trait SimpleTagConverter {
 
       val invalidEmbeds = allEmbeds.filterNot(e => {
         // If embed is at root we dont include "body" tag
-        val embedWithParent = if(e.parent.tagName() != "body") e.parent() else e
+        val embedWithParent = if (e.parent.tagName() != "body") e.parent() else e
         HtmlValidator.validate("content", embedWithParent.outerHtml()).isEmpty
       })
 
