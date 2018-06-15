@@ -13,6 +13,7 @@ import no.ndla.articleimport.model.domain.{Article, ArticleIds, Concept, Languag
 import no.ndla.network.NdlaClient
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.service.ConverterService
+import org.joda.time.DateTime
 
 import scala.util.{Failure, Success, Try}
 import scalaj.http.Http
@@ -50,11 +51,19 @@ trait DraftApiClient {
         .toOption
     }
 
-    def newArticle(article: NewArticle, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
-      postWithData[api.Article, NewArticle](s"$DraftApiPublicEndpoint/",
-                                            article,
-                                            "externalId" -> mainNodeId,
-                                            "externalSubjectIds" -> subjectIds.mkString(","))
+    def newArticle(article: NewArticle,
+                   mainNodeId: String,
+                   subjectIds: Set[String],
+                   createdDate: String,
+                   updatedDate: String): Try[api.Article] = {
+      postWithData[api.Article, NewArticle](
+        s"$DraftApiPublicEndpoint/",
+        article,
+        "externalId" -> mainNodeId,
+        "externalSubjectIds" -> subjectIds.mkString(","),
+        "oldNdlaCreatedDate" -> createdDate,
+        "oldNdlaUpdatedDate" -> updatedDate
+      )
     }
 
     def newArticle(article: Article, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
@@ -67,10 +76,13 @@ trait DraftApiClient {
             converterService.toApiUpdateArticle(article, lang, idx + 1)
         }
 
-      newArticle(newArt, mainNodeId, subjectIds) match {
+      val createdTime = new DateTime(article.created).toString
+      val updatedTime = new DateTime(article.updated).toString
+
+      newArticle(newArt, mainNodeId, subjectIds, createdTime, updatedTime) match {
         case Success(a) =>
           val (failed, _) = updateArticles
-            .map(u => updateArticle(u, a.id, mainNodeId, subjectIds))
+            .map(u => updateArticle(u, a.id, mainNodeId, subjectIds, createdTime, updatedTime))
             .partition(_.isFailure)
           if (failed.nonEmpty) {
             val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
@@ -90,18 +102,26 @@ trait DraftApiClient {
     private def updateArticle(article: api.UpdateArticle,
                               id: Long,
                               mainNodeId: String,
-                              externalSubjectIds: Set[String]): Try[api.Article] = {
-      patch[api.Article, api.UpdateArticle](s"$DraftApiPublicEndpoint/$id",
-                                            article,
-                                            "externalId" -> mainNodeId,
-                                            "externalSubjectIds" -> externalSubjectIds.mkString(","))
+                              externalSubjectIds: Set[String],
+                              created: String,
+                              updated: String): Try[api.Article] = {
+      patch[api.Article, api.UpdateArticle](
+        s"$DraftApiPublicEndpoint/$id",
+        article,
+        "externalId" -> mainNodeId,
+        "externalSubjectIds" -> externalSubjectIds.mkString(","),
+        "oldNdlaCreatedDate" -> created,
+        "oldNdlaUpdatedDate" -> updated
+      )
     }
 
     private def updateArticle(article: api.UpdateArticle,
                               mainNodeId: String,
-                              subjectIds: Set[String]): Try[api.Article] = {
+                              subjectIds: Set[String],
+                              created: String,
+                              updated: String): Try[api.Article] = {
       getArticleIdFromExternalId(mainNodeId) match {
-        case Some(id) => updateArticle(article, id, mainNodeId, subjectIds)
+        case Some(id) => updateArticle(article, id, mainNodeId, subjectIds, created, updated)
         case None =>
           Failure(NotFoundException(s"No article with external id $mainNodeId found"))
       }
@@ -116,14 +136,17 @@ trait DraftApiClient {
             converterService.toApiUpdateArticle(article, lang, startRevision + idx)
         }
 
-      val (failed, updated) = updateArticles
-        .map(u => updateArticle(u, mainNodeId, externalSubjectIds))
+      val createdTime = new DateTime(article.created).toString
+      val updatedTime = new DateTime(article.updated).toString
+
+      val (failed, updatedArticle) = updateArticles
+        .map(u => updateArticle(u, mainNodeId, externalSubjectIds, createdTime, updatedTime))
         .partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
         Failure(ImportException(s"${article.id}", s"Failed to update one or more article: $failedMsg"))
       } else {
-        updated.head
+        updatedArticle.head
       }
     }
 

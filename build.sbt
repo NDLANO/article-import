@@ -4,7 +4,7 @@ val Scalaversion = "2.12.2"
 val Scalatraversion = "2.5.1"
 val ScalaLoggingVersion = "3.5.0"
 val Log4JVersion = "2.9.1"
-val Jettyversion = "9.2.10.v20150310"
+val Jettyversion = "9.4.11.v20180605"
 val ScalaTestVersion = "3.0.1"
 val MockitoVersion = "1.10.19"
 val Elastic4sVersion = "5.2.8"
@@ -30,7 +30,7 @@ lazy val article_import = (project in file("."))
     libraryDependencies ++= Seq(
       "ndla" %% "network" % "0.29",
       "ndla" %% "mapping" % "0.6",
-      "ndla" %% "validation" % "0.16.1",
+      "ndla" %% "validation" % "0.19",
       "joda-time" % "joda-time" % "2.8.2",
       "org.scalatra" %% "scalatra" % Scalatraversion,
       "org.scalatra" %% "scalatra-json" % Scalatraversion,

@@ -9,6 +9,8 @@ package no.ndla.articleimport.service
 
 import java.util.Date
 
+import no.ndla.articleimport.ArticleImportProperties.Domain
+import no.ndla.articleimport.model.domain.ContentFilMeta._
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.model.api.ImportException
@@ -16,6 +18,7 @@ import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.service.converters.TableConverter
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
+import no.ndla.validation.ResourceType
 import org.mockito.Mockito._
 import org.mockito.Matchers._
 import org.mockito.invocation.InvocationOnMock
@@ -470,8 +473,43 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     copyright.processors should contain(Author("Editorial", "C"))
   }
 
-  test("That related articles are included in all languages") {
+  test("That FilConverterModule + FileDivConverter converts contentbrowser to div in the correct position") {
+    val title = "Full av trix"
+    val filePath = s"$nodeId/test1.pdf"
+    val filePath2 = s"$nodeId/test2.pdf"
+    val fileMeta =
+      ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/files/title.pdf", "application/pdf", "1024")
+    val fileMeta2 = fileMeta.copy(fileName = "title2.pdf", url = s"$Domain/files/title2.pdf")
+    val expectedEmbed =
+      s"""<div data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$Domain/files/$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$Domain/files/$filePath2"></div>"""
 
+    when(extractService.getNodeFilMeta(nodeId))
+      .thenReturn(Success(Seq(fileMeta, fileMeta2)))
+    when(attachmentStorageService.uploadFileFromUrl(nodeId, fileMeta))
+      .thenReturn(Success(filePath))
+    when(attachmentStorageService.uploadFileFromUrl(nodeId, fileMeta2))
+      .thenReturn(Success(filePath2))
+    when(extractService.getNodeType(nodeId)).thenReturn(Some("fil"))
+
+    val contentBrowser =
+      s"""[contentbrowser ==nid=$nodeId==remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==width===insertion=link==link_title_text=$title==lightbox_size===link_text=$title==fid===text_align===css_class===alt===css_class=contentbrowser]"""
+
+    val originalContent =
+      s"""<section><p>Hei her er det vanlig tekst, men så plutselig: "$contentBrowser" whapam!</p><div><p><strong>Og en til $contentBrowser da</strong></p></div></section>"""
+    val expectedResult =
+      s"""<section><p>Hei her er det vanlig tekst, men så plutselig: "$title" whapam!</p>$expectedEmbed<div><p><strong>Og en til $title da</strong></p>$expectedEmbed</div></section>"""
+
+    val sampleLanguageContent: LanguageContent = TestData.sampleContent.copy(content = originalContent)
+    val node = sampleNode.copy(contents = List(sampleLanguageContent))
+
+    val result = service.toDomainArticle(node, ImportStatus.empty)
+    result.isSuccess should be(true)
+    val Success((resultContent: Article, _)) = result
+
+    resultContent.content.head.content should be(expectedResult)
+  }
+
+  test("That related articles are included in all languages") {
     val relatedContent = Seq(
       MigrationRelatedContent("1", "Heisann", "", 1),
       MigrationRelatedContent("2", "Hopsann", "", 1),
@@ -503,7 +541,13 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
                                                         relatedContent = relatedContent)
 
     val relatedSection =
-      """<section><embed data-article-ids="11,12,13" data-resource="related-content"></section>"""
+      """<section>
+        |<div data-type="related-content">
+        |<embed data-article-id="11" data-resource="related-content">
+        |<embed data-article-id="12" data-resource="related-content">
+        |<embed data-article-id="13" data-resource="related-content">
+        |</div>
+        |</section>""".stripMargin.replace("\n", "")
     val expectedNbContent = s"<section><p>Hei hå</p></section>$relatedSection"
     val expectedEnContent = s"<section><p>Hey ho</p></section>$relatedSection"
 

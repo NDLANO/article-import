@@ -7,8 +7,11 @@
 
 package no.ndla.articleimport.service.converters
 
+import no.ndla.articleimport.model.domain.{ExternalEmbedMetaWithTitle, UploadedFile}
+import no.ndla.articleimport.ArticleImportProperties.Domain
 import no.ndla.validation.{ResourceType, TagAttributes}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
+import org.jsoup.nodes.{Document, Element}
 
 trait HtmlTagGenerator {
 
@@ -141,12 +144,34 @@ trait HtmlTagGenerator {
       buildEmbedContent(attrs)
     }
 
-    def buildRelatedContent(articleIds: Set[Long]): String = {
-      val attrs = Map(
-        TagAttributes.DataResource -> ResourceType.RelatedContent.toString,
-        TagAttributes.DataArticleIds -> articleIds.map(_.toString).mkString(",")
-      )
-      buildEmbedContent(attrs)
+    def buildRelatedContent(articleIds: List[Long], externalUrlMeta: List[ExternalEmbedMetaWithTitle]): Element = {
+      val doc = Document.createShell("")
+      doc.outputSettings().prettyPrint(false).indentAmount(0)
+
+      val relatedDiv = doc.body
+        .appendElement("div")
+        .attr(TagAttributes.DataType.toString, ResourceType.RelatedContent.toString)
+
+      val idEmbeds = articleIds.map(id => {
+        val attrs = Map(
+          TagAttributes.DataResource -> ResourceType.RelatedContent.toString,
+          TagAttributes.DataArticleId -> id.toString
+        )
+        buildEmbedContent(attrs)
+      })
+
+      val externalEmbeds = externalUrlMeta.map(meta => {
+        val attrs = Map(
+          TagAttributes.DataResource -> ResourceType.RelatedContent.toString,
+          TagAttributes.DataTitle -> meta.title,
+          TagAttributes.DataUrl -> meta.url
+        )
+        buildEmbedContent(attrs)
+      })
+
+      (externalEmbeds ++ idEmbeds).foreach(embed => relatedDiv.append(embed))
+
+      relatedDiv
     }
 
     private def buildAttributesString(figureDataAttributeMap: Map[TagAttributes.Value, String]): String =
@@ -157,6 +182,35 @@ trait HtmlTagGenerator {
             s"""$key="${value.trim.replace("\"", "&quot;")}""""
         }
         .mkString(" ")
+
+    /**
+      * Builds a span with data-type [[ResourceType.File]] and a child embed-tag for each file
+      * Spans are used to allow them to be placed inline until they are
+      * parsed by a converter which moves them into box elements and converted to divs.
+      *
+      * @param files List of uploaded files
+      * @return Span [[Element]]
+      */
+    def buildFileEmbed(files: List[UploadedFile]): Element = {
+      val doc = Document.createShell("")
+      doc.outputSettings().prettyPrint(false).indentAmount(0)
+
+      val fileDiv = doc.body
+        .appendElement("FileListEntries")
+        .attr(TagAttributes.DataType.toString, ResourceType.File.toString)
+
+      files.foreach(f => {
+        val attrs = Map(
+          TagAttributes.DataResource -> ResourceType.File.toString,
+          TagAttributes.DataUrl -> f.url,
+          TagAttributes.DataTitle -> f.fileMeta.title,
+          TagAttributes.DataType -> f.fileMeta.fileName.split('.').lastOption.getOrElse("")
+        )
+        fileDiv.append(buildEmbedContent(attrs))
+      })
+
+      fileDiv
+    }
 
   }
 
