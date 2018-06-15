@@ -28,12 +28,12 @@ trait FileDivConverter {
     }
 
     /**
-      * Locates file-spans and moves them out of inline parents and converts them to divs
+      * Locates FileListEntries elements and moves them out of inline parents and converts them to divs
       * @param element Entire html element
       */
     private def moveFilesAfterText(element: Element): Unit = {
       element
-        .select(s"""span[${TagAttributes.DataType}="${ResourceType.File}"]""")
+        .select(s"""FileListEntries""")
         .asScala
         .foreach(d => {
           outOfInlines(d).tagName("div")

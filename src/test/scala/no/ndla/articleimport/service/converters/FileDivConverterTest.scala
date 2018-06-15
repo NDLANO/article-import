@@ -32,7 +32,7 @@ class FileDivConverterTest extends UnitSuite with TestEnvironment {
          |<embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$filePath2">""".stripMargin
 
     val originalContent =
-      s"""<section><h1>Article here</h1><p>Files for this can be found on this page: "melon<span data-type="${ResourceType.File.toString}">"$embeds</span>" so please visit it :D</p></section>"""
+      s"""<section><h1>Article here</h1><p>Files for this can be found on this page: "melon<FileListEntries data-type="${ResourceType.File.toString}">"$embeds</FileListEntries>" so please visit it :D</p></section>"""
     val expectedContent =
       s"""<section><h1>Article here</h1><p>Files for this can be found on this page: "melon" so please visit it :D</p><div data-type="${ResourceType.File.toString}">"$embeds</div></section>"""
 

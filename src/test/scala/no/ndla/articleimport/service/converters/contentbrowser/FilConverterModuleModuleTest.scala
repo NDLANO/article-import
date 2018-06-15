@@ -53,7 +53,7 @@ class FilConverterModuleModuleTest extends UnitSuite with TestEnvironment {
       ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/$filePath", "application/pdf", "1024")
     val fileMeta2 = fileMeta.copy(fileName = "title2.pdf", url = s"$Domain/$filePath2")
     val expectedResult =
-      s"""$title<span data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$Domain/files/$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$Domain/files/$filePath2"></span>"""
+      s"""$title<FileListEntries data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$Domain/files/$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$Domain/files/$filePath2"></FileListEntries>"""
 
     when(extractService.getNodeFilMeta(nodeId))
       .thenReturn(Success(Seq(fileMeta, fileMeta2)))
