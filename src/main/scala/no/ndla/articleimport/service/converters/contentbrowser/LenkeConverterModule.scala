@@ -76,7 +76,6 @@ trait LenkeConverterModule {
     }
 
     private val embedHostWhitelist = List(
-      "commoncraft.com",
       "exprogroup.com",
       "kahoot.it",
       "khanacademy.org",
@@ -89,6 +88,7 @@ trait LenkeConverterModule {
       "tv2skole.no",
       "vg.no",
       "vimeo.com",
+      "vimeopro.com",
       "youtu.be",
       "youtube.com"
     ).map(_.asDomainRegex)
@@ -107,7 +107,6 @@ trait LenkeConverterModule {
       if (urlIsWhitelisted(url)) {
         val NRKUrlPattern = "nrk.no".asDomainRegex
         val PreziUrlPattern = "prezi.com".asDomainRegex
-        val CommonCraftUrlPattern = "commoncraft.com".asDomainRegex
         val NdlaFilmIundervisningUrlPattern = "ndla.filmiundervisning.no".asDomainRegex
         val KahootUrlPattern = "play.kahoot.it".asDomainRegex
         val vimeoProUrlPattern = "vimeopro.com".asDomainRegex
@@ -123,7 +122,7 @@ trait LenkeConverterModule {
             Success((embed, requiredLib, Seq(message)))
           case vimeoProUrlPattern(_)      => Success(getVimeoProEmbedTag(embedCode), None, Seq(message))
           case kunnskapsFilmUrlPattern(_) => Success(getKunnskapsFilmEmbedTag(embedCode), None, Seq(message))
-          case PreziUrlPattern(_) | CommonCraftUrlPattern(_) | NdlaFilmIundervisningUrlPattern(_) |
+          case PreziUrlPattern(_) | NdlaFilmIundervisningUrlPattern(_) |
               KahootUrlPattern(_) | khanAcademyUrlPattern(_) | tv2SkoleUrlPattern(_) | scribdUrlPattern(_) |
               vgNoUrlPattern(_) =>
             buildRegularEmbedTag(embedCode, nid, url).map(embedTag => (embedTag, None, Seq(message)))

@@ -149,24 +149,24 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     status.messages should be(Seq("External resource to be embedded: http://prezi.com/123123123"))
   }
 
-  test("That LenkeConverter returns a iframe embed for commoncraft resources") {
-    val CcraftUrl = "http://www.commoncraft.com/123123123"
-    val CcraftSrc = "https://www.commoncraft.com/embed/db233ba&autoplay=0"
-    val CcraftEmbedCode =
-      s"""<iframe id="cc-embed" frameborder="0" width="620" height="451" src="$CcraftSrc" scrolling="false"></iframe>"""
+  test("That LenkeConverter returns an external embed for vimeopro resources") {
+    val vimeoProUrl = "http://www.vimeopro.com/heiho/film/video/12345"
+    val vimeoProSrc = "https://player.vimeo.com/video/12345"
+    val vimeoProEmbedCode =
+      s"""<iframe src=\"$vimeoProSrc\" width=\"620\" height=\"501\" frameborder=\"0\" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>"""
 
     val content =
       TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
     val expectedResult =
-      s"""<$ResourceHtmlEmbedTag data-height="451" data-resource="${ResourceType.IframeContent}" data-url="$CcraftSrc" data-width="620" />"""
+      s"""<$ResourceHtmlEmbedTag data-resource="${ResourceType.ExternalContent}" data-url="$vimeoProSrc" />"""
 
     when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(Some(CcraftUrl), Some(CcraftEmbedCode))))
+      .thenReturn(Success(MigrationEmbedMeta(Some(vimeoProUrl), Some(vimeoProEmbedCode))))
     val Success((result, _, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    status.messages should be(Seq("External resource to be embedded: http://www.commoncraft.com/123123123"))
+    status.messages should be(Seq(s"External resource to be embedded: $vimeoProUrl"))
   }
 
   test("That LenkeConverter returns a iframe embed for ndla.filmundervisningen resources") {
