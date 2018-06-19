@@ -23,10 +23,7 @@ trait TaxonomyApiClient {
     private val TaxonomyApiEndpoint = s"http://$ApiGatewayUrl/taxonomy/v1"
 
     def existsInTaxonomy(nid: String): Try[Boolean] = {
-      val res = getResource(nid)
-      val top = getTopic(nid)
-
-      res.orElse(top) match {
+      getResource(nid).orElse(getTopic(nid)) match {
         case Success(_)                                    => Success(true)
         case Failure(ex: HttpRequestException) if ex.is404 => Success(true)
         case Failure(ex)                                   => Failure(ex)

@@ -38,50 +38,40 @@ trait RelatedContentConverter {
   object RelatedContentConverter extends ConverterModule {
     override def convert(content: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
 
-      val allRelatedNids = content.relatedContent
-        .map(c => (c.nid, extractService.getNodeType(c.nid).getOrElse("unknown")))
-        .toSet
-
+      val allRelatedNids =
+        content.relatedContent.map(c => (c.nid, extractService.getNodeType(c.nid).getOrElse("unknown"))).toSet
       val linkNodesWithOnlyUrl = getLinkNodesWithoutEmbed(allRelatedNids, content.language)
       val nonLinkNids = allRelatedNids.filterNot { case (nid, _) => linkNodesWithOnlyUrl.map(_.nid).contains(nid) }
       val (excludedNids, nidsToImport) = getValidNids(nonLinkNids.toList).separate
 
       val updatedStatus = importStatus.addErrors(excludedNids)
 
-      if (nidsToImport.isEmpty && linkNodesWithOnlyUrl.isEmpty) {
-        Success(content, updatedStatus)
-      } else {
-        val importRelatedContentCb: (Set[String], ImportStatus) => Try[(Set[Long], ImportStatus)] =
-          importRelatedContent(content.nid, _, _)
-        val handlerFunc =
-          if (updatedStatus.nodeLocalContext.depth > importRelatedNodesMaxDepth) getRelatedContentFromDb _
-          else importRelatedContentCb
-
-        handlerFunc(nidsToImport.toSet, updatedStatus) match {
-          case Success((ids, status)) if ids.nonEmpty || linkNodesWithOnlyUrl.nonEmpty =>
-            val element = stringToJsoupDocument(content.content)
-            element.append(
-              s"<section>${HtmlTagGenerator.buildRelatedContent(ids.toList, linkNodesWithOnlyUrl.toList)}</section>")
-
-            Success(content.copy(content = jsoupDocumentToString(element)), status)
-          case Success((_, status)) =>
-            Success(content, status)
-          case Failure(ex: ImportExceptions) =>
-            val importExceptions = ex.errors.collect { case ex: ImportException => ex }
-            val otherExceptions = ex.errors.diff(importExceptions)
-            val finalStatus = updatedStatus
-              .addErrors(importExceptions)
-              .addErrors(
-                otherExceptions.map(
-                  e =>
-                    ImportException(content.nid,
-                                    "Something unexpected went wrong while importing related nodes.",
-                                    Some(e))))
-            Success((content, finalStatus))
-          case Failure(ex) =>
-            Success((content, updatedStatus.addError(ImportException(content.nid, ex.getMessage, Some(ex)))))
-        }
+      handleNodes(content.nid, nidsToImport.toSet, updatedStatus) match {
+        case Success((ids, status)) if ids.nonEmpty || linkNodesWithOnlyUrl.nonEmpty =>
+          val element = stringToJsoupDocument(content.content)
+          element.append(
+            s"<section>${HtmlTagGenerator.buildRelatedContent(ids.toList, linkNodesWithOnlyUrl.toList)}</section>")
+          Success(content.copy(content = jsoupDocumentToString(element)), status)
+        case Success((_, status)) =>
+          Success(content, status)
+        case Failure(ex) =>
+          Success((content, handleRelatedErrors(content.nid, ex, updatedStatus)))
       }
+    }
+
+    private def handleRelatedErrors(nid: String, exception: Throwable, importStatus: ImportStatus): ImportStatus = {
+      exception match {
+        case ex: ImportExceptions =>
+          val importExceptions = ex.errors.collect { case ex: ImportException => ex }
+          val otherExceptions = ex.errors.diff(importExceptions)
+          importStatus
+            .addErrors(importExceptions)
+            .addErrors(otherExceptions.map(e =>
+              ImportException(nid, "Something unexpected went wrong while importing related nodes.", Some(e))))
+        case ex =>
+          importStatus.addError(ImportException(nid, ex.getMessage, Some(ex)))
+      }
+
     }
 
     /**
@@ -103,6 +93,23 @@ trait RelatedContentConverter {
             case _ => None
           }
       }.flatten
+    }
+
+    /**
+      * Imports or fetches nodes depending on whether the node depth threshold is bigger than [[importRelatedNodesMaxDepth]]
+      * @param nid mainNodeId
+      * @param nidsToImport nids that are to be imported or fetched.
+      * @param importStatus ImportStatus
+      * @return Try with a tuple where _1 is set of imported/fetched ids and _2 is updated importStatus
+      */
+    private def handleNodes(nid: String,
+                            nidsToImport: Set[String],
+                            importStatus: ImportStatus): Try[(Set[Long], ImportStatus)] = {
+      if (importStatus.nodeLocalContext.depth > importRelatedNodesMaxDepth) {
+        getRelatedContentFromDb(nidsToImport, importStatus)
+      } else {
+        importRelatedContent(nid, nidsToImport, importStatus)
+      }
     }
 
     private def importRelatedContent(mainNodeId: String,
