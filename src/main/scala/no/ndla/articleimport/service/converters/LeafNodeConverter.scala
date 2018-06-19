@@ -52,12 +52,12 @@ trait LeafNodeConverter {
     private def doLink(cont: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
       extractService.getLinkEmbedMeta(cont.nid) match {
         case Success(MigrationEmbedMeta(Some(url), embedCode)) =>
-          val inlineEmbed = LenkeConverterModule.insertInline(cont.nid, url, embedCode.getOrElse(""))
+          val inlineEmbed = LenkeConverterModule.insertInline(cont.nid, url, embedCode.getOrElse(""), importStatus)
 
           inlineEmbed.map {
-            case (embedTag, requiredLibraries, _) =>
+            case (embedTag, requiredLibraries, status) =>
               (cont.copy(content = embedTag, requiredLibraries = requiredLibraries.toSet, metaDescription = url),
-               importStatus)
+               status)
           }
 
         case Success(MigrationEmbedMeta(url, embedCode)) =>
