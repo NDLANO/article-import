@@ -90,7 +90,9 @@ trait LenkeConverterModule {
       "vimeo.com",
       "vimeopro.com",
       "youtu.be",
-      "youtube.com"
+      "youtube.com",
+      "issuu.com",
+      "livestream.com"
     ).map(_.asDomainRegex)
 
     private def urlIsWhitelisted(url: String): Boolean = {
@@ -115,6 +117,7 @@ trait LenkeConverterModule {
         val vgNoUrlPattern = "vg.no".asDomainRegex
         val scribdUrlPattern = "scribd.com".asDomainRegex
         val kunnskapsFilmUrlPattern = "kunnskapsfilm.no".asDomainRegex
+        val livestreamUrlPattern = "livestream.com".asDomainRegex
 
         url.host.getOrElse("") match {
           case NRKUrlPattern(_) =>
@@ -122,9 +125,9 @@ trait LenkeConverterModule {
             Success((embed, requiredLib, Seq(message)))
           case vimeoProUrlPattern(_)      => Success(getVimeoProEmbedTag(embedCode), None, Seq(message))
           case kunnskapsFilmUrlPattern(_) => Success(getKunnskapsFilmEmbedTag(embedCode), None, Seq(message))
-          case PreziUrlPattern(_) | NdlaFilmIundervisningUrlPattern(_) |
-              KahootUrlPattern(_) | khanAcademyUrlPattern(_) | tv2SkoleUrlPattern(_) | scribdUrlPattern(_) |
-              vgNoUrlPattern(_) =>
+          case PreziUrlPattern(_) | NdlaFilmIundervisningUrlPattern(_) | KahootUrlPattern(_) |
+              khanAcademyUrlPattern(_) | tv2SkoleUrlPattern(_) | scribdUrlPattern(_) | vgNoUrlPattern(_) |
+              livestreamUrlPattern(_) =>
             buildRegularEmbedTag(embedCode, nid, url).map(embedTag => (embedTag, None, Seq(message)))
           case _ => Success((HtmlTagGenerator.buildExternalInlineEmbedContent(url), None, Seq(message)))
         }
