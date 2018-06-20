@@ -14,6 +14,11 @@ import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.ResourceType
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import org.mockito.Mockito._
+import com.netaporter.uri.dsl._
+import no.ndla.network.model.HttpRequestException
+import org.mockito.Matchers._
+import org.mockito.Mockito
+import scalaj.http.{Http, HttpRequest, HttpResponse}
 
 import scala.util.{Failure, Success}
 
@@ -22,9 +27,9 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
   val altText = "Jente som spiser melom. Grønn bakgrunn, rød melon. Fotografi."
   val linkUrl = "https://www.youtube.com/watch?v=1qN72LEQnaU"
 
-  override val extractService = new ExtractService
+  override val extractService: ExtractService = new ExtractService
 
-  override def beforeEach = {
+  override def beforeEach: Unit = {
     val iframeEmbed = s"""<iframe src="$linkUrl" />"""
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(linkUrl), Some(iframeEmbed))))
@@ -149,24 +154,24 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     status.messages should be(Seq("External resource to be embedded: http://prezi.com/123123123"))
   }
 
-  test("That LenkeConverter returns a iframe embed for commoncraft resources") {
-    val CcraftUrl = "http://www.commoncraft.com/123123123"
-    val CcraftSrc = "https://www.commoncraft.com/embed/db233ba&autoplay=0"
-    val CcraftEmbedCode =
-      s"""<iframe id="cc-embed" frameborder="0" width="620" height="451" src="$CcraftSrc" scrolling="false"></iframe>"""
+  test("That LenkeConverter returns an external embed for vimeopro resources") {
+    val vimeoProUrl = "http://www.vimeopro.com/heiho/film/video/12345"
+    val vimeoProSrc = "https://player.vimeo.com/video/12345"
+    val vimeoProEmbedCode =
+      s"""<iframe src=\"$vimeoProSrc\" width=\"620\" height=\"501\" frameborder=\"0\" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>"""
 
     val content =
       TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
     val expectedResult =
-      s"""<$ResourceHtmlEmbedTag data-height="451" data-resource="${ResourceType.IframeContent}" data-url="$CcraftSrc" data-width="620" />"""
+      s"""<$ResourceHtmlEmbedTag data-resource="${ResourceType.ExternalContent}" data-url="$vimeoProSrc" />"""
 
     when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(Some(CcraftUrl), Some(CcraftEmbedCode))))
+      .thenReturn(Success(MigrationEmbedMeta(Some(vimeoProUrl), Some(vimeoProEmbedCode))))
     val Success((result, _, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(expectedResult)
-    status.messages should be(Seq("External resource to be embedded: http://www.commoncraft.com/123123123"))
+    status.messages should be(Seq(s"External resource to be embedded: $vimeoProUrl"))
   }
 
   test("That LenkeConverter returns a iframe embed for ndla.filmundervisningen resources") {
@@ -180,7 +185,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     val content =
       TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
     val expectedResult =
-      s"""<$ResourceHtmlEmbedTag data-height="337px" data-resource="${ResourceType.IframeContent}" data-url="$NdlaFilmSrc" data-width="632px" />"""
+      s"""<$ResourceHtmlEmbedTag data-height="337px" data-resource="${ResourceType.IframeContent}" data-url="${NdlaFilmSrc
+        .withScheme("https")}" data-width="632px" />"""
 
     when(extractService.getNodeEmbedMeta(nodeId))
       .thenReturn(Success(MigrationEmbedMeta(Some(NdlaFilmUrl), Some(NdlaFilmEmbedCode))))
@@ -266,5 +272,25 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     val Failure(ex: ImportException) = LenkeConverterModule.convert(content, ImportStatus.empty)
 
     ex.message.contains("not a whitelisted embed source") should be(true)
+  }
+
+  test("domains should be converted to https and add a warning if unreachable") {
+    val src = "new.livestream.com/video/123"
+    val errorResponse =
+      new HttpRequestException(s"Received error 404 NOT FOUND when calling https://$src. Body was ''", None)
+
+    val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
+    when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(
+      Success(MigrationEmbedMeta(Some("http://livestream.com/video/123"), Some(s"<iframe src='http://$src'>"))))
+    val lenkeConverterModule = spy(LenkeConverterModule)
+    when(lenkeConverterModule.checkAvailability(any[String])).thenReturn(Left(Some(errorResponse)))
+    val Success((result, _, status)) = lenkeConverterModule.convert(content, ImportStatus.empty)
+    result should be(s"""<embed data-height="" data-resource="iframe" data-url="https://$src" data-width="" />""")
+    status.errors should be(
+      Seq(ImportException(
+        "1234",
+        "Embed with 'http://livestream.com/video/123' might not be rendered properly, as 'https://new.livestream.com/video/123' returned an error.",
+        Some(errorResponse)
+      )))
   }
 }

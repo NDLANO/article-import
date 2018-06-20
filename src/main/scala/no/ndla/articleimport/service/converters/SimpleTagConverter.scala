@@ -46,14 +46,13 @@ trait SimpleTagConverter {
       })
 
       val errorMessages = invalidEmbeds.map(embed => {
-        val attrsToIncludeInError = List("src", "type")
-        val attrMessages = attrsToIncludeInError.map(a => (a, embed.attr(a))).filter(_._2.trim.nonEmpty).map {
-          case (attr, value) => s"$attr was: '$value'"
-        }
+        val errorToReturn =
+          s"Failed to import node with invalid embed. (${embed.outerHtml()})"
+
         val errorEmbed = HtmlTagGenerator.buildErrorContent("Innhold mangler.")
         embed.after(errorEmbed)
         embed.remove()
-        s"Failed to import node with invalid embed${attrMessages.mkString(", ", ", and ", ".")}"
+        errorToReturn
       })
 
       Success(

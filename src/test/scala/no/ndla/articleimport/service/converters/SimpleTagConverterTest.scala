@@ -271,7 +271,7 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
       Seq(
         ImportException(
           "1234",
-          "Failed to import node with invalid embed, src was: 'http://example.com/test.swf', and type was: 'application/x-shockwave-flash'.")
+          """Failed to import node with invalid embed. (<embed type="application/x-shockwave-flash" src="http://example.com/test.swf">)""")
       ))
   }
 
