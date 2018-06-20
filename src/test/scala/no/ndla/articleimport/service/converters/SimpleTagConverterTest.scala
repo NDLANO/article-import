@@ -275,4 +275,19 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
       ))
   }
 
+  test("That embeds that require parents without parent are left untouched") {
+    val content =
+      """<section>
+        |<embed data-resource="related-content" data-url="http://example.com" data-title="Eksempel tittel">
+        |</section>""".stripMargin
+        .replace("\n", "")
+
+    val Success((result, status)) =
+      SimpleTagConverter.convert(TestData.sampleContent.copy(content = content),
+                                 ImportStatus.empty)
+
+    result.content should be (content)
+    status.errors.size should be(0)
+  }
+
 }
