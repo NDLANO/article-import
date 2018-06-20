@@ -96,7 +96,8 @@ trait LenkeConverterModule {
       "youtu.be",
       "youtube.com",
       "issuu.com",
-      "livestream.com"
+      "livestream.com",
+      "channel9.msdn.com"
     ).map(_.asDomainRegex)
 
     private def urlIsWhitelisted(url: String): Boolean = {
@@ -125,6 +126,7 @@ trait LenkeConverterModule {
         val scribdUrlPattern = "scribd.com".asDomainRegex
         val kunnskapsFilmUrlPattern = "kunnskapsfilm.no".asDomainRegex
         val livestreamUrlPattern = "livestream.com".asDomainRegex
+        val channel9MsdnUrlPattern = "channel9.msdn.com".asDomainRegex
 
         url.host.getOrElse("") match {
           case NRKUrlPattern(_) =>
@@ -135,7 +137,7 @@ trait LenkeConverterModule {
             Success(getKunnskapsFilmEmbedTag(embedCode), None, updatedStatus)
           case PreziUrlPattern(_) | NdlaFilmIundervisningUrlPattern(_) | KahootUrlPattern(_) |
               khanAcademyUrlPattern(_) | tv2SkoleUrlPattern(_) | scribdUrlPattern(_) | vgNoUrlPattern(_) |
-              livestreamUrlPattern(_) =>
+              livestreamUrlPattern(_) | channel9MsdnUrlPattern(_) =>
             buildRegularEmbedTag(embedCode, nid, url, updatedStatus).map {
               case (embedTag, status) => (embedTag, None, status)
             }
