@@ -16,7 +16,7 @@ import no.ndla.articleimport.{ArticleImportProperties, TestData, TestEnvironment
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.validation.TagAttributes._
 import no.ndla.validation.ResourceType._
-import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
+import no.ndla.articleimport.model.api.{ImportException, ImportExceptions, TaxonomyException}
 import org.mockito.Mockito._
 import org.mockito.Matchers._
 import org.mockito.Matchers
@@ -32,6 +32,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
   override def beforeEach() {
     when(extractService.getNodeType("1234")).thenReturn(Some("fagstoff"))
     when(extractService.getNodeType("5678")).thenReturn(Some("fagstoff"))
+    when(taxonomyApiClient.existsInTaxonomy(any[String])).thenReturn(Success(true))
     when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
       val nid = i.getArgumentAt(0, "".getClass)
       Success(
@@ -113,9 +114,9 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     status.errors should be(
       List(
         ImportException("1234",
-                        s"Related content with node id 1234 (unsupported) is unsupported and will not be imported"),
+                        s"Related content with node id 1234 (unsupported) is unsupported and will not be imported."),
         ImportException("5678",
-                        s"Related content with node id 5678 (unsupported) is unsupported and will not be imported")
+                        s"Related content with node id 5678 (unsupported) is unsupported and will not be imported.")
       ))
   }
 
@@ -149,7 +150,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     status.errors should be(
       List(
         ImportException("1234",
-                        s"Related content with node id 1234 (unsupported) is unsupported and will not be imported")
+                        s"Related content with node id 1234 (unsupported) is unsupported and will not be imported.")
       ))
 
   }
@@ -171,6 +172,41 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1), ImportStatus.empty)))
 
     val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="1" $DataResource="$RelatedContent"></div></section>"""
+
+    val Success((result, _)) =
+      RelatedContentConverter.convert(languageContent.copy(content = origContent), ImportStatus.empty)
+    result.content should equal(expectedContent)
+  }
+
+  test("That convert should only import related content that is in taxonomy") {
+
+    when(taxonomyApiClient.existsInTaxonomy("1234")).thenReturn(Success(false))
+    when(taxonomyApiClient.existsInTaxonomy("5678")).thenReturn(Success(true))
+    val origContent = "<section><h1>hmm</h1></section>"
+
+    when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
+      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1), ImportStatus.empty)))
+      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
+
+    val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="1" $DataResource="$RelatedContent"></div></section>"""
+
+    val Success((result, _)) =
+      RelatedContentConverter.convert(languageContent.copy(content = origContent), ImportStatus.empty)
+    result.content should equal(expectedContent)
+  }
+
+  test("That convert succeeds with a different error if taxonomy fails") {
+    val taxonomyException = new RuntimeException("Taxonomy failed blabla")
+    when(taxonomyApiClient.existsInTaxonomy("1234")).thenReturn(Failure(taxonomyException))
+    when(taxonomyApiClient.existsInTaxonomy("5678")).thenReturn(Success(true))
+    val origContent = "<section><h1>hmm</h1></section>"
+
+    val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="2" $DataResource="$RelatedContent"></div></section>"""
+
+    when(extractConvertStoreContent.processNode(Matchers.eq("1234"), any[ImportStatus]))
+      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1), ImportStatus.empty)))
+    when(extractConvertStoreContent.processNode(Matchers.eq("5678"), any[ImportStatus]))
+      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
 
     val Success((result, _)) =
       RelatedContentConverter.convert(languageContent.copy(content = origContent), ImportStatus.empty)
@@ -214,7 +250,6 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
         ImportStatus.empty)
     result.content should equal(expectedContent)
     status.errors should be(Seq.empty)
-
   }
 
 }

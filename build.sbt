@@ -26,7 +26,7 @@ lazy val article_import = (project in file("."))
     version := appProperties.value.getProperty("NDLAComponentVersion"),
     scalaVersion := Scalaversion,
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-    scalacOptions := Seq("-target:jvm-1.8", "-unchecked", "-deprecation", "-feature"),
+    scalacOptions := Seq("-target:jvm-1.8", "-unchecked", "-deprecation", "-feature", "-Ypartial-unification"),
     libraryDependencies ++= Seq(
       "ndla" %% "network" % "0.29",
       "ndla" %% "mapping" % "0.6",
@@ -51,7 +51,8 @@ lazy val article_import = (project in file("."))
       "org.scalatra" %% "scalatra-scalatest" % Scalatraversion % "test",
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
       "org.mockito" % "mockito-all" % MockitoVersion % "test",
-      "org.apache.commons" % "commons-text" % "1.2"
+      "org.apache.commons" % "commons-text" % "1.2",
+      "org.typelevel" %% "cats-core" % "1.0.1"
     )
   )
   .enablePlugins(DockerPlugin)

@@ -39,6 +39,7 @@ object ComponentRegistry
     with NdlaClient
     with MigrationApiClient
     with DraftApiClient
+    with TaxonomyApiClient
     with AudioApiClient
     with ImageApiClient
     with TagsService
@@ -65,6 +66,7 @@ object ComponentRegistry
   lazy val imageApiClient = new ImageApiClient
   lazy val draftApiClient = new DraftApiClient
   lazy val h5pApiClient = new H5PApiClient
+  lazy val taxonomyApiClient = new TaxonomyApiClient
 
   lazy val extractService = new ExtractService
   lazy val converterService = new ConverterService

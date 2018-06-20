@@ -31,6 +31,7 @@ trait ContentBrowserConverterModules
     with SimpleTagConverter
     with VisualElementConverter
     with RelatedContentConverter
+    with TaxonomyApiClient
     with ContentBrowserConverter
     with HTMLCleaner
     with LeafNodeConverter

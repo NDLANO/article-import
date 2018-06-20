@@ -36,6 +36,7 @@ object ArticleImportProperties extends LazyLogging {
   val DraftHost = propOrElse("DRAFT_API_HOST", "draft-api.ndla-local")
   val AudioHost = propOrElse("AUDIO_API_HOST", "audio-api.ndla-local")
   val ImageHost = propOrElse("IMAGE_API_HOST", "image-api.ndla-local")
+  val ApiGatewayUrl = "api-gateway.ndla-local"
 
   val nodeTypeBegrep: String = "begrep"
   val nodeTypeVideo: String = "video"

@@ -39,6 +39,7 @@ trait TestEnvironment
     with ExtractConvertStoreContent
     with NdlaClient
     with DraftApiClient
+    with TaxonomyApiClient
     with MigrationApiClient
     with AudioApiClient
     with ImageApiClient
@@ -74,6 +75,7 @@ trait TestEnvironment
   val imageApiClient = mock[ImageApiClient]
   val draftApiClient = mock[DraftApiClient]
   val h5pApiClient = mock[H5PApiClient]
+  val taxonomyApiClient = mock[TaxonomyApiClient]
 
   val clock = mock[SystemClock]
   val authUser = mock[AuthUser]
