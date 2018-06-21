@@ -275,4 +275,20 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
       ))
   }
 
+  test("That that parents of embeds are not validated") {
+    val content =
+      """<section>
+        |<div style="border:1;">
+        |<embed data-resource="related-content" data-url="http://example.com" data-title="Eksempel tittel">
+        |</div>
+        |</section>""".stripMargin
+        .replace("\n", "")
+
+    val Success((result, status)) =
+      SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
+
+    result.content should be(content)
+    status.errors.size should be(0)
+  }
+
 }

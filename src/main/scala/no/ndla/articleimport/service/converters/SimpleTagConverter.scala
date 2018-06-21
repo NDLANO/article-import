@@ -40,9 +40,7 @@ trait SimpleTagConverter {
       val HtmlValidator = new TextValidator(allowHtml = true)
 
       val invalidEmbeds = allEmbeds.filterNot(e => {
-        // Embeds must be validated with parent. "body" is stripped so we don't include that.
-        val embedWithParent = if (e.parent.tagName() != "body") e.parent() else e
-        HtmlValidator.validate("content", embedWithParent.outerHtml()).isEmpty
+        HtmlValidator.validate("content", e.outerHtml(), validateEmbedTagParent = false).isEmpty
       })
 
       val errorMessages = invalidEmbeds.map(embed => {
