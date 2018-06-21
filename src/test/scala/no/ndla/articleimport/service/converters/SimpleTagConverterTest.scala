@@ -275,10 +275,12 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
       ))
   }
 
-  test("That embeds that require parents without parent are left untouched") {
+  test("That that parents of embeds are not validated") {
     val content =
       """<section>
+        |<div style="border:1;">
         |<embed data-resource="related-content" data-url="http://example.com" data-title="Eksempel tittel">
+        |</div>
         |</section>""".stripMargin
         .replace("\n", "")
 
