@@ -191,7 +191,7 @@ trait DraftApiClient {
     }
 
     def newEmptyConcept(mainNodeId: String): Try[Long] =
-      post(s"$DraftApiInternEndpoint/empty_concept/", "externalId" -> mainNodeId)
+      post[Long](s"$DraftApiInternEndpoint/empty_concept/", "externalId" -> mainNodeId)
 
     def updateConcept(concept: api.UpdateConcept, id: Long): Try[api.Concept] = {
       patch[api.Concept, api.UpdateConcept](s"$DraftApiConceptPublicEndpoint/$id", concept)
