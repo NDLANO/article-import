@@ -43,7 +43,6 @@ trait SimpleTagConverter {
         HtmlValidator.validate("content", e.outerHtml(), validateEmbedTagParent = false).isEmpty
       })
 
-
       val errorMessages = invalidEmbeds.map(embed => {
         val errorToReturn =
           s"Failed to import node with invalid embed. (${embed.outerHtml()})"

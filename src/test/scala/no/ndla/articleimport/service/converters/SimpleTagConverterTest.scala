@@ -283,10 +283,9 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
         .replace("\n", "")
 
     val Success((result, status)) =
-      SimpleTagConverter.convert(TestData.sampleContent.copy(content = content),
-                                 ImportStatus.empty)
+      SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
 
-    result.content should be (content)
+    result.content should be(content)
     status.errors.size should be(0)
   }
 
