@@ -24,7 +24,7 @@ trait ExtractService {
     def getNodeData(nodeId: String): Try[NodeToConvert] = {
       val tagsForNode = tagsService.forContent(nodeId) match {
         case Failure(e) =>
-          logger.warn(s"Could not import tags for node $nodeId", e)
+          logger.warn(s"Could not import tags for node $nodeId (${e.getMessage})")
           List()
         case Success(tags) => tags
       }
