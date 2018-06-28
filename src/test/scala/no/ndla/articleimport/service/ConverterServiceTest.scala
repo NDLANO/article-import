@@ -516,7 +516,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
       MigrationRelatedContent("3", "Tralala", "", 1)
     )
 
-    when(taxonomyApiClient.existsInTaxonomy(any[String])).thenReturn(Success(true))
+    when(taxonomyApiClient.getResource(any[String])).thenReturn(Success(Some(TestData.sampleTaxonomyResource)))
     when(extractService.getNodeType(any[String])).thenReturn(Some("fagstoff"))
     when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
       val nid = i.getArgumentAt(0, "".getClass)
