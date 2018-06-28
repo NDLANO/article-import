@@ -9,7 +9,7 @@ package no.ndla.articleimport.integration
 
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.network.NdlaClient
-import no.ndla.articleimport.ArticleImportProperties.ApiGatewayUrl
+import no.ndla.articleimport.ArticleImportProperties.Domain
 import no.ndla.articleimport.integration.TaxonomyApiClient.{Resource, Topic}
 import no.ndla.network.model.HttpRequestException
 import scalaj.http.Http
@@ -21,7 +21,7 @@ trait TaxonomyApiClient {
   val taxonomyApiClient: TaxonomyApiClient
 
   class TaxonomyApiClient extends LazyLogging {
-    private val TaxonomyApiEndpoint = s"http://$ApiGatewayUrl/taxonomy/v1"
+    private val TaxonomyApiEndpoint = s"$Domain/taxonomy/v1"
 
     def getResource(nid: String): Try[Option[Resource]] =
       get[Resource](s"$TaxonomyApiEndpoint/resources/urn:resource:1:$nid")
