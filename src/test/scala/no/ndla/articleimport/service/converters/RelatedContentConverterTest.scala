@@ -32,7 +32,8 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
   override def beforeEach() {
     when(extractService.getNodeType("1234")).thenReturn(Some("fagstoff"))
     when(extractService.getNodeType("5678")).thenReturn(Some("fagstoff"))
-    when(taxonomyApiClient.existsInTaxonomy(any[String])).thenReturn(Success(true))
+    when(taxonomyApiClient.getResource(any[String])).thenReturn(Success(Some(TestData.sampleTaxonomyResource)))
+    when(taxonomyApiClient.getTopic(any[String])).thenReturn(Success(Some(TestData.sampleTaxonomyTopic)))
     when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
       val nid = i.getArgumentAt(0, "".getClass)
       Success(
@@ -180,8 +181,9 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
 
   test("That convert should only import related content that is in taxonomy") {
 
-    when(taxonomyApiClient.existsInTaxonomy("1234")).thenReturn(Success(false))
-    when(taxonomyApiClient.existsInTaxonomy("5678")).thenReturn(Success(true))
+    when(taxonomyApiClient.getResource("1234")).thenReturn(Success(None))
+    when(taxonomyApiClient.getTopic("1234")).thenReturn(Success(None))
+    when(taxonomyApiClient.getResource("5678")).thenReturn(Success(Some(TestData.sampleTaxonomyResource)))
     val origContent = "<section><h1>hmm</h1></section>"
 
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
@@ -197,8 +199,10 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
 
   test("That convert succeeds with a different error if taxonomy fails") {
     val taxonomyException = new RuntimeException("Taxonomy failed blabla")
-    when(taxonomyApiClient.existsInTaxonomy("1234")).thenReturn(Failure(taxonomyException))
-    when(taxonomyApiClient.existsInTaxonomy("5678")).thenReturn(Success(true))
+    when(taxonomyApiClient.getResource("1234")).thenReturn(Failure(taxonomyException))
+    when(taxonomyApiClient.getTopic("1234")).thenReturn(Failure(taxonomyException))
+    when(taxonomyApiClient.getResource("5678")).thenReturn(Success(None))
+    when(taxonomyApiClient.getTopic("5678")).thenReturn(Success(Some(TestData.sampleTaxonomyTopic)))
     val origContent = "<section><h1>hmm</h1></section>"
 
     val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="2" $DataResource="$RelatedContent"></div></section>"""

@@ -242,6 +242,12 @@ object TestData {
                                           ArticleType.Standard,
                                           Seq.empty)
 
+  val sampleTaxonomyResource = TaxonomyApiClient.Resource("1234",
+                                                          "Sample resource",
+                                                          None,
+                                                          "/subject:12/topic:1:184105/topic:1:184106/resource:1:77480")
+  val sampleTaxonomyTopic = TaxonomyApiClient.Topic("12345", "Sample topic", None, "/subject:7/topic:1:183193")
+
   def contentBrowserWithFields(dOMPath: List[String], fields: (String, String)*): ContentBrowser = {
     new ContentBrowser {
       val FieldMap = fields.toMap
