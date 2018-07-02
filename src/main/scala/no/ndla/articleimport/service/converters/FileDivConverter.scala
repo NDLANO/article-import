@@ -28,7 +28,10 @@ trait FileDivConverter {
     }
 
     /**
-      * Locates FileListEntries elements and moves them out of inline parents and converts them to divs
+      * Locates <FileListEntries> with more than 1 element and moves them out of inline parents
+      * and converts them to divs. If the <FileListEntries> has one element,
+      * the <FileListEntries> is unwrapped and the lone <embed> is left.
+      *
       * @param element Entire html element
       */
     private def moveFilesAfterText(element: Element): Unit = {
@@ -36,7 +39,11 @@ trait FileDivConverter {
         .select(s"""FileListEntries""")
         .asScala
         .foreach(d => {
-          outOfInlines(d).tagName("div")
+          if (d.children().size() > 1) {
+            outOfInlines(d).tagName("div")
+          } else {
+            d.unwrap()
+          }
         })
     }
 

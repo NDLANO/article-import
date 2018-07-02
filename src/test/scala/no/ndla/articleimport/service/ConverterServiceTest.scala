@@ -7,6 +7,7 @@
 
 package no.ndla.articleimport.service
 
+import java.net.URL
 import java.util.Date
 
 import no.ndla.articleimport.ArticleImportProperties.Domain
@@ -21,6 +22,7 @@ import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.ResourceType
 import org.mockito.Mockito._
 import org.mockito.Matchers._
+import org.mockito.Matchers
 import org.mockito.invocation.InvocationOnMock
 
 import scala.util.{Success, Try}
@@ -481,7 +483,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
       ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/files/title.pdf", "application/pdf", "1024")
     val fileMeta2 = fileMeta.copy(fileName = "title2.pdf", url = s"$Domain/files/title2.pdf")
     val expectedEmbed =
-      s"""<div data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$Domain/files/$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$Domain/files/$filePath2"></div>"""
+      s"""<div data-type="${ResourceType.File.toString}"><embed data-alt="Full av trix" data-path="files/$filePath" data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf"><embed data-alt="Full av trix" data-path="files/$filePath2" data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf"></div>"""
 
     when(extractService.getNodeFilMeta(nodeId))
       .thenReturn(Success(Seq(fileMeta, fileMeta2)))
@@ -554,6 +556,62 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     val node = sampleNode.copy(contents = List(nbLanguageContent, enLanguageContent))
     val Success((result: Article, _)) = service.toDomainArticle(node, ImportStatus.empty.withNewNodeLocalContext())
     result.content.map(_.content) should be(Seq(expectedNbContent, expectedEnContent))
+  }
+
+  test("That single file embeds are left inline without wrapper") {
+
+    val fileNodeId = "6666"
+    when(taxonomyApiClient.existsInTaxonomy(any[String])).thenReturn(Success(true))
+    when(extractService.getNodeType(any[String])).thenReturn(Some("fagstoff"))
+    when(extractService.getNodeType(fileNodeId)).thenReturn(Some("fil"))
+    when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
+      val nid = i.getArgumentAt(0, "".getClass)
+      Success(
+        TestData.sampleNodeToConvert.copy(
+          contents = Seq(
+            TestData.sampleContent.copy(nid = nid, tnid = nid)
+          )))
+    })
+
+    reset(extractConvertStoreContent)
+    when(extractConvertStoreContent.processNode(any[String], any[ImportStatus])).thenAnswer((i: InvocationOnMock) => {
+      val externalId = i.getArgumentAt(0, "".getClass)
+      val status = i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]
+      val importedId = ("1" + externalId).toInt
+      Success((TestData.sampleApiArticle.copy(id = importedId), status))
+    })
+    when(extractService.getNodeFilMeta(fileNodeId)).thenReturn(
+      Success(
+        Seq(
+          ContentFilMeta(
+            fileNodeId,
+            fileNodeId,
+            "Woop woop all the files",
+            "all_the_files.pdf",
+            new URL("http://ndla.no/sites/default/files/all_the_filerino.pdf"),
+            "application/pdf",
+            "78547"
+          )
+        )))
+    when(attachmentStorageService.uploadFileFromUrl(Matchers.eq(fileNodeId), any[ContentFilMeta])).thenReturn(
+      Success("yabadaba/all_the_filerino.pdf")
+    )
+
+    val fileContentBrowser =
+      s"[contentbrowser ==nid=6666==imagecache=Fullbredde==width===alt===link===node_link=1==link_type=link_to_content==lightbox_size===remove_fields[76661]=1==remove_fields[76663]=1==remove_fields[76664]=1==remove_fields[76666]=1==insertion===link_title_text= ==link_text=Her er den fine linken==text_align===css_class=contentbrowser contentbrowser]"
+
+    val content =
+      s"""<section><p>Hei hå, her har vi inlinefiler $fileContentBrowser, jaddajadda!</p></section>""".stripMargin
+
+    val languageContent = TestData.sampleContent.copy(language = "nb", content = content)
+
+    val expectedContent =
+      s"""<section><p>Hei hå, her har vi inlinefiler <embed data-alt="Her er den fine linken" data-path="files/yabadaba/all_the_filerino.pdf" data-resource="file" data-title="Woop woop all the files" data-type="pdf">, jaddajadda!</p></section>""".stripMargin
+
+    val node = sampleNode.copy(contents = List(languageContent))
+    val Success((result: Article, _)) = service.toDomainArticle(node, ImportStatus.empty.withNewNodeLocalContext())
+    result.content.map(_.content) should be(Seq(expectedContent))
+
   }
 
 }

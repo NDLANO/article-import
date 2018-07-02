@@ -26,9 +26,7 @@ trait FilConverterModule {
       val nodeId = content.get("nid")
 
       extractService.getNodeFilMeta(nodeId) match {
-        case Success(Seq(fileMeta)) =>
-          uploadFile(nodeId, fileMeta).map(generateHtml(_, importStatus))
-        case Success(fileMetas) if fileMetas.length > 1 =>
+        case Success(fileMetas) =>
           val uploadedFiles = fileMetas.map(fileMeta => uploadFile(nodeId, fileMeta))
           val failures = uploadedFiles.collect { case Failure(ex) => ex }
 
@@ -46,20 +44,11 @@ trait FilConverterModule {
       }
     }
 
-    private def generateHtml(uploaded: UploadedFile,
-                             importStatus: ImportStatus): (String, Seq[RequiredLibrary], ImportStatus) =
-      (HtmlTagGenerator.buildAnchor(uploaded.url,
-                                    uploaded.fileMeta.fileName,
-                                    uploaded.fileMeta.title,
-                                    openInNewTab = false),
-       Seq.empty,
-       importStatus)
-
     private def generateFileEmbed(uploadedFiles: List[UploadedFile],
                                   linkText: Option[String],
                                   importStatus: ImportStatus): (String, Seq[RequiredLibrary], ImportStatus) = {
-      val embedHtml = HtmlTagGenerator.buildFileEmbed(uploadedFiles).outerHtml()
-      (linkText.getOrElse("") + embedHtml, Seq.empty, importStatus)
+      val embedHtml = HtmlTagGenerator.buildFileEmbed(uploadedFiles, linkText)
+      (embedHtml, Seq.empty, importStatus)
     }
 
     private def uploadFile(nodeId: String, fileMeta: ContentFilMeta) = {

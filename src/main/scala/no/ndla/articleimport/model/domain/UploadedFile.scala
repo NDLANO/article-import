@@ -7,8 +7,6 @@
 
 package no.ndla.articleimport.model.domain
 
-import no.ndla.articleimport.ArticleImportProperties.Domain
-
 case class UploadedFile(fileMeta: ContentFilMeta, filePath: String) {
-  val url: String = s"$Domain/files/$filePath"
+  val urlPath: String = s"files/$filePath"
 }
