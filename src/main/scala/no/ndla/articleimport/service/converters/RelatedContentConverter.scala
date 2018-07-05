@@ -7,23 +7,16 @@
 
 package no.ndla.articleimport.service.converters
 
+import cats.data.OptionT
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
+import no.ndla.articleimport.ArticleImportProperties.{importRelatedNodesMaxDepth, nodeTypeLink, supportedContentTypes}
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration._
-import no.ndla.articleimport.model.api._
-import no.ndla.articleimport.model.domain.ImportStatus
-import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
-import no.ndla.articleimport.ArticleImportProperties.{importRelatedNodesMaxDepth, supportedContentTypes}
-import cats.implicits._
 import no.ndla.articleimport.model.api.{Article, Concept, ImportException, ImportExceptions}
 import no.ndla.articleimport.model.domain.{ExternalEmbedMetaWithTitle, ImportStatus, Language}
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
-import no.ndla.validation.TagAttributes._
-import no.ndla.validation.ResourceType
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Element
-import org.jsoup.nodes.Entities.EscapeMode
-import no.ndla.articleimport.ArticleImportProperties.{nodeTypeLink, supportedContentTypes, importRelatedNodesMaxDepth}
+
 import scala.util.{Failure, Success, Try}
 
 trait RelatedContentConverter {
@@ -150,6 +143,13 @@ trait RelatedContentConverter {
       Success((ids, importStatus))
     }
 
+    private def existsInTaxonomy(nid: String): Try[Boolean] = {
+      taxonomyApiClient.getResource(nid).map(_.isDefined) match {
+        case Success(true) => Success(true)
+        case _             => taxonomyApiClient.getTopic(nid).map(_.isDefined)
+      }
+    }
+
     /**
       * Returns which @nids that are valid
       * @param nids All related nids
@@ -163,7 +163,7 @@ trait RelatedContentConverter {
             ImportException(nid,
                             s"Related content with node id $nid ($nodeType) is unsupported and will not be imported."))
         case (nid, _) =>
-          taxonomyApiClient.existsInTaxonomy(nid) match {
+          existsInTaxonomy(nid) match {
             case Success(true) => Right(nid)
             case Success(false) =>
               Left(
