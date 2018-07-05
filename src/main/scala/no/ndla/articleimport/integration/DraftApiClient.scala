@@ -52,21 +52,21 @@ trait DraftApiClient {
     }
 
     def newArticle(article: NewArticle,
-                   mainNodeId: String,
+                   nodeIds: List[String],
                    subjectIds: Set[String],
                    createdDate: String,
                    updatedDate: String): Try[api.Article] = {
       postWithData[api.Article, NewArticle](
         s"$DraftApiPublicEndpoint/",
         article,
-        "externalId" -> mainNodeId,
+        "externalId" -> nodeIds.mkString(","),
         "externalSubjectIds" -> subjectIds.mkString(","),
         "oldNdlaCreatedDate" -> createdDate,
         "oldNdlaUpdatedDate" -> updatedDate
       )
     }
 
-    def newArticle(article: Article, mainNodeId: String, subjectIds: Set[String]): Try[api.Article] = {
+    def newArticle(article: Article, nodeIds: List[String], subjectIds: Set[String]): Try[api.Article] = {
       val newArt = converterService.toApiNewArticle(article, article.supportedLanguages.head)
       val updateArticles = article.supportedLanguages
         .drop(1)
@@ -79,10 +79,10 @@ trait DraftApiClient {
       val createdTime = new DateTime(article.created).toString
       val updatedTime = new DateTime(article.updated).toString
 
-      newArticle(newArt, mainNodeId, subjectIds, createdTime, updatedTime) match {
+      newArticle(newArt, nodeIds, subjectIds, createdTime, updatedTime) match {
         case Success(a) =>
           val (failed, _) = updateArticles
-            .map(u => updateArticle(u, a.id, mainNodeId, subjectIds, createdTime, updatedTime))
+            .map(u => updateArticle(u, a.id, nodeIds, subjectIds, createdTime, updatedTime))
             .partition(_.isFailure)
           if (failed.nonEmpty) {
             val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
@@ -94,21 +94,21 @@ trait DraftApiClient {
       }
     }
 
-    def newEmptyArticle(mainNodeId: String, subjectIds: Set[String]): Try[ContentId] =
+    def newEmptyArticle(nodeIds: List[String], subjectIds: Set[String]): Try[ContentId] =
       post[ContentId](s"$DraftApiInternEndpoint/empty_article/",
-                      "externalId" -> mainNodeId,
+                      "externalId" -> nodeIds.mkString(","),
                       "externalSubjectIds" -> subjectIds.mkString(","))
 
     private def updateArticle(article: api.UpdateArticle,
                               id: Long,
-                              mainNodeId: String,
+                              nids: List[String],
                               externalSubjectIds: Set[String],
                               created: String,
                               updated: String): Try[api.Article] = {
       patch[api.Article, api.UpdateArticle](
         s"$DraftApiPublicEndpoint/$id",
         article,
-        "externalId" -> mainNodeId,
+        "externalId" -> nids.mkString(","),
         "externalSubjectIds" -> externalSubjectIds.mkString(","),
         "oldNdlaCreatedDate" -> created,
         "oldNdlaUpdatedDate" -> updated
@@ -116,18 +116,20 @@ trait DraftApiClient {
     }
 
     private def updateArticle(article: api.UpdateArticle,
-                              mainNodeId: String,
+                              nodeIds: List[String],
                               subjectIds: Set[String],
                               created: String,
                               updated: String): Try[api.Article] = {
+      val mainNodeId = nodeIds.headOption.getOrElse("")
       getArticleIdFromExternalId(mainNodeId) match {
-        case Some(id) => updateArticle(article, id, mainNodeId, subjectIds, created, updated)
+        case Some(id) => updateArticle(article, id, nodeIds, subjectIds, created, updated)
         case None =>
-          Failure(NotFoundException(s"No article with external id $mainNodeId found"))
+          Failure(NotFoundException(s"No article with external id $nodeIds found"))
       }
     }
 
-    def updateArticle(article: Article, mainNodeId: String, externalSubjectIds: Set[String]): Try[api.Article] = {
+    def updateArticle(article: Article, nodeIds: List[String], externalSubjectIds: Set[String]): Try[api.Article] = {
+      val mainNodeId = nodeIds.headOption.getOrElse("")
       val startRevision =
         getContentByExternalId(mainNodeId).flatMap(_.revision).getOrElse(1)
       val updateArticles = article.supportedLanguages.zipWithIndex
@@ -140,7 +142,7 @@ trait DraftApiClient {
       val updatedTime = new DateTime(article.updated).toString
 
       val (failed, updatedArticle) = updateArticles
-        .map(u => updateArticle(u, mainNodeId, externalSubjectIds, createdTime, updatedTime))
+        .map(u => updateArticle(u, nodeIds, externalSubjectIds, createdTime, updatedTime))
         .partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
@@ -164,11 +166,13 @@ trait DraftApiClient {
       get[api.Concept](s"$DraftApiConceptPublicEndpoint/$id").toOption
     }
 
-    private def newConcept(concept: NewConcept, mainNodeId: String): Try[api.Concept] = {
-      postWithData[api.Concept, NewConcept](s"$DraftApiConceptPublicEndpoint/", concept, "externalId" -> mainNodeId)
+    private def newConcept(concept: NewConcept, nodeIds: List[String]): Try[api.Concept] = {
+      postWithData[api.Concept, NewConcept](s"$DraftApiConceptPublicEndpoint/",
+                                            concept,
+                                            "externalId" -> nodeIds.mkString(","))
     }
 
-    def newConcept(concept: Concept, mainNodeId: String): Try[api.Concept] = {
+    def newConcept(concept: Concept, nodeIds: List[String]): Try[api.Concept] = {
       val newCon: api.NewConcept = converterService.toNewApiConcept(concept,
                                                                     concept.supportedLanguages.headOption
                                                                       .getOrElse(Language.UnknownLanguage))
@@ -176,7 +180,7 @@ trait DraftApiClient {
         .drop(1)
         .map(l => converterService.toUpdateApiConcept(concept, l))
 
-      newConcept(newCon, mainNodeId) match {
+      newConcept(newCon, nodeIds) match {
         case Success(c) =>
           val (failed, _) =
             updateCons.map(u => updateConcept(u, c.id)).partition(_.isFailure)
@@ -190,14 +194,15 @@ trait DraftApiClient {
       }
     }
 
-    def newEmptyConcept(mainNodeId: String): Try[Long] =
-      post[Long](s"$DraftApiInternEndpoint/empty_concept/", "externalId" -> mainNodeId)
+    def newEmptyConcept(nodeIds: List[String]): Try[Long] =
+      post[Long](s"$DraftApiInternEndpoint/empty_concept/", "externalId" -> nodeIds.mkString(","))
 
     def updateConcept(concept: api.UpdateConcept, id: Long): Try[api.Concept] = {
       patch[api.Concept, api.UpdateConcept](s"$DraftApiConceptPublicEndpoint/$id", concept)
     }
 
-    def updateConcept(concept: api.UpdateConcept, mainNodeId: String): Try[api.Concept] = {
+    def updateConcept(concept: api.UpdateConcept, nodeIds: List[String]): Try[api.Concept] = {
+      val mainNodeId = nodeIds.headOption.getOrElse("")
       getConceptIdFromExternalId(mainNodeId) match {
         case Some(id) => updateConcept(concept, id)
         case None =>
@@ -205,10 +210,10 @@ trait DraftApiClient {
       }
     }
 
-    def updateConcept(concept: Concept, mainNodeId: String): Try[api.Concept] = {
+    def updateConcept(concept: Concept, nodeIds: List[String]): Try[api.Concept] = {
       val updateCons = concept.supportedLanguages.map(l => converterService.toUpdateApiConcept(concept, l))
       val (failed, updated) =
-        updateCons.map(u => updateConcept(u, mainNodeId)).partition(_.isFailure)
+        updateCons.map(u => updateConcept(u, nodeIds)).partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
         Failure(ImportException(s"${concept.id}", s"Failed to update one or more concept: $failedMsg"))
