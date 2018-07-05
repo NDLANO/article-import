@@ -41,7 +41,8 @@ trait ConverterService {
 
       convert(nodeToConvert, maxConvertionRounds, importStatus.addVisitedNodes(nodeIdsToImport))
         .flatMap { case (content, status) => postProcess(content, status) } match {
-        case Failure(f) => Failure(f)
+        case Failure(f) =>
+          Failure(f)
         case Success((convertedContent, converterStatus)) if convertedContent.nodeType == nodeTypeBegrep =>
           Success((toDomainConcept(convertedContent), converterStatus))
         case Success((convertedContent, converterStatus)) =>

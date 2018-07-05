@@ -184,14 +184,16 @@ trait HtmlTagGenerator {
         .mkString(" ")
 
     /**
-      * Builds a span with data-type [[ResourceType.File]] and a child embed-tag for each file
-      * Spans are used to allow them to be placed inline until they are
+      * Builds a custom <FileListEntries> tag with data-type [[ResourceType.File]]
+      * and a child embed-tag for each file.
+      * <FileListEntries> are used to allow them to be placed inline until they are
       * parsed by a converter which moves them into box elements and converted to divs.
       *
       * @param files List of uploaded files
+      * @param linkText Text to add to embed-tags data-alt (This is used if
       * @return Span [[Element]]
       */
-    def buildFileEmbed(files: List[UploadedFile]): Element = {
+    def buildFileEmbed(files: List[UploadedFile], linkText: Option[String]): String = {
       val doc = Document.createShell("")
       doc.outputSettings().prettyPrint(false).indentAmount(0)
 
@@ -199,17 +201,20 @@ trait HtmlTagGenerator {
         .appendElement("FileListEntries")
         .attr(TagAttributes.DataType.toString, ResourceType.File.toString)
 
+      val preText = if (files.size > 1) linkText.getOrElse("") else ""
+
       files.foreach(f => {
         val attrs = Map(
           TagAttributes.DataResource -> ResourceType.File.toString,
-          TagAttributes.DataUrl -> f.url,
+          TagAttributes.DataPath -> f.urlPath,
           TagAttributes.DataTitle -> f.fileMeta.title,
-          TagAttributes.DataType -> f.fileMeta.fileName.split('.').lastOption.getOrElse("")
+          TagAttributes.DataType -> f.fileMeta.fileName.split('.').lastOption.getOrElse(""),
+          TagAttributes.DataAlt -> linkText.getOrElse("")
         )
         fileDiv.append(buildEmbedContent(attrs))
       })
 
-      fileDiv
+      preText + fileDiv.outerHtml()
     }
 
   }

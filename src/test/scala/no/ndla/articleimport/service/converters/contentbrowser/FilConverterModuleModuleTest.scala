@@ -26,12 +26,12 @@ class FilConverterModuleModuleTest extends UnitSuite with TestEnvironment {
     reset(extractService, attachmentStorageService)
   }
 
-  test("That FilConverter returns a link to the file if only one file") {
+  test("That FilConverter returns an embed to the file") {
     val fileMeta =
       ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/files/title.pdf", "application/pdf", "1024")
     val filePath = s"$nodeId/${fileMeta.fileName}"
     val expectedResult =
-      s"""<a href="$Domain/files/$filePath" title="${fileMeta.title}">${fileMeta.fileName}</a>"""
+      s"""<FileListEntries data-type="file"><embed data-alt="melon" data-path="files/1234/title.pdf" data-resource="file" data-title="title" data-type="pdf"></FileListEntries>"""
 
     when(extractService.getNodeFilMeta(nodeId))
       .thenReturn(Success(Seq(fileMeta)))
@@ -53,7 +53,7 @@ class FilConverterModuleModuleTest extends UnitSuite with TestEnvironment {
       ContentFilMeta(nodeId, "0", "title", "title.pdf", s"$Domain/$filePath", "application/pdf", "1024")
     val fileMeta2 = fileMeta.copy(fileName = "title2.pdf", url = s"$Domain/$filePath2")
     val expectedResult =
-      s"""$title<FileListEntries data-type="${ResourceType.File.toString}"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf" data-url="$Domain/files/$filePath"><embed data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf" data-url="$Domain/files/$filePath2"></FileListEntries>"""
+      s"""$title<FileListEntries data-type="${ResourceType.File.toString}"><embed data-alt="melon" data-path="files/$filePath" data-resource="${ResourceType.File.toString}" data-title="${fileMeta.title}" data-type="pdf"><embed data-alt="melon" data-path="files/$filePath2" data-resource="${ResourceType.File.toString}" data-title="${fileMeta2.title}" data-type="pdf"></FileListEntries>"""
 
     when(extractService.getNodeFilMeta(nodeId))
       .thenReturn(Success(Seq(fileMeta, fileMeta2)))
