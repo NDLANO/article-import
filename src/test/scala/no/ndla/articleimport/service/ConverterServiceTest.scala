@@ -11,6 +11,7 @@ import java.net.URL
 import java.util.Date
 
 import no.ndla.articleimport.ArticleImportProperties.Domain
+import no.ndla.articleimport.integration.TaxonomyApiClient.Resource
 import no.ndla.articleimport.model.domain.ContentFilMeta._
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api
@@ -561,7 +562,8 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
   test("That single file embeds are left inline without wrapper") {
 
     val fileNodeId = "6666"
-    when(taxonomyApiClient.existsInTaxonomy(any[String])).thenReturn(Success(true))
+    val taxonomyResource = Resource("urn:resource:1:123", "fint navn", None, "/fin/path/egentlig")
+    when(taxonomyApiClient.getResource(any[String])).thenReturn(Success(Some(taxonomyResource)))
     when(extractService.getNodeType(any[String])).thenReturn(Some("fagstoff"))
     when(extractService.getNodeType(fileNodeId)).thenReturn(Some("fil"))
     when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
