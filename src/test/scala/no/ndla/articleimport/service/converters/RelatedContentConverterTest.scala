@@ -256,4 +256,34 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     status.errors should be(Seq.empty)
   }
 
+  test("That mainNodeId is used to look up taxonomy for related content") {
+    val origContent = "<section><h1>hmm</h1></section>"
+    val relatedMainNid = "9990"
+    val relatedNotMainNid = "9995"
+
+    when(
+      extractConvertStoreContent
+        .processNode(any[String], any[ImportStatus]))
+      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1: Long), ImportStatus.empty)))
+      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
+
+    when(extractService.getNodeType(relatedNotMainNid)).thenReturn(Some("fagstoff"))
+
+    when(extractService.getNodeData(relatedNotMainNid)).thenReturn(
+      Success(
+        TestData.sampleNodeToConvert.copy(
+          contents = List(
+            TestData.sampleContent.copy(nid = relatedMainNid, tnid = "0"),
+            TestData.sampleContent.copy(nid = relatedNotMainNid, tnid = relatedMainNid)
+          ))
+      )
+    )
+
+    RelatedContentConverter.convert(
+      languageContent.copy(content = origContent, relatedContent = Seq(relatedContent1.copy(nid = relatedNotMainNid))),
+      ImportStatus.empty)
+
+    verify(taxonomyApiClient, times(1)).getResource(relatedMainNid)
+  }
+
 }
