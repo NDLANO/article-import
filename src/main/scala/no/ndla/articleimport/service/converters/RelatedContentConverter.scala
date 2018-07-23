@@ -144,9 +144,16 @@ trait RelatedContentConverter {
     }
 
     private def existsInTaxonomy(nid: String): Try[Boolean] = {
-      taxonomyApiClient.getResource(nid).map(_.isDefined) match {
+      // Make sure we have the main node id
+      val mainNid = extractService
+        .getNodeData(nid)
+        .map(_.getMainNid)
+        .getOrElse(None)
+        .getOrElse(nid)
+
+      taxonomyApiClient.getResource(mainNid).map(_.isDefined) match {
         case Success(true) => Success(true)
-        case _             => taxonomyApiClient.getTopic(nid).map(_.isDefined)
+        case _             => taxonomyApiClient.getTopic(mainNid).map(_.isDefined)
       }
     }
 
