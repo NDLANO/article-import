@@ -15,7 +15,7 @@ object Language {
   val NoLanguage = ""
   val AllLanguages = "all"
 
-  def findByLanguageOrBestEffort[P <: LanguageField[_]](sequence: Seq[P], lang: String): Option[P] = {
+  def findByLanguageOrBestEffort[P <: LanguageField](sequence: Seq[P], lang: String): Option[P] = {
     @tailrec def findFirstLanguageMatching(sequence: Seq[P], lang: Seq[String]): Option[P] = {
       lang match {
         case Nil => sequence.headOption

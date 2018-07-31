@@ -7,6 +7,4 @@
 
 package no.ndla.articleimport.model.domain
 
-case class ArticleMetaImage(imageId: String, language: String) extends LanguageField[String] {
-  override def value: String = imageId
-}
+case class ArticleMetaImage(imageId: String, language: String) extends LanguageField

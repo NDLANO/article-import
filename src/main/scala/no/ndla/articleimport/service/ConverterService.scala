@@ -342,18 +342,18 @@ trait ConverterService {
     def toApiNewArticle(article: Article, lang: String): api.NewArticle = {
       api.NewArticle(
         findByLanguageOrBestEffort(article.title, lang)
-          .map(_.value)
+          .map(_.title)
           .getOrElse(""),
         findByLanguageOrBestEffort(article.content, lang)
-          .map(_.value)
+          .map(_.content)
           .getOrElse(""),
         findByLanguageOrBestEffort(article.tags, lang)
-          .map(_.value)
+          .map(_.tags)
           .getOrElse(Seq.empty),
-        findByLanguageOrBestEffort(article.introduction, lang).map(_.value),
-        findByLanguageOrBestEffort(article.metaDescription, lang).map(_.value),
-        findByLanguageOrBestEffort(article.metaImageId, lang).map(_.value),
-        findByLanguageOrBestEffort(article.visualElement, lang).map(_.value),
+        findByLanguageOrBestEffort(article.introduction, lang).map(_.introduction),
+        findByLanguageOrBestEffort(article.metaDescription, lang).map(_.content),
+        findByLanguageOrBestEffort(article.metaImageId, lang).map(_.imageId), // TODO: AltText
+        findByLanguageOrBestEffort(article.visualElement, lang).map(_.resource),
         toApiCopyright(article.copyright),
         article.requiredLibraries.map(toApiRequiredLibrary),
         article.articleType,
@@ -366,15 +366,15 @@ trait ConverterService {
       api.UpdateArticle(
         revision,
         lang,
-        findByLanguageOrBestEffort(article.title, lang).map(_.value),
-        findByLanguageOrBestEffort(article.content, lang).map(_.value),
+        findByLanguageOrBestEffort(article.title, lang).map(_.title),
+        findByLanguageOrBestEffort(article.content, lang).map(_.content),
         findByLanguageOrBestEffort(article.tags, lang)
-          .map(_.value)
+          .map(_.tags)
           .getOrElse(Seq.empty),
-        findByLanguageOrBestEffort(article.introduction, lang).map(_.value),
-        findByLanguageOrBestEffort(article.metaDescription, lang).map(_.value),
-        findByLanguageOrBestEffort(article.metaImageId, lang).map(_.value),
-        findByLanguageOrBestEffort(article.visualElement, lang).map(_.value),
+        findByLanguageOrBestEffort(article.introduction, lang).map(_.introduction),
+        findByLanguageOrBestEffort(article.metaDescription, lang).map(_.content),
+        findByLanguageOrBestEffort(article.metaImageId, lang).map(_.imageId), // TODO: AltText
+        findByLanguageOrBestEffort(article.visualElement, lang).map(_.resource),
         Some(toApiCopyright(article.copyright)),
         article.requiredLibraries.map(toApiRequiredLibrary),
         article.editorialKeywords,
