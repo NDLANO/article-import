@@ -20,13 +20,14 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
   test("toDomainArticle should import ingress images and use as meta images (yes really)") {
     val (imageId, imageNid) = ("1", "1234")
     val contents = Seq(TestData.sampleContent.copy(metaImage = Some(imageNid), language = "nb"))
+    val image = Some(TestData.sampleImageMetaInformation.copy(id = imageId))
 
-    when(imageApiClient.importImage(imageNid))
-      .thenReturn(Some(TestData.sampleImageMetaInformation.copy(id = imageId)))
+    when(imageApiClient.importImage(imageNid)).thenReturn(image)
+    when(imageApiClient.getMetaByExternId(imageNid, "nb")).thenReturn(image)
     val node = sampleNodeToConvert.copy(contents = contents)
 
     MetaInfoConverter.convert(node, ImportStatus.empty).get._1.metaImages should be(
-      Seq(ArticleMetaImage(imageId, "nb")))
+      Seq(ArticleMetaImage(imageId, "alt text", "nb")))
   }
 
   test("That license should be by-sa by default if lenkenode") {

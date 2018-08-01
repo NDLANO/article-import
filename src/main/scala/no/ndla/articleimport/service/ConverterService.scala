@@ -13,7 +13,7 @@ import no.ndla.articleimport.auth.User
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration.{ImageApiClient, LanguageIngress, MigrationApiClient}
 import no.ndla.articleimport.model.api
-import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
+import no.ndla.articleimport.model.api.{ImportException, ImportExceptions, NewArticleMetaImage}
 import no.ndla.articleimport.model.domain.Language._
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.service.converters.MetaInfoConverter
@@ -352,7 +352,7 @@ trait ConverterService {
           .getOrElse(Seq.empty),
         findByLanguageOrBestEffort(article.introduction, lang).map(_.introduction),
         findByLanguageOrBestEffort(article.metaDescription, lang).map(_.content),
-        findByLanguageOrBestEffort(article.metaImageId, lang).map(_.imageId), // TODO: AltText
+        findByLanguageOrBestEffort(article.metaImage, lang).map(i => NewArticleMetaImage(i.imageId, i.altText)),
         findByLanguageOrBestEffort(article.visualElement, lang).map(_.resource),
         toApiCopyright(article.copyright),
         article.requiredLibraries.map(toApiRequiredLibrary),
@@ -373,7 +373,7 @@ trait ConverterService {
           .getOrElse(Seq.empty),
         findByLanguageOrBestEffort(article.introduction, lang).map(_.introduction),
         findByLanguageOrBestEffort(article.metaDescription, lang).map(_.content),
-        findByLanguageOrBestEffort(article.metaImageId, lang).map(_.imageId), // TODO: AltText
+        findByLanguageOrBestEffort(article.metaImage, lang).map(i => NewArticleMetaImage(i.imageId, i.altText)),
         findByLanguageOrBestEffort(article.visualElement, lang).map(_.resource),
         Some(toApiCopyright(article.copyright)),
         article.requiredLibraries.map(toApiRequiredLibrary),

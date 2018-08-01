@@ -7,4 +7,4 @@
 
 package no.ndla.articleimport.model.domain
 
-case class ArticleMetaImage(imageId: String, language: String) extends LanguageField
+case class ArticleMetaImage(imageId: String, altText: String, language: String) extends LanguageField

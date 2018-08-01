@@ -230,13 +230,13 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     val contentNode = sampleLanguageContent.copy(content = s"<section>$sampleContentString</section>")
     val node = sampleNode.copy(contents = List(contentNode))
     val imageMeta = ImageMetaInformation(newId,
-                                         List(),
-                                         List(),
+                                         None,
+                                         None,
                                          imageUrl,
                                          256,
                                          "",
                                          ImageCopyright(ImageLicense("", "", Some("")), "", List()),
-                                         ImageTag(List(), None))
+                                         ImageTag(List(), ""))
     val expectedResult =
       s"""|<section>
           |<$ResourceHtmlEmbedTag data-align="" data-alt="$sampleAlt" data-caption="" data-resource="image" data-resource_id="1" data-size="full">
