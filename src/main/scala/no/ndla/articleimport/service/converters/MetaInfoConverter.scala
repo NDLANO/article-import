@@ -98,23 +98,29 @@ trait MetaInfoConverter {
     }
 
     private def getMetaImages(nodeToConvert: NodeToConvert): Seq[ArticleMetaImage] = {
+      val imagesToImport = nodeToConvert.contents.flatMap(_.metaImage).distinct
+      val importedImages = imagesToImport.flatMap(nid => {
+        if (imageApiClient.importImage(nid).nonEmpty) {
+          Some(nid)
+        } else {
+          logger.warn(s"Failed to import meta image with node id $nid")
+          None
+        }
+      })
+
       nodeToConvert.contents.flatMap(content =>
-        content.metaImage.flatMap(imageNid =>
-          imageApiClient.importImage(imageNid) match {
-            case Some(_) =>
-              imageApiClient
-                .getMetaByExternId(imageNid, content.language)
-                .map(imageInLanguage => {
-                  ArticleMetaImage(imageInLanguage.id,
-                                   imageInLanguage.alttext.map(_.alttext).getOrElse(""),
-                                   content.language)
-                })
-            case None =>
-              logger.warn(s"Failed to import meta image with node id $imageNid")
-              None
+        content.metaImage.flatMap(imageNid => {
+          if (importedImages.contains(imageNid)) {
+            imageApiClient
+              .getMetaByExternId(imageNid, content.language)
+              .map(imageInLanguage => {
+                ArticleMetaImage(imageInLanguage.id,
+                                 imageInLanguage.alttext.map(_.alttext).getOrElse(""),
+                                 content.language)
+              })
+          } else None
         }))
     }
-
   }
 
 }

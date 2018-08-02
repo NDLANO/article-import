@@ -106,6 +106,7 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
   }
 
   test("That metaImages are only imported once") {
+    reset(imageApiClient)
     val (imageId, imageNid) = ("1", "1234")
     val nbContents = TestData.sampleContent.copy(metaImage = Some(imageNid), language = "nb")
     val enContents = TestData.sampleContent.copy(metaImage = Some(imageNid), language = "en")
