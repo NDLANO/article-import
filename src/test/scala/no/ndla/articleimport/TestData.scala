@@ -12,6 +12,7 @@ import java.util.Date
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.model.api
+import no.ndla.articleimport.model.api.NewArticleMetaImage
 import no.ndla.articleimport.service.converters.contentbrowser.ContentBrowser
 import org.joda.time.DateTime
 
@@ -53,7 +54,7 @@ object TestData {
     Seq(),
     Seq(),
     Seq(ArticleMetaDescription("meta description", "nb")),
-    Seq(ArticleMetaImage("11", "nb")),
+    Seq(ArticleMetaImage("11", "alt", "nb")),
     today,
     today,
     "ndalId54321",
@@ -108,7 +109,9 @@ object TestData {
     Seq("tag"),
     Some("introductino"),
     Some("metadescription"),
-    Some("22"),
+    Some(
+      NewArticleMetaImage("22", "alt")
+    ),
     None,
     api.Copyright(Some(api.License("by-sa", None, None)),
                   Some("fromSomeWhere"),
@@ -160,13 +163,13 @@ object TestData {
 
   val sampleImageMetaInformation = ImageMetaInformation(
     "1",
-    List(ImageTitle("Sample title", Some("nb"))),
-    List(ImageAltText("alt text", Some("nb"))),
+    Some(ImageTitle("Sample title", "nb")),
+    Some(ImageAltText("alt text", "nb")),
     "://image-url.com/image/img.jpg",
     1024,
     "application/jpeg",
     ImageCopyright(ImageLicense("by", "Creative Commons", None), "pix", Seq.empty),
-    ImageTag(Seq("sample tag"), Some("nb"))
+    ImageTag(Seq("sample tag"), "nb")
   )
 
   val sampleConcept = Concept(

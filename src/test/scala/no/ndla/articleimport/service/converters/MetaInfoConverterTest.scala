@@ -12,7 +12,9 @@ import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.ArticleImportProperties.nodeTypeLink
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.TestData._
+import no.ndla.articleimport.integration.ImageAltText
 import org.mockito.Mockito._
+
 import scala.util.{Failure, Success}
 
 class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
@@ -20,13 +22,14 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
   test("toDomainArticle should import ingress images and use as meta images (yes really)") {
     val (imageId, imageNid) = ("1", "1234")
     val contents = Seq(TestData.sampleContent.copy(metaImage = Some(imageNid), language = "nb"))
+    val image = Some(TestData.sampleImageMetaInformation.copy(id = imageId))
 
-    when(imageApiClient.importImage(imageNid))
-      .thenReturn(Some(TestData.sampleImageMetaInformation.copy(id = imageId)))
+    when(imageApiClient.importImage(imageNid)).thenReturn(image)
+    when(imageApiClient.getMetaByExternId(imageNid, "nb")).thenReturn(image)
     val node = sampleNodeToConvert.copy(contents = contents)
 
     MetaInfoConverter.convert(node, ImportStatus.empty).get._1.metaImages should be(
-      Seq(ArticleMetaImage(imageId, "nb")))
+      Seq(ArticleMetaImage(imageId, "alt text", "nb")))
   }
 
   test("That license should be by-sa by default if lenkenode") {
@@ -100,6 +103,29 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
     val status1 = ImportStatus.empty.addInsertedLicense(Some("pd"))
     val Success((converted1, _)) = MetaInfoConverter.convert(sampleNodeToConvert.copy(license = Some("pd")), status1)
     converted1.license should be("pd")
+  }
+
+  test("That metaImages are only imported once") {
+    reset(imageApiClient)
+    val (imageId, imageNid) = ("1", "1234")
+    val nbContents = TestData.sampleContent.copy(metaImage = Some(imageNid), language = "nb")
+    val enContents = TestData.sampleContent.copy(metaImage = Some(imageNid), language = "en")
+    val image = TestData.sampleImageMetaInformation.copy(id = imageId)
+    val nbImage = image.copy(alttext = Some(ImageAltText("nbAlt", "nb")))
+    val enImage = image.copy(alttext = Some(ImageAltText("enAlt", "en")))
+    val node = sampleNodeToConvert.copy(contents = Seq(nbContents, enContents))
+
+    when(imageApiClient.importImage(imageNid)).thenReturn(Some(image))
+    when(imageApiClient.getMetaByExternId(imageNid, "nb")).thenReturn(Some(nbImage))
+    when(imageApiClient.getMetaByExternId(imageNid, "en")).thenReturn(Some(enImage))
+
+    val (converted, _) = MetaInfoConverter.convert(node, ImportStatus.empty).get
+
+    converted.metaImages should be(
+      Seq(ArticleMetaImage(nbImage.id, nbImage.alttext.get.alttext, "nb"),
+          ArticleMetaImage(enImage.id, enImage.alttext.get.alttext, "en")))
+
+    verify(imageApiClient, times(1)).importImage(imageNid)
   }
 
 }

@@ -7,7 +7,7 @@
 
 package no.ndla.articleimport.model.domain
 
-import scala.annotation.tailrec
+import no.ndla.mapping.ISO639
 
 object Language {
   val DefaultLanguage = "nb"
@@ -15,19 +15,10 @@ object Language {
   val NoLanguage = ""
   val AllLanguages = "all"
 
-  def findByLanguageOrBestEffort[P <: LanguageField[_]](sequence: Seq[P], lang: String): Option[P] = {
-    @tailrec def findFirstLanguageMatching(sequence: Seq[P], lang: Seq[String]): Option[P] = {
-      lang match {
-        case Nil => sequence.headOption
-        case head :: tail =>
-          sequence.find(_.language == head) match {
-            case Some(x) => Some(x)
-            case None    => findFirstLanguageMatching(sequence, tail)
-          }
-      }
-    }
-
-    findFirstLanguageMatching(sequence, lang :: DefaultLanguage :: Nil)
+  def findByLanguageOrBestEffort[P <: LanguageField](sequence: Seq[P], lang: String): Option[P] = {
+    sequence
+      .find(_.language == language)
+      .orElse(sequence.sortBy(lf => ISO639.languagePriority.reverse.indexOf(lf.language)).lastOption)
   }
 
   def languageOrUnknown(language: Option[String]): String = {

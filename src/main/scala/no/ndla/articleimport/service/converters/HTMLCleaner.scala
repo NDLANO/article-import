@@ -151,14 +151,14 @@ trait HTMLCleaner {
         case None => extractIngress(element).map(LanguageIngress(_, None))
         case Some(ingress) =>
           val imageEmbedHtml = ingress.ingressImage
-            .flatMap(imageApiClient.importOrGetMetaByExternId)
+            .flatMap(imageApiClient.importImage)
             .map(imageMetaData =>
               HtmlTagGenerator.buildImageEmbedContent(
                 caption = "",
                 imageId = imageMetaData.id.toString,
                 align = "",
                 size = "",
-                altText = imageMetaData.alttexts
+                altText = imageMetaData.alttext
                   .find(_.language == content.language)
                   .map(_.alttext)
                   .getOrElse("")

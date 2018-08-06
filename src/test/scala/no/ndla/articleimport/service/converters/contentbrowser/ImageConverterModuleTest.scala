@@ -27,13 +27,13 @@ class ImageConverterModuleTest extends UnitSuite with TestEnvironment {
   val copyright = ImageCopyright(license, "", List(author))
 
   val image = ImageMetaInformation("1234",
-                                   List(ImageTitle("", Some("nb"))),
-                                   List(ImageAltText("", Some("nb"))),
+                                   Some(ImageTitle("", "nb")),
+                                   Some(ImageAltText("", "nb")),
                                    "full.jpg",
                                    1024,
                                    "",
                                    copyright,
-                                   ImageTag(List(""), Some("")))
+                                   ImageTag(List(""), ""))
 
   test("That a contentbrowser string of type 'image' returns an HTML img-tag with path to image") {
     val expectedResult =

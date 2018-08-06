@@ -1,6 +1,6 @@
 import java.util.Properties
 
-val Scalaversion = "2.12.2"
+val Scalaversion = "2.12.6"
 val Scalatraversion = "2.5.1"
 val ScalaLoggingVersion = "3.5.0"
 val Log4JVersion = "2.9.1"
@@ -29,7 +29,7 @@ lazy val article_import = (project in file("."))
     scalacOptions := Seq("-target:jvm-1.8", "-unchecked", "-deprecation", "-feature", "-Ypartial-unification"),
     libraryDependencies ++= Seq(
       "ndla" %% "network" % "0.29",
-      "ndla" %% "mapping" % "0.6",
+      "ndla" %% "mapping" % "0.8",
       "ndla" %% "validation" % "0.22",
       "joda-time" % "joda-time" % "2.8.2",
       "org.scalatra" %% "scalatra" % Scalatraversion,

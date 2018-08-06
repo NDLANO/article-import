@@ -7,6 +7,4 @@
 
 package no.ndla.articleimport.model.domain
 
-case class ConceptTitle(title: String, language: String) extends LanguageField[String] {
-  override def value: String = title
-}
+case class ConceptTitle(title: String, language: String) extends LanguageField

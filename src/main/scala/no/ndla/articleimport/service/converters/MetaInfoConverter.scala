@@ -11,8 +11,9 @@ import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.ArticleImportProperties.nodeTypeLink
 import no.ndla.articleimport.integration.ImageApiClient
 import no.ndla.articleimport.model.api.ImportException
-import no.ndla.articleimport.model.domain.{ArticleMetaImage, ImportStatus, NodeToConvert, NodeWithConvertedMeta}
+import no.ndla.articleimport.model.domain._
 import no.ndla.mapping.License.getLicenses
+
 import scala.util.{Failure, Success, Try}
 
 trait MetaInfoConverter {
@@ -81,6 +82,7 @@ trait MetaInfoConverter {
     /**
       * Combines set of cc licenses into a single cc license with components from all.
       * For example 'by-sa' and 'by-nc' is combined into 'by-nc-sa'
+      *
       * @param licenses Set of cc licenses
       * @return Combined license
       */
@@ -96,19 +98,29 @@ trait MetaInfoConverter {
     }
 
     private def getMetaImages(nodeToConvert: NodeToConvert): Seq[ArticleMetaImage] = {
-      nodeToConvert.contents
-        .flatMap(c =>
-          c.metaImage.map(imageNid =>
-            imageApiClient.importImage(imageNid) match {
-              case Some(image) =>
-                Some(ArticleMetaImage(image.id, c.language))
-              case None =>
-                logger.warn(s"Failed to import meta image with node id $imageNid")
-                None
-          }))
-        .flatten
-    }
+      val imagesToImport = nodeToConvert.contents.flatMap(_.metaImage).distinct
+      val importedImages = imagesToImport.flatMap(nid => {
+        if (imageApiClient.importImage(nid).nonEmpty) {
+          Some(nid)
+        } else {
+          logger.warn(s"Failed to import meta image with node id $nid")
+          None
+        }
+      })
 
+      nodeToConvert.contents.flatMap(content =>
+        content.metaImage.flatMap(imageNid => {
+          if (importedImages.contains(imageNid)) {
+            imageApiClient
+              .getMetaByExternId(imageNid, content.language)
+              .map(imageInLanguage => {
+                ArticleMetaImage(imageInLanguage.id,
+                                 imageInLanguage.alttext.map(_.alttext).getOrElse(""),
+                                 content.language)
+              })
+          } else None
+        }))
+    }
   }
 
 }
