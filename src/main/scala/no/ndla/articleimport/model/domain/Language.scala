@@ -17,7 +17,7 @@ object Language {
 
   def findByLanguageOrBestEffort[P <: LanguageField](sequence: Seq[P], lang: String): Option[P] = {
     sequence
-      .find(_.language == language)
+      .find(_.language == lang)
       .orElse(sequence.sortBy(lf => ISO639.languagePriority.reverse.indexOf(lf.language)).lastOption)
   }
 
