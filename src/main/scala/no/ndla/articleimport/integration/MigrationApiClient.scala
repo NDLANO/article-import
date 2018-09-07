@@ -51,7 +51,8 @@ trait MigrationApiClient {
     lazy val getNodeEmbedData: Memoize[String, Try[MigrationEmbedMeta]] = Memoize(
       get[MigrationEmbedMeta](ContentEmbedEndpoint, _))
 
-    lazy val getFilMeta = Memoize(get[Seq[MigrationContentFileMeta]](ContentFileEndpoint, _))
+    lazy val getFilMeta: Memoize[String, Try[Seq[MigrationContentFileMeta]]] = Memoize(
+      get[Seq[MigrationContentFileMeta]](ContentFileEndpoint, _))
 
     lazy val getNodeGeneralContent: Memoize[String, Try[Seq[MigrationNodeGeneralContent]]] = Memoize(
       get[Seq[MigrationNodeGeneralContent]](ContentGeneralEndpoint, _))
