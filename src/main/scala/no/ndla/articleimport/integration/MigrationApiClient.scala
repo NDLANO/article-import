@@ -30,7 +30,6 @@ trait MigrationApiClient {
     private val ContentDataEndpoint = s"$ContentMigrationBaseEndpoint/:node_id" ? (s"db-source" -> s"$DBSource")
     private val ContentTypeEndpoint = s"$ContentMigrationBaseEndpoint/type/:node_id" ? (s"db-source" -> s"$DBSource")
     private val ContentEmbedEndpoint = s"$ContentMigrationBaseEndpoint/embedmeta/:node_id" ? (s"db-source" -> s"$DBSource")
-    private val ContentAudioEndpoint = s"$ContentMigrationBaseEndpoint/audiometa/:node_id" ? (s"db-source" -> s"$DBSource")
     private val ContentFileEndpoint = s"$ContentMigrationBaseEndpoint/filemeta/:node_id" ? (s"db-source" -> s"$DBSource")
     private val ContentGeneralEndpoint = s"$ContentMigrationBaseEndpoint/generalcontent/:node_id" ? (s"db-source" -> s"$DBSource")
     private val ContentBiblioMetaEndpoint = s"$ContentMigrationBaseEndpoint/bibliometa/:node_id" ? (s"db-source" -> s"$DBSource")
@@ -46,24 +45,22 @@ trait MigrationApiClient {
                                        MigrationPassword)
     }
 
-    def getContentType(nodeId: String): Try[MigrationNodeType] =
-      get[MigrationNodeType](ContentTypeEndpoint, nodeId)
+    lazy val getContentType: Memoize[String, Try[MigrationNodeType]] =
+      Memoize(get[MigrationNodeType](ContentTypeEndpoint, _))
 
-    def getNodeEmbedData(nodeId: String): Try[MigrationEmbedMeta] =
-      get[MigrationEmbedMeta](ContentEmbedEndpoint, nodeId)
+    lazy val getNodeEmbedData: Memoize[String, Try[MigrationEmbedMeta]] = Memoize(
+      get[MigrationEmbedMeta](ContentEmbedEndpoint, _))
 
-    def getFilMeta(nodeId: String): Try[Seq[MigrationContentFileMeta]] =
-      get[Seq[MigrationContentFileMeta]](ContentFileEndpoint, nodeId)
+    lazy val getFilMeta = Memoize(get[Seq[MigrationContentFileMeta]](ContentFileEndpoint, _))
 
-    def getNodeGeneralContent(nodeId: String): Try[Seq[MigrationNodeGeneralContent]] =
-      get[Seq[MigrationNodeGeneralContent]](ContentGeneralEndpoint, nodeId)
+    lazy val getNodeGeneralContent: Memoize[String, Try[Seq[MigrationNodeGeneralContent]]] = Memoize(
+      get[Seq[MigrationNodeGeneralContent]](ContentGeneralEndpoint, _))
 
-    def getBiblioMeta(nodeId: String): Try[MigrationContentBiblioMeta] =
-      get[MigrationContentBiblioMeta](ContentBiblioMetaEndpoint, nodeId)
+    lazy val getBiblioMeta: Memoize[String, Try[MigrationContentBiblioMeta]] = Memoize(
+      get[MigrationContentBiblioMeta](ContentBiblioMetaEndpoint, _))
 
-    def getSubjectForNode(nodeId: String): Try[Set[MigrationSubjectMeta]] =
-      get[Seq[MigrationSubjectMeta]](ContentSubjectMetaEndpoint, nodeId)
-        .map(_.toSet)
+    lazy val getSubjectForNode: Memoize[String, Try[Set[MigrationSubjectMeta]]] =
+      Memoize((nodeId: String) => get[Seq[MigrationSubjectMeta]](ContentSubjectMetaEndpoint, nodeId).map(_.toSet))
 
     private val getAllNodeTranslationNids: Memoize[String, Try[Set[String]]] =
       Memoize((nodeId: String) => getContentNodeData(nodeId).map(_.contents.map(_.nid).toSet))
