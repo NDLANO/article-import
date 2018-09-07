@@ -15,12 +15,13 @@ import no.ndla.validation.ResourceType
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import org.mockito.Mockito._
 import com.netaporter.uri.dsl._
+import no.ndla.articleimport.caching.Memoize
 import no.ndla.network.model.HttpRequestException
 import org.mockito.Matchers._
 import org.mockito.Mockito
 import scalaj.http.{Http, HttpRequest, HttpResponse}
 
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
   val nodeId = "1234"
@@ -29,10 +30,16 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
 
   override val extractService: ExtractService = new ExtractService
 
+  def memoizeMockGetNodeEmbedData(ret: Try[MigrationEmbedMeta]): Memoize[String, Try[MigrationEmbedMeta]] = {
+    Memoize[String, Try[MigrationEmbedMeta]]((_: String) => ret)
+  }
+
   override def beforeEach: Unit = {
     val iframeEmbed = s"""<iframe src="$linkUrl" />"""
-    when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(Some(linkUrl), Some(iframeEmbed))))
+
+    when(migrationApiClient.getNodeEmbedData).thenReturn({
+      memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(linkUrl), Some(iframeEmbed))))
+    })
   }
 
   test("That LenkeConverter returns an embed code if insertion method is 'inline'") {
@@ -122,8 +129,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-nrk-video-id="$nrkVideoId" data-resource="nrk" data-url="$nrkLinkUrl" />"""
 
-    when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(Some(nrkLinkUrl), Some(nrkEmbedScript))))
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(nrkLinkUrl), Some(nrkEmbedScript)))))
     val Success((result, requiredLibraries, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
@@ -145,8 +152,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-height="451" data-resource="${ResourceType.IframeContent}" data-url="$preziSrc" data-width="620" />"""
 
-    when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(Some(preziUrl), Some(preziEmbedCode))))
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(preziUrl), Some(preziEmbedCode)))))
     val Success((result, _, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
@@ -165,8 +172,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-resource="${ResourceType.ExternalContent}" data-url="$vimeoProSrc" />"""
 
-    when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(Some(vimeoProUrl), Some(vimeoProEmbedCode))))
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(vimeoProUrl), Some(vimeoProEmbedCode)))))
     val Success((result, _, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
@@ -188,8 +195,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       s"""<$ResourceHtmlEmbedTag data-height="337px" data-resource="${ResourceType.IframeContent}" data-url="${NdlaFilmSrc
         .withScheme("https")}" data-width="632px" />"""
 
-    when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(Some(NdlaFilmUrl), Some(NdlaFilmEmbedCode))))
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(NdlaFilmUrl), Some(NdlaFilmEmbedCode)))))
     val Success((result, _, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
@@ -211,8 +218,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     val expectedResult =
       s"""<$ResourceHtmlEmbedTag data-height="350px" data-resource="${ResourceType.IframeContent}" data-url="$KahootSrc" data-width="620px" />"""
 
-    when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(Some(KahootUrl), Some(KahootEmbedCode))))
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(KahootUrl), Some(KahootEmbedCode)))))
     val Success((result, _, status)) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
 
@@ -236,8 +243,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
   test("LenkeConverter should return an error if embedmeta does not contain embedcode or url") {
     val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId)
 
-    when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(None, None)))
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(None, None))))
     val Failure(x: ImportException) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
     x.message.contains("External embed meta is missing url or embed code") should be(true)
@@ -247,8 +254,8 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     "LenkeConverter should return an error if embedmeta does not contain url and a src attr cant be found in embed code") {
     val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId)
 
-    when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(None, Some("<h1>this makes no sense</h1>"))))
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(None, Some("<h1>this makes no sense</h1>")))))
     val Failure(x: ImportException) =
       LenkeConverterModule.convert(content, ImportStatus.empty)
     x.message.contains("External embed meta is missing url or embed code") should be(true)
@@ -257,9 +264,10 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
   test("LenkeConverter should use url from embedCode if url is undefined") {
     val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
 
-    when(extractService.getNodeEmbedMeta(nodeId))
-      .thenReturn(Success(MigrationEmbedMeta(None, Some("<script src='http://nrk.no'></script>"))))
-    val Success((result, _, errors)) = LenkeConverterModule.convert(content, ImportStatus.empty)
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(
+        memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(None, Some("<script src='http://nrk.no'></script>")))))
+    val Success((result, _, _)) = LenkeConverterModule.convert(content, ImportStatus.empty)
 
     result should equal(
       s"""<$ResourceHtmlEmbedTag data-nrk-video-id="" data-resource="${ResourceType.NRKContent}" data-url="http://nrk.no" />""")
@@ -267,8 +275,9 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
 
   test("only whitelisted hosts should be embedded") {
     val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
-    when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(
-      Success(MigrationEmbedMeta(Some("http://obscure.stuff.gg"), Some("<script src='http://hmmm.biz.niz"))))
+    when(migrationApiClient.getNodeEmbedData).thenReturn(
+      memoizeMockGetNodeEmbedData(
+        Success(MigrationEmbedMeta(Some("http://obscure.stuff.gg"), Some("<script src='http://hmmm.biz.niz")))))
     val Failure(ex: ImportException) = LenkeConverterModule.convert(content, ImportStatus.empty)
 
     ex.message.contains("not a whitelisted embed source") should be(true)
@@ -280,8 +289,9 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       new HttpRequestException(s"Received error 404 NOT FOUND when calling https://$src. Body was ''", None)
 
     val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
-    when(extractService.getNodeEmbedMeta(nodeId)).thenReturn(
-      Success(MigrationEmbedMeta(Some("http://livestream.com/video/123"), Some(s"<iframe src='http://$src'>"))))
+    when(migrationApiClient.getNodeEmbedData).thenReturn(
+      memoizeMockGetNodeEmbedData(
+        Success(MigrationEmbedMeta(Some("http://livestream.com/video/123"), Some(s"<iframe src='http://$src'>")))))
     val lenkeConverterModule = spy(LenkeConverterModule)
     when(lenkeConverterModule.checkAvailability(any[String])).thenReturn(Left(Some(errorResponse)))
     val Success((result, _, status)) = lenkeConverterModule.convert(content, ImportStatus.empty)

@@ -9,6 +9,7 @@ package no.ndla.articleimport.service
 
 import java.util.Date
 
+import no.ndla.articleimport.caching.Memoize
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.api.{ArticleStatus, ImportException, OptimisticLockException}
 import no.ndla.articleimport.model.domain._
@@ -59,8 +60,9 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       .thenReturn(Seq(NodeGeneralContent(nodeId2, nodeId2, "title", "content", "en")))
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
     when(draftApiClient.getArticleIdFromExternalId(nodeId2)).thenReturn(None)
-    when(migrationApiClient.getSubjectForNode(nodeId))
-      .thenReturn(Try(Set(MigrationSubjectMeta("52", "helsearbeider vg2"))))
+    when(migrationApiClient.getSubjectForNode)
+      .thenReturn(Memoize[String, Try[Set[MigrationSubjectMeta]]]((_: String) =>
+        Try(Set(MigrationSubjectMeta("52", "helsearbeider vg2")))))
 
     when(draftApiClient.getArticleIdFromExternalId(sampleNode.contents.head.nid))
       .thenReturn(Some(1: Long))
