@@ -137,7 +137,7 @@ trait ExtractConvertStoreContent {
                     val storeImportStatus = importStatus.addMessage(
                       s"$mainNodeId has been updated since import, but forceUpdateArticles is set, updating anyway")
                     draftApiClient
-                      .updateArticle(article, nodeIds, getSubjectIds(mainNodeId))
+                      .updateArticle(article, nodeIds, getSubjectIds(mainNodeId), importStatus.importId)
                       .flatMap(publishArticle(_, storeImportStatus))
                   } else {
                     logger.info("Article has been updated since import, refusing to import...")
@@ -155,12 +155,12 @@ trait ExtractConvertStoreContent {
               }
             case _ =>
               draftApiClient
-                .updateArticle(article, nodeIds, getSubjectIds(mainNodeId))
+                .updateArticle(article, nodeIds, getSubjectIds(mainNodeId), importStatus.importId)
                 .flatMap(publishArticle(_, importStatus))
           }
         case _ =>
           draftApiClient
-            .newArticle(article, nodeIds, getSubjectIds(mainNodeId))
+            .newArticle(article, nodeIds, getSubjectIds(mainNodeId), importStatus.importId)
             .flatMap(publishArticle(_, importStatus))
 
       }

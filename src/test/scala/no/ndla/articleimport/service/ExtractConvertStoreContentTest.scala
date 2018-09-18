@@ -85,7 +85,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       .thenReturn(None)
     when(draftApiClient.getArticleIdFromExternalId(any[String]))
       .thenReturn(None)
-    when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]]))
+    when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]]))
       .thenReturn(Success(TestData.sampleApiArticle))
     when(draftApiClient.publishArticle(any[Long]))
       .thenReturn(Success(TestData.sampleImportedPublishedStatus))
@@ -97,7 +97,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
                    Set(nodeId, nodeId2),
                    Some(sampleArticle.id)))
     verify(draftApiClient, times(1))
-      .newArticle(any[Article], any[List[String]], any[Set[String]])
+      .newArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]])
   }
 
   test("That ETL returns a list of visited nodes") {
@@ -110,7 +110,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       .thenReturn(Some(1: Long))
     when(draftApiClient.getArticleIdFromExternalId(any[String]))
       .thenReturn(None)
-    when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]]))
+    when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]]))
       .thenReturn(Success(TestData.sampleApiArticle))
     when(draftApiClient.publishArticle(any[Long]))
       .thenReturn(Success(TestData.sampleImportedPublishedStatus))
@@ -151,12 +151,12 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   }
 
   test("That ETL returns a Failure if failed to persist the converted article") {
-    when(draftApiClient.updateArticle(any[Article], any[List[String]], any[Set[String]]))
+    when(draftApiClient.updateArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]]))
       .thenReturn(Failure(new OptimisticLockException()))
     when(draftApiClient.getArticleIdFromExternalId(sampleNode.contents.head.nid))
       .thenReturn(Some(1: Long))
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
-    when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]]))
+    when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]]))
       .thenReturn(Failure(new HttpRequestException("store")))
     when(draftApiClient.getConceptIdFromExternalId(any[String]))
       .thenReturn(Some(1: Long))
@@ -193,7 +193,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       .thenReturn(Some(1: Long))
     when(draftApiClient.getContentByExternalId(any[String]))
       .thenReturn(Some(sampleArticle))
-    when(draftApiClient.updateArticle(any[Article], any[List[String]], any[Set[String]]))
+    when(draftApiClient.updateArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]]))
       .thenReturn(Success(TestData.sampleApiArticle))
 
     when(draftApiClient.getConceptIdFromExternalId(any[String]))
@@ -211,7 +211,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
                    forceUpdateArticles = true))
 
     verify(draftApiClient, times(1))
-      .updateArticle(any[Article], any[List[String]], any[Set[String]])
+      .updateArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]])
   }
 
   test("Articles should not be force-updated if flag is not set") {
@@ -227,7 +227,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       .thenReturn(Some(sampleArticle))
     when(draftApiClient.getArticleFromId(any[Long]))
       .thenReturn(Some(sampleArticle))
-    when(draftApiClient.updateArticle(any[Article], any[List[String]], any[Set[String]]))
+    when(draftApiClient.updateArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]]))
       .thenReturn(Success(TestData.sampleApiArticle))
 
     when(draftApiClient.getConceptIdFromExternalId(any[String]))
@@ -246,7 +246,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
         forceUpdateArticles = false
       ))
     verify(draftApiClient, times(0))
-      .updateArticle(any[Article], any[List[String]], any[Set[String]])
+      .updateArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]])
   }
 
   test("storeArticle should update if id exists, but no body") {
@@ -260,15 +260,15 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.getArticleFromId(10)).thenReturn(None)
     when(draftApiClient.publishArticle(any[Long]))
       .thenReturn(Success(TestData.sampleImportedPublishedStatus))
-    when(draftApiClient.updateArticle(any[Article], any[List[String]], any[Set[String]]))
+    when(draftApiClient.updateArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]]))
       .thenReturn(Success(TestData.sampleApiArticle.copy(id = id)))
 
     eCSService.storeArticle(sampleArticle, List(id.toString), ImportStatus.empty)
 
     verify(draftApiClient, times(1))
-      .updateArticle(any[Article], any[List[String]], any[Set[String]])
+      .updateArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]])
     verify(draftApiClient, times(0))
-      .newArticle(any[Article], any[List[String]], any[Set[String]])
+      .newArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]])
   }
 
   test("storeArticle should create new if id does not exist at all") {
@@ -282,15 +282,15 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.getArticleFromId(10)).thenReturn(None)
     when(draftApiClient.publishArticle(any[Long]))
       .thenReturn(Success(TestData.sampleImportedPublishedStatus))
-    when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]]))
+    when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]]))
       .thenReturn(Success(TestData.sampleApiArticle.copy(id = id)))
 
     eCSService.storeArticle(sampleArticle, List(id.toString), ImportStatus.empty)
 
     verify(draftApiClient, times(0))
-      .updateArticle(any[Article], any[List[String]], any[Set[String]])
+      .updateArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]])
     verify(draftApiClient, times(1))
-      .newArticle(any[Article], any[List[String]], any[Set[String]])
+      .newArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]])
   }
 
 }

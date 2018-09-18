@@ -64,7 +64,8 @@ class InternControllerTest extends UnitSuite with TestEnvironment with ScalatraF
          headers = Map("Authorization" -> authHeaderWithDraftsWriteRole)) {
       status should equal(200)
       val convertedBody = read[ImportStatus](body)
-      convertedBody should equal(ImportStatus(s"Successfully imported node $nodeId: $newNodeId", Set[String]()))
+      convertedBody should equal(
+        ImportStatus(Seq(s"Successfully imported node $nodeId: $newNodeId"), Seq.empty, Set.empty, None))
     }
   }
 
