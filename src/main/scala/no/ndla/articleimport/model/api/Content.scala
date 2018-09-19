@@ -42,7 +42,7 @@ case class Article(
     @(ApiModelProperty @field)(description = "By whom the article was last updated") updatedBy: String,
     @(ApiModelProperty @field)(description = "The type of article this is. Possible values are topic-article,standard") articleType: String,
     @(ApiModelProperty @field)(description = "The languages this article supports") supportedLanguages: Seq[String],
-    @(ApiModelProperty @field)(description = "Status of the article") status: Option[ArticleStatus])
+    @(ApiModelProperty @field)(description = "Status of the article") status: ArticleStatus)
     extends ApiContent
 
 @ApiModel(description = "Information about the concept")

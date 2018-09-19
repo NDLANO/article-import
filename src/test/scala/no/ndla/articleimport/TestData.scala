@@ -228,7 +228,7 @@ object TestData {
     "me",
     "standard",
     Seq("nb"),
-    None
+    ArticleStatus("DRAFT", Set.empty)
   )
 
   val contentTitle = ArticleTitle("", "unknown")

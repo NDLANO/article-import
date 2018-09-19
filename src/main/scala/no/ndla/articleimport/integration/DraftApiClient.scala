@@ -155,8 +155,8 @@ trait DraftApiClient {
     def publishArticle(id: Long): Try[ArticleStatus] = {
       for {
         _ <- put[ContentId](s"$DraftApiPublicEndpoint/$id/validate/")
-        status <- put[ArticleStatus](s"$DraftApiPublicEndpoint/$id/publish/?import_publish=true")
-      } yield status
+        status <- put[api.Article](s"$DraftApiPublicEndpoint/$id/status/PUBLISHED?import_publish=true")
+      } yield status.status
     }
 
     def deleteArticle(id: Long): Try[ContentId] =
