@@ -7,11 +7,12 @@
 
 package no.ndla.articleimport.service
 
+import no.ndla.articleimport.caching.Memoize
 import no.ndla.articleimport.{TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.MigrationNodeGeneralContent
 import org.mockito.Mockito._
 
-import scala.util.Success
+import scala.util.{Success, Try}
 
 class ExtractServiceTest extends UnitSuite with TestEnvironment {
   override val extractService = new ExtractService
@@ -25,20 +26,20 @@ class ExtractServiceTest extends UnitSuite with TestEnvironment {
     MigrationNodeGeneralContent(nodeId2, nodeId1, "tittel", "oppgåve", "nn")
 
   test("That getNodeOppgave returns all translations of a node when requested node is main node") {
-    when(migrationApiClient.getNodeGeneralContent(nodeId1))
-      .thenReturn(Success(List(oppgave1, oppgave2)))
-    when(migrationApiClient.getNodeGeneralContent(nodeId2))
-      .thenReturn(Success(List(oppgave2)))
+    when(migrationApiClient.getNodeGeneralContent)
+      .thenReturn(Memoize[String, Try[Seq[MigrationNodeGeneralContent]]]((id: String) => {
+        Try(Map(nodeId1 -> List(oppgave1, oppgave2), nodeId2 -> List(oppgave2))(id))
+      }))
 
     extractService.getNodeGeneralContent(nodeId1) should equal(
       List(oppgave1.asNodeGeneralContent, oppgave2.asNodeGeneralContent))
   }
 
   test("That getNodeOppgave returns all translations of a node when requested node is a translation") {
-    when(migrationApiClient.getNodeGeneralContent(nodeId1))
-      .thenReturn(Success(List(oppgave1, oppgave2)))
-    when(migrationApiClient.getNodeGeneralContent(nodeId2))
-      .thenReturn(Success(List(oppgave2)))
+    when(migrationApiClient.getNodeGeneralContent)
+      .thenReturn(Memoize[String, Try[Seq[MigrationNodeGeneralContent]]]((id: String) => {
+        Try(Map(nodeId1 -> List(oppgave1, oppgave2), nodeId2 -> List(oppgave2))(id))
+      }))
 
     extractService.getNodeGeneralContent(nodeId2) should equal(
       List(oppgave1.asNodeGeneralContent, oppgave2.asNodeGeneralContent))
