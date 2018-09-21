@@ -10,7 +10,7 @@ val ScalaTestVersion = "3.0.1"
 val MockitoVersion = "1.10.19"
 val Elastic4sVersion = "5.2.8"
 val ElasticsearchVersion = "5.1.1"
-val JacksonVersion = "2.9.4"
+val JacksonVersion = "2.9.5"
 
 val appProperties = settingKey[Properties]("The application properties")
 
