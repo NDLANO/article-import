@@ -45,6 +45,7 @@ lazy val article_import = (project in file("."))
       "org.apache.logging.log4j" % "log4j-core" % Log4JVersion,
       "org.apache.logging.log4j" % "log4j-slf4j-impl" % Log4JVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % JacksonVersion,
+      "com.fasterxml.jackson.core" % "jackson-databind" % JacksonVersion, // Overriding jackson-databind used in elastic4s because of https://snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-32111
       "org.scalaj" %% "scalaj-http" % "2.3.0",
       "org.apache.lucene" % "lucene-test-framework" % "6.4.1" % "test",
       "org.jsoup" % "jsoup" % "1.11.2",
