@@ -36,9 +36,10 @@ trait DraftApiClient {
       s"http://${ArticleImportProperties.DraftHost}/health"
 
     def getContentByExternalId(externalId: String): Option[api.ApiContent] = {
-      getArticleIdFromExternalId(externalId)
-        .flatMap(getArticleFromId)
-        .orElse(getConceptIdFromExternalId(externalId).flatMap(getConceptFromId))
+      getArticleIdFromExternalId(externalId).flatMap(getArticleFromId) match {
+        case Some(art) => Some(art)
+        case None      => getConceptIdFromExternalId(externalId).flatMap(getConceptFromId)
+      }
     }
 
     def getArticleFromId(id: Long): Option[api.Article] = {
@@ -250,6 +251,10 @@ trait DraftApiClient {
       get[ContentId](s"$DraftApiConceptPublicEndpoint/external_id/$externalId")
         .map(_.id)
         .toOption
+    }
+
+    def getArticleIds(externalId: String): Option[ArticleIds] = {
+      get[ArticleIds](s"$DraftApiInternEndpoint/ids/$externalId").toOption
     }
 
     private def get[A](endpointUrl: String, params: Seq[(String, String)] = Seq.empty)(

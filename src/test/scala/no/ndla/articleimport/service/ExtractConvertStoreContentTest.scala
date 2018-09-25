@@ -81,6 +81,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       extractConvertStoreContent.processNode(nodeId2,
                                              ImportStatus(Seq(), Seq(), Set(nodeId)).withNewNodeLocalContext()))
       .thenReturn(Try((sampleArticle, ImportStatus(Seq(), Seq(), Set(nodeId, nodeId2)))))
+    when(draftApiClient.getArticleIds(any[String])).thenReturn(None)
     when(draftApiClient.getConceptIdFromExternalId(any[String]))
       .thenReturn(None)
     when(draftApiClient.getArticleIdFromExternalId(any[String]))
@@ -102,6 +103,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
   test("That ETL returns a list of visited nodes") {
     val sampleArticle = TestData.sampleApiArticle
+    when(draftApiClient.getArticleIds(any[String])).thenReturn(None)
     when(
       extractConvertStoreContent
         .processNode(nodeId2, ImportStatus(Seq(), Seq(), Set("9876", nodeId))))
@@ -122,6 +124,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   }
 
   test("That ETL returns a Failure if the node was not found") {
+    when(draftApiClient.getArticleIds(any[String])).thenReturn(None)
     when(extractService.getNodeData(nodeId))
       .thenReturn(Success(sampleNode.copy(contents = Seq())))
     when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(None)
@@ -132,6 +135,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   }
 
   test("ETL should return a Failure if validation fails") {
+    when(draftApiClient.getArticleIds(any[String])).thenReturn(None)
     when(draftApiClient.getArticleIdFromExternalId(nodeId))
       .thenReturn(Some(1: Long))
     when(draftApiClient.getArticleIdFromExternalId(nodeId2))
@@ -151,6 +155,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   }
 
   test("That ETL returns a Failure if failed to persist the converted article") {
+    when(draftApiClient.getArticleIds(any[String])).thenReturn(None)
     when(draftApiClient.updateArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]]))
       .thenReturn(Failure(new OptimisticLockException()))
     when(draftApiClient.getArticleIdFromExternalId(sampleNode.contents.head.nid))
@@ -170,6 +175,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
 
   test("Articles that fails to import should be deleted from database if it exists") {
     reset(draftApiClient)
+    when(draftApiClient.getArticleIds(any[String])).thenReturn(None)
     when(draftApiClient.getArticleIdFromExternalId(any[String]))
       .thenReturn(Some(1: Long))
     when(draftApiClient.deleteArticle(1))
@@ -186,6 +192,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   test("Articles should be force-updated if flag is set") {
     reset(draftApiClient)
     val sampleArticle = TestData.sampleApiArticle.copy(revision = Some(10))
+    when(draftApiClient.getArticleIds(any[String])).thenReturn(None)
     when(extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty(forceUpdate = true).addVisitedNode(nodeId)))
       .thenReturn(
         Try((sampleArticle, ImportStatus(Seq(), Seq(), Set(nodeId, nodeId2), Some(1), forceUpdateArticles = true))))
@@ -217,6 +224,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   test("Articles should not be force-updated if flag is not set") {
     val sampleArticle = TestData.sampleApiArticle.copy(revision = Some(10))
     reset(draftApiClient)
+    when(draftApiClient.getArticleIds(any[String])).thenReturn(None)
     when(
       extractConvertStoreContent.processNode(nodeId2, ImportStatus.empty(forceUpdate = false).addVisitedNode(nodeId)))
       .thenReturn(

@@ -25,30 +25,56 @@ trait ExtractConvertStoreContent {
   class ExtractConvertStoreContent extends LazyLogging {
 
     def processNode(externalId: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
-      val mainNid = getMainNodeId(externalId)
-      if (importStatus.visitedNodes.contains(mainNid.getOrElse(externalId))) {
-        logger.info(s"Skipping node '$externalId' since main nid '${mainNid.getOrElse(0)}' is already imported.")
-        return mainNid.flatMap(draftApiClient.getContentByExternalId) match {
-          case Some(content) => Success(content, importStatus)
-          case None =>
-            Failure(NotFoundException(s"Content with external id $externalId was not found"))
+      val (si, status) = shouldImport(externalId, importStatus)
+      if (si) {
+        logger.info(s"Importing node '$externalId'...")
+        extract(externalId) match {
+          case Success((node, mainNodeId)) =>
+            val allNodeIds = (mainNodeId +: node.contents.map(_.nid).toList).distinct // Make sure the mainNodeId is first
+            getConvertedNode(externalId, allNodeIds, node, status) match {
+              case Success(converted) => Success(converted)
+              case Failure(ex) =>
+                logger.warn(s"Failed to import node with id $externalId. Deleting any previous version")
+                deleteContent(mainNodeId, node.nodeType).foreach(id =>
+                  logger.warn(s"Deleted content with id $id with node type ${node.nodeType}"))
+                Failure(ex)
+            }
+          case Failure(f) => Failure(f)
+        }
+      } else {
+        draftApiClient.getContentByExternalId(externalId) match {
+          case Some(content) => Success(content, status)
+          case None          => Failure(NotFoundException(s"Content with external id $externalId was not found"))
         }
       }
-      logger.info(s"Importing node '$externalId' with main nid: '${mainNid.getOrElse(0)}'")
+    }
 
-      val (node, mainNodeId) = extract(externalId) match {
-        case Success((n, mnid)) => (n, mnid)
-        case Failure(f)         => return Failure(f)
+    private def shouldImport(externalId: String, importStatus: ImportStatus): (Boolean, ImportStatus) = {
+      (importStatus.importId, draftApiClient.getArticleIds(externalId).flatMap(_.importId)) match {
+        case (Some(newImportId), Some(oldImportId)) if newImportId == oldImportId =>
+          val msg = s"Skipping node '$externalId' since importId is the same as existing."
+          logger.info(msg)
+          (false, importStatus.addMessage(msg))
+        case _ =>
+          val mainNid = getMainNodeId(externalId)
+          if (importStatus.visitedNodes.contains(mainNid.getOrElse(externalId))) {
+            logger.info(s"Skipping node '$externalId' since main nid '${mainNid.getOrElse(0)}' is already imported.")
+            (false, importStatus)
+          } else { (true, importStatus) }
       }
+    }
 
-      val allNodeIds = (mainNodeId +: node.contents.map(_.nid).toList).distinct // Make sure the mainNodeId is first
-
-      val convertedNode = for {
+    private def getConvertedNode(externalId: String,
+                                 allNodeIds: List[String],
+                                 node: NodeToConvert,
+                                 importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
+      for {
         // Generate an ID for the content before converting the node.
         // This ensures that cyclic dependencies between articles does not cause an infinite recursive import job
         _ <- generateNewIdIfFirstTimeImported(allNodeIds, node.nodeType)
-        (convertedContent, updatedImportStatus) <- converterService
-          .toDomainArticle(node, importStatus.withNewNodeLocalContext())
+        (convertedContent, updatedImportStatus) <- converterService.toDomainArticle(
+          node,
+          importStatus.withNewNodeLocalContext())
         (content, storeImportStatus) <- store(convertedContent, allNodeIds, updatedImportStatus)
       } yield
         (content,
@@ -57,14 +83,6 @@ trait ExtractConvertStoreContent {
            .setArticleId(content.id)
            .resetNodeLocalContext(importStatus.nodeLocalContext))
 
-      convertedNode match {
-        case Success(converted) => Success(converted)
-        case Failure(ex) =>
-          logger.warn(s"Failed to import node with id $externalId. Deleting any previous version")
-          deleteContent(mainNodeId, node.nodeType)
-            .foreach(id => logger.warn(s"Deleted content with id $id with node type ${node.nodeType}"))
-          Failure(ex)
-      }
     }
 
     def getMainNodeId(externalId: String): Option[String] = {
