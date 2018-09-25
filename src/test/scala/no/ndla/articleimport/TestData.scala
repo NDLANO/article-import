@@ -12,7 +12,7 @@ import java.util.Date
 import no.ndla.articleimport.integration._
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.model.api
-import no.ndla.articleimport.model.api.NewArticleMetaImage
+import no.ndla.articleimport.model.api.{ArticleStatus, NewArticleMetaImage}
 import no.ndla.articleimport.service.converters.contentbrowser.ContentBrowser
 import org.joda.time.DateTime
 
@@ -23,6 +23,8 @@ object TestData {
   private val today = new DateTime().toDate
 
   val articleId = 1
+
+  val sampleImportedPublishedStatus = ArticleStatus("PUBLISHED", Set("IMPORTED"))
 
   val sampleArticleWithPublicDomain = Article(
     Option(1),
@@ -226,7 +228,7 @@ object TestData {
     "me",
     "standard",
     Seq("nb"),
-    None
+    ArticleStatus("DRAFT", Set.empty)
   )
 
   val contentTitle = ArticleTitle("", "unknown")

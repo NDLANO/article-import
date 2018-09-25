@@ -154,9 +154,9 @@ trait DraftApiClient {
 
     def publishArticle(id: Long): Try[ArticleStatus] = {
       for {
-        _ <- put[ArticleStatus](s"$DraftApiPublicEndpoint/$id/publish/?import_publish=true")
-        status <- post[ArticleStatus](s"$DraftApiInternEndpoint/article/$id/publish/?import_publish=true")
-      } yield status
+        _ <- put[ContentId](s"$DraftApiPublicEndpoint/$id/validate/")
+        status <- put[api.Article](s"$DraftApiPublicEndpoint/$id/status/PUBLISHED?import_publish=true")
+      } yield status.status
     }
 
     def deleteArticle(id: Long): Try[ContentId] =
@@ -278,12 +278,6 @@ trait DraftApiClient {
       ndlaClient.fetchWithForwardedAuth[A](Http(endpointUrl).method("DELETE").params(params.toMap))
     }
 
-    def isHealthy: Boolean = {
-      Try(Http(DraftHealthEndpoint).execute()) match {
-        case Success(resp) => resp.isSuccess
-        case _             => false
-      }
-    }
   }
 }
 

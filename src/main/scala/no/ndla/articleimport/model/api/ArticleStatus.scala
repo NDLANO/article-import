@@ -7,4 +7,4 @@
 
 package no.ndla.articleimport.model.api
 
-case class ArticleStatus(status: Set[String])
+case class ArticleStatus(current: String, other: Set[String])

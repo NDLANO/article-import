@@ -9,7 +9,7 @@ package no.ndla.articleimport.service
 
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.{DraftApiClient, MigrationApiClient}
-import no.ndla.articleimport.model.api.{ApiContent, ImportException, NotFoundException}
+import no.ndla.articleimport.model.api.{ApiContent, ArticleStatus, ImportException, NotFoundException}
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.ArticleImportProperties.{nodeTypeBegrep, supportedContentTypes}
@@ -169,13 +169,12 @@ trait ExtractConvertStoreContent {
     private def publishArticle(storedArticle: ApiContent,
                                importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
       draftApiClient.publishArticle(storedArticle.id) match {
-        case Success(status) if Set("PUBLISHED", "IMPORTED").subsetOf(status.status) =>
+        case Success(status) if ArticleStatus("PUBLISHED", Set("IMPORTED")) == status =>
           Success(storedArticle, importStatus)
         case Success(status) =>
           Failure(
-            ImportException(
-              s"${storedArticle.id}",
-              s"Published article does not contain expected statuses PUBLISHED and IMPORTED (${status.status})"))
+            ImportException(s"${storedArticle.id}",
+                            s"Published article does not contain expected statuses PUBLISHED and IMPORTED ($status)"))
         case Failure(ex) => Failure(ex)
       }
     }

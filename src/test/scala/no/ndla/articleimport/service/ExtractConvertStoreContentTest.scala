@@ -88,7 +88,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]]))
       .thenReturn(Success(TestData.sampleApiArticle))
     when(draftApiClient.publishArticle(any[Long]))
-      .thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+      .thenReturn(Success(TestData.sampleImportedPublishedStatus))
 
     val Success((_, status)) = eCSService.processNode(nodeId, ImportStatus.empty)
     status should equal(
@@ -113,7 +113,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]]))
       .thenReturn(Success(TestData.sampleApiArticle))
     when(draftApiClient.publishArticle(any[Long]))
-      .thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+      .thenReturn(Success(TestData.sampleImportedPublishedStatus))
 
     val Success((_, status)) =
       eCSService.processNode(nodeId, ImportStatus(Seq(), Seq(), Set("9876")))
@@ -161,7 +161,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.getConceptIdFromExternalId(any[String]))
       .thenReturn(Some(1: Long))
     when(draftApiClient.publishArticle(any[Long]))
-      .thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+      .thenReturn(Success(TestData.sampleImportedPublishedStatus))
 
     val result =
       eCSService.processNode(nodeId, ImportStatus(Seq(), Seq(), Set("9876")))
@@ -199,7 +199,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.getConceptIdFromExternalId(any[String]))
       .thenReturn(Some(1: Long))
     when(draftApiClient.publishArticle(any[Long]))
-      .thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+      .thenReturn(Success(TestData.sampleImportedPublishedStatus))
 
     val Success((_, status)) =
       eCSService.processNode(nodeId, ImportStatus.empty(forceUpdate = true))
@@ -233,7 +233,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     when(draftApiClient.getConceptIdFromExternalId(any[String]))
       .thenReturn(Some(1: Long))
     when(draftApiClient.publishArticle(any[Long]))
-      .thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+      .thenReturn(Success(TestData.sampleImportedPublishedStatus))
 
     val Success((_, status)) =
       eCSService.processNode(nodeId, ImportStatus.empty(forceUpdate = false))
@@ -259,7 +259,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       .thenReturn(Some(10: Long))
     when(draftApiClient.getArticleFromId(10)).thenReturn(None)
     when(draftApiClient.publishArticle(any[Long]))
-      .thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+      .thenReturn(Success(TestData.sampleImportedPublishedStatus))
     when(draftApiClient.updateArticle(any[Article], any[List[String]], any[Set[String]]))
       .thenReturn(Success(TestData.sampleApiArticle.copy(id = id)))
 
@@ -281,7 +281,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       .thenReturn(None)
     when(draftApiClient.getArticleFromId(10)).thenReturn(None)
     when(draftApiClient.publishArticle(any[Long]))
-      .thenReturn(Success(ArticleStatus(Set("IMPORTED", "PUBLISHED"))))
+      .thenReturn(Success(TestData.sampleImportedPublishedStatus))
     when(draftApiClient.newArticle(any[Article], any[List[String]], any[Set[String]]))
       .thenReturn(Success(TestData.sampleApiArticle.copy(id = id)))
 
