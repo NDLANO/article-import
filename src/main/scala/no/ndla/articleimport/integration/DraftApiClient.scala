@@ -9,7 +9,7 @@ package no.ndla.articleimport.integration
 
 import no.ndla.articleimport.ArticleImportProperties
 import no.ndla.articleimport.model.api._
-import no.ndla.articleimport.model.domain.{Article, ArticleIds, Concept, Language}
+import no.ndla.articleimport.model.domain.{Article, ImportId, Concept, Language}
 import no.ndla.network.NdlaClient
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.service.ConverterService
@@ -253,8 +253,8 @@ trait DraftApiClient {
         .toOption
     }
 
-    def getArticleIds(externalId: String): Option[ArticleIds] = {
-      get[ArticleIds](s"$DraftApiInternEndpoint/ids/$externalId").toOption
+    def getImportId(externalId: String): Option[ImportId] = {
+      get[ImportId](s"$DraftApiInternEndpoint/import-id/$externalId").toOption
     }
 
     private def get[A](endpointUrl: String, params: Seq[(String, String)] = Seq.empty)(

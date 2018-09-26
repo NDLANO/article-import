@@ -50,7 +50,7 @@ trait ExtractConvertStoreContent {
     }
 
     private[service] def shouldImport(externalId: String, importStatus: ImportStatus): (Boolean, ImportStatus) = {
-      (importStatus.importId, draftApiClient.getArticleIds(externalId).flatMap(_.importId)) match {
+      (importStatus.importId, draftApiClient.getImportId(externalId).flatMap(_.importId)) match {
         case (Some(newImportId), Some(oldImportId)) if newImportId == oldImportId =>
           val msg = s"Skipping node '$externalId' since importId is the same as existing."
           logger.info(msg)

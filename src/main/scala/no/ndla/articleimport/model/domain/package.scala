@@ -13,4 +13,5 @@ package object domain {
   }
 
   case class ArticleIds(articleId: Long, externalId: List[String], importId: Option[String])
+  case class ImportId(importId: Option[String])
 }
