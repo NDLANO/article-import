@@ -25,8 +25,8 @@ trait ExtractConvertStoreContent {
   class ExtractConvertStoreContent extends LazyLogging {
 
     def processNode(externalId: String, importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
-      val (si, status) = shouldImport(externalId, importStatus)
-      if (si) {
+      val (shouldBeImported, status) = shouldImport(externalId, importStatus)
+      if (shouldBeImported) {
         logger.info(s"Importing node '$externalId'...")
         extract(externalId) match {
           case Success((node, mainNodeId)) =>
@@ -49,7 +49,7 @@ trait ExtractConvertStoreContent {
       }
     }
 
-    private def shouldImport(externalId: String, importStatus: ImportStatus): (Boolean, ImportStatus) = {
+    private[service] def shouldImport(externalId: String, importStatus: ImportStatus): (Boolean, ImportStatus) = {
       (importStatus.importId, draftApiClient.getArticleIds(externalId).flatMap(_.importId)) match {
         case (Some(newImportId), Some(oldImportId)) if newImportId == oldImportId =>
           val msg = s"Skipping node '$externalId' since importId is the same as existing."

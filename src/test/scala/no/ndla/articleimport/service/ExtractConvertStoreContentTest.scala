@@ -301,4 +301,35 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       .newArticle(any[Article], any[List[String]], any[Set[String]], any[Option[String]])
   }
 
+  test("shouldImport should return true when importIds are different and node has not been visited") {
+    val externalId = "1234"
+    val ids = ArticleIds(9999, List(externalId), None)
+    val nodeToConvert = TestData.sampleNodeToConvert.copy(
+      contents = Seq(TestData.sampleContent.copy(nid = externalId, tnid = externalId)))
+    when(draftApiClient.getArticleIds(Matchers.eq(externalId))).thenReturn(Some(ids))
+    when(extractService.getNodeData(externalId)).thenReturn(Success(nodeToConvert))
+    val (result, _) = eCSService.shouldImport(externalId, ImportStatus.empty(importId = None))
+    result should be(true)
+  }
+
+  test("shouldImport should return false when importIds are different but node has been visited") {
+    val externalId = "1234"
+    val ids = ArticleIds(9999, List(externalId), None)
+    val nodeToConvert = TestData.sampleNodeToConvert.copy(
+      contents = Seq(TestData.sampleContent.copy(nid = externalId, tnid = externalId)))
+    when(draftApiClient.getArticleIds(Matchers.eq(externalId))).thenReturn(Some(ids))
+    when(extractService.getNodeData(externalId)).thenReturn(Success(nodeToConvert))
+    val (result, _) = eCSService.shouldImport(externalId, ImportStatus.empty.copy(visitedNodes = Set(externalId)))
+    result should be(false)
+  }
+
+  test("shouldImport should return false when importIds equal") {
+    val externalId = "1234"
+    val importId = "b5bc6dd2-cd6e-4c74-abd5-811679b09b0d"
+    val ids = ArticleIds(9999, List(externalId), Some(importId))
+    when(draftApiClient.getArticleIds(Matchers.eq(externalId))).thenReturn(Some(ids))
+    val (result, _) = eCSService.shouldImport(externalId, ImportStatus.empty.copy(importId = Some(importId)))
+    result should be(false)
+  }
+
 }
