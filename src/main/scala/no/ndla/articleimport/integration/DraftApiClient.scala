@@ -9,7 +9,7 @@ package no.ndla.articleimport.integration
 
 import no.ndla.articleimport.ArticleImportProperties
 import no.ndla.articleimport.model.api._
-import no.ndla.articleimport.model.domain.{Article, ArticleIds, Concept, Language}
+import no.ndla.articleimport.model.domain.{Article, ImportId, Concept, Language}
 import no.ndla.network.NdlaClient
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.service.ConverterService
@@ -36,9 +36,10 @@ trait DraftApiClient {
       s"http://${ArticleImportProperties.DraftHost}/health"
 
     def getContentByExternalId(externalId: String): Option[api.ApiContent] = {
-      getArticleIdFromExternalId(externalId)
-        .flatMap(getArticleFromId)
-        .orElse(getConceptIdFromExternalId(externalId).flatMap(getConceptFromId))
+      getArticleIdFromExternalId(externalId).flatMap(getArticleFromId) match {
+        case Some(art) => Some(art)
+        case None      => getConceptIdFromExternalId(externalId).flatMap(getConceptFromId)
+      }
     }
 
     def getArticleFromId(id: Long): Option[api.Article] = {
@@ -55,18 +56,27 @@ trait DraftApiClient {
                    nodeIds: List[String],
                    subjectIds: Set[String],
                    createdDate: String,
-                   updatedDate: String): Try[api.Article] = {
-      postWithData[api.Article, NewArticle](
-        s"$DraftApiPublicEndpoint/",
-        article,
+                   updatedDate: String,
+                   importId: Option[String]): Try[api.Article] = {
+
+      val params = List(
         "externalId" -> nodeIds.mkString(","),
         "externalSubjectIds" -> subjectIds.mkString(","),
         "oldNdlaCreatedDate" -> createdDate,
         "oldNdlaUpdatedDate" -> updatedDate
+      ) ++ importId.map(("importId", _))
+
+      postWithData[api.Article, NewArticle](
+        s"$DraftApiPublicEndpoint/",
+        article,
+        params: _*
       )
     }
 
-    def newArticle(article: Article, nodeIds: List[String], subjectIds: Set[String]): Try[api.Article] = {
+    def newArticle(article: Article,
+                   nodeIds: List[String],
+                   subjectIds: Set[String],
+                   importId: Option[String]): Try[api.Article] = {
       val newArt = converterService.toApiNewArticle(article, article.supportedLanguages.head)
       val updateArticles = article.supportedLanguages
         .drop(1)
@@ -79,10 +89,10 @@ trait DraftApiClient {
       val createdTime = new DateTime(article.created).toString
       val updatedTime = new DateTime(article.updated).toString
 
-      newArticle(newArt, nodeIds, subjectIds, createdTime, updatedTime) match {
+      newArticle(newArt, nodeIds, subjectIds, createdTime, updatedTime, importId) match {
         case Success(a) =>
           val (failed, _) = updateArticles
-            .map(u => updateArticle(u, a.id, nodeIds, subjectIds, createdTime, updatedTime))
+            .map(u => updateArticle(u, a.id, nodeIds, subjectIds, createdTime, updatedTime, importId))
             .partition(_.isFailure)
           if (failed.nonEmpty) {
             val failedMsgs = failed.map(_.failed.get.getMessage).mkString(", ")
@@ -104,14 +114,18 @@ trait DraftApiClient {
                               nids: List[String],
                               externalSubjectIds: Set[String],
                               created: String,
-                              updated: String): Try[api.Article] = {
+                              updated: String,
+                              importId: Option[String]): Try[api.Article] = {
+
+      val queryParams = List("externalId" -> nids.mkString(","),
+                             "externalSubjectIds" -> externalSubjectIds.mkString(","),
+                             "oldNdlaCreatedDate" -> created,
+                             "oldNdlaUpdatedDate" -> updated) ++ importId.map("importId" -> _)
+
       patch[api.Article, api.UpdateArticle](
         s"$DraftApiPublicEndpoint/$id",
         article,
-        "externalId" -> nids.mkString(","),
-        "externalSubjectIds" -> externalSubjectIds.mkString(","),
-        "oldNdlaCreatedDate" -> created,
-        "oldNdlaUpdatedDate" -> updated
+        queryParams: _*
       )
     }
 
@@ -119,16 +133,20 @@ trait DraftApiClient {
                               nodeIds: List[String],
                               subjectIds: Set[String],
                               created: String,
-                              updated: String): Try[api.Article] = {
+                              updated: String,
+                              importId: Option[String]): Try[api.Article] = {
       val mainNodeId = nodeIds.headOption.getOrElse("")
       getArticleIdFromExternalId(mainNodeId) match {
-        case Some(id) => updateArticle(article, id, nodeIds, subjectIds, created, updated)
+        case Some(id) => updateArticle(article, id, nodeIds, subjectIds, created, updated, importId)
         case None =>
           Failure(NotFoundException(s"No article with external id $nodeIds found"))
       }
     }
 
-    def updateArticle(article: Article, nodeIds: List[String], externalSubjectIds: Set[String]): Try[api.Article] = {
+    def updateArticle(article: Article,
+                      nodeIds: List[String],
+                      externalSubjectIds: Set[String],
+                      importId: Option[String]): Try[api.Article] = {
       val mainNodeId = nodeIds.headOption.getOrElse("")
       val startRevision =
         getContentByExternalId(mainNodeId).flatMap(_.revision).getOrElse(1)
@@ -142,7 +160,7 @@ trait DraftApiClient {
       val updatedTime = new DateTime(article.updated).toString
 
       val (failed, updatedArticle) = updateArticles
-        .map(u => updateArticle(u, nodeIds, externalSubjectIds, createdTime, updatedTime))
+        .map(u => updateArticle(u, nodeIds, externalSubjectIds, createdTime, updatedTime, importId))
         .partition(_.isFailure)
       if (failed.nonEmpty) {
         val failedMsg = failed.map(_.failed.get.getMessage).mkString(", ")
@@ -233,6 +251,10 @@ trait DraftApiClient {
       get[ContentId](s"$DraftApiConceptPublicEndpoint/external_id/$externalId")
         .map(_.id)
         .toOption
+    }
+
+    def getImportId(externalId: String): Option[ImportId] = {
+      get[ImportId](s"$DraftApiInternEndpoint/import-id/$externalId").toOption
     }
 
     private def get[A](endpointUrl: String, params: Seq[(String, String)] = Seq.empty)(

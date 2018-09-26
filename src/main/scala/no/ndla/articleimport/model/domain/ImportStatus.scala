@@ -14,7 +14,8 @@ case class ImportStatus(messages: Seq[String],
                         visitedNodes: Set[String] = Set.empty,
                         articleId: Option[Long] = None,
                         forceUpdateArticles: Boolean = false,
-                        nodeLocalContext: NodeLocalImportStatus = NodeLocalImportStatus()) {
+                        nodeLocalContext: NodeLocalImportStatus = NodeLocalImportStatus(),
+                        importId: Option[String] = None) {
 
   def addMessage(message: String): ImportStatus =
     this.copy(messages = this.messages :+ message)
@@ -51,11 +52,9 @@ case class ImportStatus(messages: Seq[String],
 object ImportStatus {
   def empty = ImportStatus(Seq.empty, Seq.empty, Set.empty, None)
 
-  def empty(forceUpdate: Boolean) =
-    ImportStatus(Seq.empty, Seq.empty, Set.empty, None, forceUpdateArticles = forceUpdate)
-
-  def apply(message: String, visitedNodes: Set[String]): ImportStatus =
-    ImportStatus(Seq(message), Seq.empty, visitedNodes, None)
+  def empty(forceUpdate: Boolean = false, importId: Option[String] = None): ImportStatus = {
+    ImportStatus(Seq.empty, Seq.empty, Set.empty, None, forceUpdateArticles = forceUpdate, importId = importId)
+  }
 }
 
 case class NodeLocalImportStatus(insertedLicenses: List[String] = List.empty,
