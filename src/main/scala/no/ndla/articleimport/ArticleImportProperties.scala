@@ -103,7 +103,6 @@ object ArticleImportProperties extends LazyLogging {
   val H5PHost = Map(
     "brukertest" -> "h5p.ndla.no",
     "spoletest" -> "h5p.ndla.no",
-    "staging" -> "h5p.ndla.no",
     "prod" -> "h5p.ndla.no"
   ).getOrElse(Environment, "h5p-test.ndla.no")
 
