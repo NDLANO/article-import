@@ -289,4 +289,36 @@ class GeneralContentConverterModuleTest extends UnitSuite with TestEnvironment {
     status.messages.isEmpty should be(true)
   }
 
+  test("That licenses and authors should not be inserted for links") {
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "link", "link_text" -> "link")
+    when(extractService.getNodeGeneralContent(nodeId)).thenReturn(Seq(sampleFagstoff1, sampleFagstoff2))
+    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(Some(sampleArticle.id))
+    val Success((_, _, status)) = generalContentConverter.convert(content, ImportStatus.empty)
+
+    status.nodeLocalContext.insertedAuthors should be(List.empty)
+    status.nodeLocalContext.insertedLicenses should be(List.empty)
+  }
+
+  test("That licenses and authors should be inserted for inline content") {
+    val content1 =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline", "link_text" -> "jadda")
+    val content2 =
+      TestData.contentBrowserWithFields(List.empty,
+                                        "nid" -> nodeId,
+                                        "insertion" -> "collapsed_body",
+                                        "link_text" -> "jadda")
+    when(extractService.getNodeGeneralContent(nodeId)).thenReturn(Seq(sampleFagstoff1, sampleFagstoff2))
+    when(draftApiClient.getArticleIdFromExternalId(nodeId)).thenReturn(Some(sampleArticle.id))
+    when(extractService.getNodeData(any[String])).thenReturn(Success(
+      sampleNodeToConvert.copy(license = Some("by-sa-nc"), authors = Seq(Author("opphavsmann", "Johnfinn Arvidsen")))))
+
+    val Success((_, _, status1)) = generalContentConverter.convert(content1, ImportStatus.empty)
+    val Success((_, _, status2)) = generalContentConverter.convert(content2, ImportStatus.empty)
+
+    status1.nodeLocalContext.insertedAuthors should be(List(Author("opphavsmann", "Johnfinn Arvidsen")))
+    status1.nodeLocalContext.insertedLicenses should be(List("by-sa-nc"))
+    status2.nodeLocalContext.insertedAuthors should be(List(Author("opphavsmann", "Johnfinn Arvidsen")))
+    status2.nodeLocalContext.insertedLicenses should be(List("by-sa-nc"))
+  }
 }
