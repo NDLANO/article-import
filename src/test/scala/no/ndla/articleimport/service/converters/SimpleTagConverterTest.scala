@@ -201,9 +201,9 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
     result.content should equal(expectedResult)
   }
 
-  test("only spans with font-size attribute around chinese text should be replaced with a data-size attribute") {
+  test("only spans with font-size attribute around chinese text should be replaced with a lang=zh attribute") {
     val initialContent = TestData.sampleContent.copy(content = """<span style="font-size: xx-large;">第一课：汉字</span>""")
-    val expectedResult = """<span data-size="large">第一课：汉字</span>"""
+    val expectedResult = """<span lang="zh">第一课：汉字</span>"""
     val Success((result, _)) =
       SimpleTagConverter.convert(initialContent, ImportStatus.empty)
 
@@ -211,7 +211,7 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
 
     val contentWithMultipleStylingElements = TestData.sampleContent.copy(
       content = """<span style="font-size   :xx-large   ; another-attribute: hmm">第一课：汉字</span>""")
-    val expectedResult2 = """<span data-size="large">第一课：汉字</span>"""
+    val expectedResult2 = """<span lang="zh">第一课：汉字</span>"""
     val Success((result2, _)) =
       SimpleTagConverter.convert(contentWithMultipleStylingElements, ImportStatus.empty)
 
@@ -224,6 +224,24 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
       SimpleTagConverter.convert(contentWithoutChinese, ImportStatus.empty)
 
     result3.content should equal(expectedResult3)
+  }
+
+  test("Everything chinese should be wrapped in spans with lang=zh") {
+    val content =
+      """
+        |<p><span style="font-size: large;">基围虾</span><br>500克</p>
+        |<p><span style="font-size: large;">葱</span><br>适量</p>
+      """.stripMargin.replace("\n", "")
+
+    val expectedContent =
+      """
+        |<p><span lang="zh">基围虾</span><br>500克</p>
+        |<p><span lang="zh">葱</span><br>适量</p>
+      """.stripMargin.replace("\n", "")
+
+    val Success((result, _)) =
+      SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
+    result.content should be(expectedContent)
   }
 
   test("spans with xml:lang attribute is kept as <span> tags and lang tag is inserted") {
