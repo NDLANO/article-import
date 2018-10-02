@@ -12,7 +12,7 @@ import no.ndla.articleimport.ArticleImportProperties.nodeTypeLink
 import no.ndla.articleimport.integration.ImageApiClient
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain._
-import no.ndla.mapping.License.getLicenses
+import no.ndla.mapping.License.{getLicenses, CC_BY_SA}
 
 import scala.util.{Failure, Success, Try}
 
@@ -55,7 +55,7 @@ trait MetaInfoConverter {
 
       val license = nodeToConvert.license match {
         case Some(l) => l
-        case None    => if (nodeToConvert.nodeType == nodeTypeLink) "by-sa" else ""
+        case None    => if (nodeToConvert.nodeType == nodeTypeLink) CC_BY_SA.toString else ""
       }
 
       val mainNid = nodeToConvert.getMainNid.orElse(nodeToConvert.getNid).getOrElse("")
@@ -81,20 +81,20 @@ trait MetaInfoConverter {
 
     /**
       * Combines set of cc licenses into a single cc license with components from all.
-      * For example 'by-sa' and 'by-nc' is combined into 'by-nc-sa'
+      * For example 'CC-BY-SA-4.0' and 'CC-BY-NC-4.0' is combined into 'CC-BY-NC-SA-4.0'
       *
-      * @param licenses Set of cc licenses
+      * @param licenses Set of CC licenses
       * @return Combined license
       */
     private def combineLicenses(licenses: Set[String]): Option[String] = {
       val usedParts = licenses.flatMap(license => license.split('-'))
       val combinedLicense = getLicenses.find(l => {
         usedParts.forall(part => {
-          l.license.contains(part)
+          l.license.toString.contains(part)
         })
       })
 
-      combinedLicense.map(_.license)
+      combinedLicense.map(_.license.toString)
     }
 
     private def getMetaImages(nodeToConvert: NodeToConvert): Seq[ArticleMetaImage] = {

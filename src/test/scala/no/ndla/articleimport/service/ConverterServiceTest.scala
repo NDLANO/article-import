@@ -21,6 +21,7 @@ import no.ndla.articleimport.service.converters.TableConverter
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.ResourceType
+import no.ndla.mapping.License.{CC_BY, CC_BY_SA}
 import org.mockito.Mockito._
 import org.mockito.Matchers._
 import org.mockito.Matchers
@@ -43,7 +44,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
 
   val sampleNode = NodeToConvert(List(contentTitle),
                                  Seq(),
-                                 Some("by-sa"),
+                                 Some(CC_BY_SA.toString),
                                  Seq(author),
                                  List(tag),
                                  "fagstoff",
@@ -55,7 +56,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
 
   val sampleMetaConvertedNode = NodeWithConvertedMeta(List(contentTitle),
                                                       Seq(),
-                                                      "by-sa",
+                                                      CC_BY_SA.toString,
                                                       Seq(author),
                                                       List(tag),
                                                       "fagstoff",
@@ -351,10 +352,10 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
   }
 
   test("toApiLicense converts a short license string to a license object with description and url") {
-    service.toApiLicense("by") should equal(
-      api.License("by",
-                  Some("Creative Commons Attribution 2.0 Generic"),
-                  Some("https://creativecommons.org/licenses/by/2.0/")))
+    service.toApiLicense(CC_BY.toString) should equal(
+      api.License("CC-BY-4.0",
+                  Some("Creative Commons Attribution 4.0 International"),
+                  Some("https://creativecommons.org/licenses/by/4.0/")))
   }
 
   test("VisualElement should be converted") {

@@ -270,7 +270,7 @@ trait ConverterService {
     def toApiLicense(shortLicense: String): api.License = {
       getLicense(shortLicense) match {
         case Some(l) =>
-          api.License(l.license, Option(l.description), l.url)
+          api.License(l.license.toString, Option(l.description), l.url)
         case None =>
           api.License("unknown", None, None)
       }
