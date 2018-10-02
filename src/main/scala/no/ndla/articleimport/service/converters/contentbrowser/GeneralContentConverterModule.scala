@@ -10,7 +10,7 @@ package no.ndla.articleimport.service.converters.contentbrowser
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.DraftApiClient
 import no.ndla.articleimport.model.api.{Article, Concept, ImportException}
-import no.ndla.articleimport.model.domain.{ImportStatus, Language, RequiredLibrary}
+import no.ndla.articleimport.model.domain.{ImportStatus, Language, NodeToConvert, RequiredLibrary}
 import no.ndla.articleimport.service.converters.HtmlTagGenerator
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
 import no.ndla.articleimport.ArticleImportProperties.supportedTextTypes
@@ -30,17 +30,8 @@ trait GeneralContentConverterModule {
 
       contents.reverse.find(c => c.language == contentBrowser.language | c.language == Language.NoLanguage) match {
         case Some(content) =>
-          insertContent(content.content, contentBrowser, importStatus) map {
-            case (finalContent, status) =>
-              val licenseToInsert = contentNodeData.map(_.license).getOrElse(None)
-              val authorsToInsert = contentNodeData.map(_.authors).getOrElse(List.empty).toList
-              val combineLicenses =
-                contentNodeData.map(n => supportedTextTypes.contains(n.nodeType)).getOrElse(false)
-
-              val updatedStatus =
-                if (combineLicenses) status.addInsertedAuthors(authorsToInsert).addInsertedLicense(licenseToInsert)
-                else status
-              (finalContent, Seq.empty, updatedStatus)
+          insertContent(content.content, contentNodeData, contentBrowser, importStatus).map {
+            case (finalContent, status) => (finalContent, Seq.empty, status)
           }
         case None =>
           Failure(
@@ -49,16 +40,26 @@ trait GeneralContentConverterModule {
       }
     }
 
+    private def mergeLicenseAndAuthors(contentNodeData: Try[NodeToConvert], importStatus: ImportStatus) = {
+      val licenseToInsert = contentNodeData.map(_.license).getOrElse(None)
+      val authorsToInsert = contentNodeData.map(_.authors).getOrElse(List.empty).toList
+      val combineLicenses = contentNodeData.map(n => supportedTextTypes.contains(n.nodeType)).getOrElse(false)
+      if (combineLicenses) importStatus.addInsertedAuthors(authorsToInsert).addInsertedLicense(licenseToInsert)
+      else importStatus
+    }
+
     def insertContent(content: String,
+                      contentNodeData: Try[NodeToConvert],
                       contentBrowser: ContentBrowser,
                       importStatus: ImportStatus): Try[(String, ImportStatus)] = {
       val LightboxPattern = "(lightbox_.*)".r
       val insertionMethod = contentBrowser.get("insertion")
 
       insertionMethod match {
-        case "inline" => Success(content, importStatus)
+        case "inline" => Success(content, mergeLicenseAndAuthors(contentNodeData, importStatus))
         case "collapsed_body" =>
-          Success(HtmlTagGenerator.buildDetailsSummaryContent(contentBrowser.get("link_text"), content), importStatus)
+          Success(HtmlTagGenerator.buildDetailsSummaryContent(contentBrowser.get("link_text"), content),
+                  mergeLicenseAndAuthors(contentNodeData, importStatus))
         case "link" =>
           insertLink(contentBrowser, importStatus, openInNewWindow = false)
         case LightboxPattern(_) =>
@@ -68,7 +69,7 @@ trait GeneralContentConverterModule {
             s"""Unhandled insertion method '$insertionMethod' on '${contentBrowser
               .get("link_text")}'. Defaulting to link."""
           logger.warn(warnMessage)
-          insertLink(contentBrowser, importStatus, openInNewWindow = false) map {
+          insertLink(contentBrowser, importStatus, openInNewWindow = false).map {
             case (insertString, is) =>
               (insertString, is.addMessage(warnMessage))
           }
