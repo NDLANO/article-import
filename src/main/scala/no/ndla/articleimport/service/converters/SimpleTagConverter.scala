@@ -151,17 +151,5 @@ trait SimpleTagConverter {
       el.attr(attrKey, attrVal)
     }
 
-    def parseInlineCss(str: String): Map[String, String] = {
-      str
-        .split(";")
-        .flatMap(s => {
-          s.split(":").toList match {
-            case key :: value => Some(key.trim -> value.mkString(":").trim)
-            case _            => None
-          }
-        })
-        .toMap
-    }
-
   }
 }
