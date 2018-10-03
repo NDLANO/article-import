@@ -9,14 +9,13 @@ package no.ndla.articleimport.service.converters
 
 import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
 import no.ndla.articleimport.integration.{ConverterModule, LanguageContent}
-import no.ndla.articleimport.model.api.{ImportException, ImportExceptions}
+import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.ImportStatus
-import no.ndla.validation.TagAttributes.DataSize
-import no.ndla.validation.TextValidator
+import no.ndla.validation.{TagAttributes, TextValidator}
 import org.jsoup.nodes.Element
 
 import scala.collection.JavaConverters._
-import scala.util.{Failure, Success, Try}
+import scala.util.{Success, Try}
 
 trait SimpleTagConverter {
   this: HtmlTagGenerator =>
@@ -95,23 +94,16 @@ trait SimpleTagConverter {
     }
 
     private def convertSpans(element: Element): Unit = {
-      setFontSizeForChineseText(element)
+      addLangTagToChineseText(element)
       setLanguageParameterIfPresent(element)
     }
 
-    private def setFontSizeForChineseText(element: Element): Unit = {
+    private def addLangTagToChineseText(element: Element): Unit = {
       element
         .select("span[style~=font-size]")
         .asScala
         .filter(tag => containsChineseText(tag.text))
-        .foreach(el => {
-          val cssFontSize =
-            parseInlineCss(el.attr("style")).getOrElse("font-size", "large")
-          val fontSize =
-            if (cssFontSize.contains("large")) "large" else cssFontSize
-
-          replaceAttribute(el, "style", DataSize.toString -> fontSize)
-        })
+        .foreach(el => replaceAttribute(el, "style", TagAttributes.Lang.toString -> "zh"))
     }
 
     private def setLanguageParameterIfPresent(element: Element) {
@@ -157,18 +149,6 @@ trait SimpleTagConverter {
       val (attrKey, attrVal) = attr
       el.removeAttr(originalAttrKey)
       el.attr(attrKey, attrVal)
-    }
-
-    def parseInlineCss(str: String): Map[String, String] = {
-      str
-        .split(";")
-        .flatMap(s => {
-          s.split(":").toList match {
-            case key :: value => Some(key.trim -> value.mkString(":").trim)
-            case _            => None
-          }
-        })
-        .toMap
     }
 
   }
