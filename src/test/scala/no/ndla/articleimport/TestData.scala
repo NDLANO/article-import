@@ -14,6 +14,7 @@ import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.model.api.{ArticleStatus, NewArticleMetaImage}
 import no.ndla.articleimport.service.converters.contentbrowser.ContentBrowser
+import no.ndla.mapping.License.{CC_BY_SA, PublicDomain}
 import org.joda.time.DateTime
 
 object TestData {
@@ -115,7 +116,7 @@ object TestData {
       NewArticleMetaImage("22", "alt")
     ),
     None,
-    api.Copyright(Some(api.License("by-sa", None, None)),
+    api.Copyright(Some(api.License(CC_BY_SA.toString, None, None)),
                   Some("fromSomeWhere"),
                   Seq(api.Author("string", "du")),
                   Seq.empty,
@@ -178,7 +179,7 @@ object TestData {
     Some(1),
     Seq(ConceptTitle("Tittel for begrep", "nb")),
     Seq(ConceptContent("Innhold for begrep", "nb")),
-    Some(Copyright("publicdomain", Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None)),
+    Some(Copyright(PublicDomain.toString, Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None)),
     DateTime.now().minusDays(4).toDate,
     DateTime.now().minusDays(2).toDate
   )
@@ -209,7 +210,7 @@ object TestData {
     api.ArticleTitle("tittel", "nb"),
     Some(api.ArticleContent("innhold", "nb")),
     Some(
-      api.Copyright(Some(api.License("by-sa", None, None)),
+      api.Copyright(Some(api.License(CC_BY_SA.toString, None, None)),
                     Some("fromSomeWhere"),
                     Seq(api.Author("string", "du")),
                     Seq.empty,
@@ -237,7 +238,7 @@ object TestData {
 
   val sampleNodeToConvert = NodeToConvert(List(contentTitle),
                                           Seq(),
-                                          Some("by-sa"),
+                                          Some(CC_BY_SA.toString),
                                           Seq(author),
                                           List(tag),
                                           "fagstoff",

@@ -94,7 +94,26 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle],
         if (nType == "emneartikkel") ArticleType.TopicArticle
         else ArticleType.Standard)
 
-    val lic = emptySomeToNone(license)
+    val licenseMapping = Map(
+      "by" -> "CC-BY-4.0",
+      "by-sa" -> "CC-BY-SA-4.0",
+      "by-nc" -> "CC-BY-NC-4.0",
+      "by-nd" -> "CC-BY-ND-4.0",
+      "by-nc-sa" -> "CC-BY-NC-SA-4.0",
+      "by-nc-nd" -> "CC-BY-NC-ND-4.0",
+      "by-3.0" -> "CC-BY-4.0",
+      "by-sa-3.0" -> "CC-BY-SA-4.0",
+      "by-nc-3.0" -> "CC-BY-NC-4.0",
+      "by-nd-3.0" -> "CC-BY-ND-4.0",
+      "by-nc-sa-3.0" -> "CC-BY-NC-SA-4.0",
+      "by-nc-nd-3.0" -> "CC-BY-NC-ND-4.0",
+      "copyrighted" -> "COPYRIGHTED",
+      "cc0" -> "CC0-1.0",
+      "pd" -> "PD",
+      "nolaw" -> "CC0-1.0",
+      "noc" -> "PD"
+    )
+    val lic = emptySomeToNone(license).flatMap(licenseMapping.get)
 
     NodeToConvert(
       titles.map(x => x.asContentTitle),

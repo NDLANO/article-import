@@ -13,6 +13,7 @@ import no.ndla.articleimport.ArticleImportProperties.nodeTypeLink
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.TestData._
 import no.ndla.articleimport.integration.ImageAltText
+import no.ndla.mapping.License.{CC_BY_SA, CC_BY, CC_BY_NC_SA, CC_BY_ND, CC_BY_NC, CC_BY_NC_ND, Copyrighted}
 import org.mockito.Mockito._
 
 import scala.util.{Failure, Success}
@@ -32,70 +33,74 @@ class MetaInfoConverterTest extends UnitSuite with TestEnvironment {
       Seq(ArticleMetaImage(imageId, "alt text", "nb")))
   }
 
-  test("That license should be by-sa by default if lenkenode") {
+  test("That license should be CC-BY-SA-4.0 by default if lenkenode") {
     val node = sampleNodeToConvert.copy(license = None, nodeType = nodeTypeLink)
 
-    MetaInfoConverter.convert(node, ImportStatus.empty).get._1.license should be("by-sa")
+    MetaInfoConverter.convert(node, ImportStatus.empty).get._1.license should be(CC_BY_SA.toString)
   }
 
   test("That import should fail if inserted licenses cannot be merged with original license") {
     val insertedAuthors = List(author)
     val status = ImportStatus.empty
       .addInsertedAuthors(insertedAuthors)
-      .addInsertedLicense(Some("by-sa"))
-      .addInsertedLicense(Some("copyrighted"))
+      .addInsertedLicense(Some(CC_BY_SA.toString))
+      .addInsertedLicense(Some(Copyrighted.toString))
 
     val result = MetaInfoConverter.convert(sampleNodeToConvert, status)
 
     result.isFailure should be(true)
     val Failure(ex: ImportException) = result
 
-    ex.message should be("Could not combine license by-sa with inserted licenses: by-sa,copyrighted.")
+    ex.message should be("Could not combine license CC-BY-SA-4.0 with inserted licenses: CC-BY-SA-4.0,COPYRIGHTED.")
   }
 
   test("That import should combine licenses") {
-    val status1 = ImportStatus.empty.addInsertedLicense(Some("by-sa")).addInsertedLicense(Some("by-nc-sa"))
+    val status1 =
+      ImportStatus.empty.addInsertedLicense(Some(CC_BY.toString)).addInsertedLicense(Some(CC_BY_NC_SA.toString))
     val Success((converted1, _)) = MetaInfoConverter.convert(sampleNodeToConvert, status1)
-    converted1.license should be("by-nc-sa")
+    converted1.license should be(CC_BY_NC_SA.toString)
 
-    val status2 = ImportStatus.empty.addInsertedLicense(Some("by-nc-sa")).addInsertedLicense(Some("by-nc-sa"))
+    val status2 =
+      ImportStatus.empty.addInsertedLicense(Some(CC_BY_NC_SA.toString)).addInsertedLicense(Some(CC_BY_NC_SA.toString))
     val Success((converted2, _)) = MetaInfoConverter.convert(sampleNodeToConvert, status2)
-    converted2.license should be("by-nc-sa")
+    converted2.license should be(CC_BY_NC_SA.toString)
 
     val status3 = ImportStatus.empty
     val Success((converted3, _)) = MetaInfoConverter.convert(sampleNodeToConvert, status3)
-    converted3.license should be("by-sa")
+    converted3.license should be(CC_BY_SA.toString)
 
     val status4 = ImportStatus.empty
     val Success((converted4, _)) =
-      MetaInfoConverter.convert(sampleNodeToConvert.copy(license = Some("copyrighted")), status4)
-    converted4.license should be("copyrighted")
+      MetaInfoConverter.convert(sampleNodeToConvert.copy(license = Some(Copyrighted.toString)), status4)
+    converted4.license should be(Copyrighted.toString)
 
     val status5 = ImportStatus.empty
-      .addInsertedLicense(Some("by"))
-      .addInsertedLicense(Some("by-nd"))
-      .addInsertedLicense(Some("by-nc"))
-    val Success((converted5, _)) = MetaInfoConverter.convert(sampleNodeToConvert.copy(license = Some("by")), status5)
-    converted5.license should be("by-nc-nd")
+      .addInsertedLicense(Some(CC_BY.toString))
+      .addInsertedLicense(Some(CC_BY_ND.toString))
+      .addInsertedLicense(Some(CC_BY_NC.toString))
+    val Success((converted5, _)) =
+      MetaInfoConverter.convert(sampleNodeToConvert.copy(license = Some(CC_BY.toString)), status5)
+    converted5.license should be(CC_BY_NC_ND.toString)
 
     val status6 = ImportStatus.empty
-      .addInsertedLicense(Some("by-sa"))
-      .addInsertedLicense(Some("by-nd"))
-      .addInsertedLicense(Some("by-nc"))
+      .addInsertedLicense(Some(CC_BY_SA.toString))
+      .addInsertedLicense(Some(CC_BY_ND.toString))
+      .addInsertedLicense(Some(CC_BY_NC.toString))
     val Failure(ex6: ImportException) = MetaInfoConverter.convert(sampleNodeToConvert, status6)
-    ex6.message should be(s"Could not combine license by-sa with inserted licenses: by-sa,by-nd,by-nc.")
+    ex6.message should be(
+      s"Could not combine license CC-BY-SA-4.0 with inserted licenses: CC-BY-SA-4.0,CC-BY-ND-4.0,CC-BY-NC-4.0.")
   }
 
   test("That import should combine license and authors from inserted nodes") {
     val insertedAuthors = List(Author("forfatter", "Jonas"), Author("fotograf", "Christian"))
     val status = ImportStatus.empty
       .addInsertedAuthors(insertedAuthors)
-      .addInsertedLicense(Some("by-sa"))
-      .addInsertedLicense(Some("by-nc-sa"))
+      .addInsertedLicense(Some(CC_BY_SA.toString))
+      .addInsertedLicense(Some(CC_BY_NC_SA.toString))
 
     val Success((converted, _)) = MetaInfoConverter.convert(sampleNodeToConvert, status)
 
-    converted.license should be("by-nc-sa")
+    converted.license should be(CC_BY_NC_SA.toString)
     converted.authors.map(_.name).sorted should be(Seq("Christian", "Henrik", "Jonas"))
   }
 
