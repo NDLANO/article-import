@@ -316,4 +316,28 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     newUrl.query.params.sortBy(_._1) should be(
       Vector("start" -> Some("5"), "end" -> Some("167"), "lel" -> Some("lel")).sortBy(_._1))
   }
+
+  test("youtube and youtu.be executes the same function and yields correct results") {
+    val lenkeConverterModule = spy(LenkeConverterModule)
+    val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
+    val embedCode =
+      "<iframe width=\"640\" height=\"360\" src=\"https://www.youtube.com/embed/eW5XdFqeTW4?rel=0&showinfo=0&start=5&end=167\" frameborder=\"0\" allowfullscreen></iframe>"
+
+    val url = "https://youtu.be/eW5XdFqeTW4?start=123&lel=lel"
+    val url2 = "https://youtube.com/watch?v=eW5XdFqeTW4&start=123&lel=lel"
+
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(url), Some(embedCode)))))
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(url2), Some(embedCode)))))
+
+    val Success((result, _, _)) = lenkeConverterModule.convert(content, ImportStatus.empty)
+    result should be(
+      s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="https://youtu.be/eW5XdFqeTW4?lel=lel&start=5&end=167" />""")
+    verify(lenkeConverterModule, times(1)).buildYoutubeEmbedTag(embedCode, url)
+
+    val Success((result2, _, _)) = lenkeConverterModule.convert(content, ImportStatus.empty)
+    result2 should be(
+      s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="https://youtube.com/watch?v=eW5XdFqeTW4&lel=lel&start=5&end=167" />""")
+    verify(lenkeConverterModule, times(1)).buildYoutubeEmbedTag(embedCode, url2)
+  }
 }
