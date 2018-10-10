@@ -11,6 +11,7 @@ import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.MigrationEmbedMeta
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.ImportStatus
+import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
 import no.ndla.validation.ResourceType
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import org.mockito.Mockito._
@@ -302,5 +303,17 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
         "Embed with 'http://livestream.com/video/123' might not be rendered properly, as 'https://new.livestream.com/video/123' returned an error.",
         Some(errorResponse)
       )))
+  }
+
+  test("Youtube urls should keep original queryParams, but get time params from embedCodeUrl") {
+    val embedCode =
+      "<iframe width=\"640\" height=\"360\" src=\"https://www.youtube.com/embed/eW5XdFqeTW4?rel=0&showinfo=0&start=5&end=167\" frameborder=\"0\" allowfullscreen></iframe>"
+    val url = "https://youtu.be/eW5XdFqeTW4?start=123&lel=lel"
+
+    val newEmbed = LenkeConverterModule.buildYoutubeEmbedTag(embedCode, url)
+    val newUrl = stringToJsoupDocument(newEmbed).select("embed").first().attr("data-url")
+
+    newUrl.query.params.sortBy(_._1) should be(
+      Vector("start" -> Some("5"), "end" -> Some("167"), "lel" -> Some("lel")).sortBy(_._1))
   }
 }

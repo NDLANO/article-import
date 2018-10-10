@@ -7,8 +7,8 @@
 
 package no.ndla.articleimport.service.converters.contentbrowser
 
-import com.netaporter.uri.Uri.parse
-import com.netaporter.uri.dsl._
+import io.lemonlabs.uri.dsl._
+import io.lemonlabs.uri.Url
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
@@ -56,11 +56,12 @@ trait LenkeConverterModule {
           }
 
           val NDLAPattern = "ndla.no".asDomainRegex
-          val warnings = Try(parse(url)) match {
+          val warnings = Try(Url.parse(url)) match {
             case Success(uri) =>
-              uri.host.getOrElse("") match {
+              val host = uri.hostOption.map(_.toString())
+              host.getOrElse("") match {
                 case NDLAPattern(_) => Seq(s"Link to NDLA old resource: '$url'")
-                case _              => Seq()
+                case _              => Seq.empty
               }
             case Failure(_) => Seq(s"Link in article is invalid: '$url'")
           }
@@ -102,7 +103,7 @@ trait LenkeConverterModule {
     ).map(_.asDomainRegex)
 
     private def urlIsWhitelisted(url: String): Boolean = {
-      val host = url.host.getOrElse("")
+      val host = Url.parse(url).hostOption.map(_.toString).getOrElse("")
       embedHostWhitelist.exists(_.pattern.matcher(host).matches())
     }
 
@@ -129,20 +130,22 @@ trait LenkeConverterModule {
         val livestreamUrlPattern = "livestream.com".asDomainRegex
         val channel9MsdnUrlPattern = "channel9.msdn.com".asDomainRegex
         val tomknudsenUrlPattern = "tomknudsen.no".asDomainRegex
+        val youtubecomUrlPattern = "youtube.com".asDomainRegex
+        val youtubeUrlPattern = "youtu.be".asDomainRegex
 
-        url.host.getOrElse("") match {
+        url.hostOption.map(_.toString).getOrElse("") match {
           case NRKUrlPattern(_) =>
-            val (embed, requiredLib) = getNrkEmbedTag(embedCode, url)
-            Success((embed, requiredLib, updatedStatus))
-          case vimeoProUrlPattern(_) => Success(getVimeoProEmbedTag(embedCode), None, updatedStatus)
-          case kunnskapsFilmUrlPattern(_) =>
-            Success(getKunnskapsFilmEmbedTag(embedCode), None, updatedStatus)
+            val (embed, requiredLib) = getNrkEmbedTag(embedCode, url); Success((embed, requiredLib, updatedStatus))
+          case vimeoProUrlPattern(_)      => Success(getVimeoProEmbedTag(embedCode), None, updatedStatus)
+          case kunnskapsFilmUrlPattern(_) => Success(getKunnskapsFilmEmbedTag(embedCode), None, updatedStatus)
           case PreziUrlPattern(_) | NdlaFilmIundervisningUrlPattern(_) | KahootUrlPattern(_) |
               khanAcademyUrlPattern(_) | tv2SkoleUrlPattern(_) | scribdUrlPattern(_) | vgNoUrlPattern(_) |
               livestreamUrlPattern(_) | channel9MsdnUrlPattern(_) | tomknudsenUrlPattern(_) =>
             buildRegularEmbedTag(embedCode, nid, url, updatedStatus).map {
               case (embedTag, status) => (embedTag, None, status)
             }
+          case youtubecomUrlPattern(_) | youtubeUrlPattern(_) =>
+            Success(buildYoutubeEmbedTag(embedCode, url), None, updatedStatus)
           case _ => Success((HtmlTagGenerator.buildExternalInlineEmbedContent(url), None, updatedStatus))
         }
       } else {
@@ -150,20 +153,44 @@ trait LenkeConverterModule {
       }
     }
 
+    /**
+      * Builds embedTag for youtube embeds.
+      *
+      * Special for youtube is that some query parameters are transferred from the embedcode source to the url.
+      * This is because start- and stop-time queryparameters is just added for the embedcode source and not the url.
+      *
+      * @param embedCode iframe that embedded youtube in old system
+      * @param url Url to be used in the resulting embed
+      * @return Embed-tag html
+      */
+    private[service] def buildYoutubeEmbedTag(embedCode: String, url: String): String = {
+      val paramTypesToTransfer = List("t", "time_continue", "start", "end")
+      val doc = stringToJsoupDocument(embedCode).select("iframe").first()
+      val embedUrl = doc.attr("src")
+      val queryParamsToTransfer = embedUrl.query.filterNames(pn => paramTypesToTransfer.contains(pn))
+
+      val newUrl = queryParamsToTransfer.params.foldLeft(url) { (url, parameter) =>
+        url.replaceParams(parameter._1, parameter._2).toString
+      }
+
+      HtmlTagGenerator.buildExternalInlineEmbedContent(newUrl)
+    }
+
     def getNrkEmbedTag(embedCode: String, url: String): (String, Option[RequiredLibrary]) = {
       val doc = Jsoup.parseBodyFragment(embedCode)
       val (videoId, requiredLibraryUrl) =
         (doc.select("div[data-nrk-id]").attr("data-nrk-id"), doc.select("script").attr("src"))
       val requiredLibrary =
-        RequiredLibrary("text/javascript", "NRK video embed", requiredLibraryUrl.copy(scheme = None))
+        RequiredLibrary("text/javascript", "NRK video embed", requiredLibraryUrl.withScheme("").toString.drop(1)) // TODO: Do we care for the .toString.drop(1) that is required when using new lemonlabs
 
       (HtmlTagGenerator.buildNRKInlineVideoContent(videoId, url), Some(requiredLibrary))
     }
 
-    def buildRegularEmbedTag(embedCode: String,
-                             nid: String,
-                             url: String,
-                             importStatus: ImportStatus): Try[(String, ImportStatus)] = {
+    private def buildRegularEmbedTag(embedCode: String,
+                                     nid: String,
+                                     url: String,
+                                     importStatus: ImportStatus): Try[(String, ImportStatus)] = {
+
       Option(stringToJsoupDocument(embedCode).select("iframe").first()).map(doc => {
         val (src, width, height) =
           (doc.attr("src"), doc.attr("width"), doc.attr("height"))
@@ -198,14 +225,14 @@ trait LenkeConverterModule {
       }
     }
 
-    def getVimeoProEmbedTag(embedCode: String): String = {
+    private def getVimeoProEmbedTag(embedCode: String): String = {
       val doc = Jsoup.parseBodyFragment(embedCode).select("iframe").first()
       val src = doc.attr("src")
 
       HtmlTagGenerator.buildExternalInlineEmbedContent(src)
     }
 
-    def getKunnskapsFilmEmbedTag(embedCode: String): String = {
+    private def getKunnskapsFilmEmbedTag(embedCode: String): String = {
       val doc = Jsoup.parseBodyFragment(embedCode).select("iframe").first()
       val src = doc.attr("src")
 

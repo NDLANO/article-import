@@ -49,7 +49,7 @@ lazy val article_import = (project in file("."))
       "org.scalaj" %% "scalaj-http" % "2.3.0",
       "org.apache.lucene" % "lucene-test-framework" % "6.4.1" % "test",
       "org.jsoup" % "jsoup" % "1.11.2",
-      "com.netaporter" %% "scala-uri" % "0.4.16",
+      "io.lemonlabs" %% "scala-uri" % "1.3.1",
       "org.scalatra" %% "scalatra-scalatest" % Scalatraversion % "test",
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
       "org.mockito" % "mockito-all" % MockitoVersion % "test",
