@@ -181,7 +181,7 @@ trait LenkeConverterModule {
       val (videoId, requiredLibraryUrl) =
         (doc.select("div[data-nrk-id]").attr("data-nrk-id"), doc.select("script").attr("src"))
       val requiredLibrary =
-        RequiredLibrary("text/javascript", "NRK video embed", requiredLibraryUrl.withScheme("").toString.drop(1)) // TODO: Do we care for the .toString.drop(1) that is required when using new lemonlabs
+        RequiredLibrary("text/javascript", "NRK video embed", requiredLibraryUrl.withScheme("").toString.drop(1)) // drop(1) so we get //example.com rather than ://example.com
 
       (HtmlTagGenerator.buildNRKInlineVideoContent(videoId, url), Some(requiredLibrary))
     }
