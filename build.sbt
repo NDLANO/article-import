@@ -56,7 +56,7 @@ lazy val article_import = (project in file("."))
       "org.apache.commons" % "commons-text" % "1.2",
       "org.typelevel" %% "cats-core" % "1.0.1",
       "log4j" % "log4j" % "1.2.16",
-      "net.bull.javamelody" % "javamelody-core" % "1.73.1",
+      "net.bull.javamelody" % "javamelody-core" % "1.74.0",
       "org.jrobin" % "jrobin" % "1.5.9",
       "com.amazonaws" % "aws-java-sdk-cloudwatch" % AwsSdkversion
     )
