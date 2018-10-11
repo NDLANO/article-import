@@ -11,11 +11,12 @@ import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.MigrationEmbedMeta
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.ImportStatus
+import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
 import no.ndla.validation.ResourceType
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import org.mockito.Mockito._
-import com.netaporter.uri.dsl._
 import no.ndla.articleimport.caching.Memoize
+import io.lemonlabs.uri.dsl._
 import no.ndla.network.model.HttpRequestException
 import org.mockito.Matchers._
 import org.mockito.Mockito
@@ -302,5 +303,58 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
         "Embed with 'http://livestream.com/video/123' might not be rendered properly, as 'https://new.livestream.com/video/123' returned an error.",
         Some(errorResponse)
       )))
+  }
+
+  test("Youtube urls should keep original queryParams, but get time params from embedCodeUrl") {
+    val embedCode =
+      "<iframe width=\"640\" height=\"360\" src=\"https://www.youtube.com/embed/eW5XdFqeTW4?rel=0&showinfo=0&start=5&end=167\" frameborder=\"0\" allowfullscreen></iframe>"
+    val url = "https://youtu.be/eW5XdFqeTW4?start=123&lel=lel"
+
+    val newEmbed = LenkeConverterModule.buildYoutubeEmbedTag(embedCode, url)
+    val newUrl = stringToJsoupDocument(newEmbed).select("embed").first().attr("data-url")
+
+    newUrl.query.params.sortBy(_._1) should be(
+      Vector("start" -> Some("5"), "end" -> Some("167"), "lel" -> Some("lel"), "rel" -> Some("0")).sortBy(_._1))
+  }
+
+  test("youtube and youtu.be executes the same function and yields correct results") {
+    val lenkeConverterModule = spy(LenkeConverterModule)
+    val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
+    val embedCode =
+      "<iframe width=\"640\" height=\"360\" src=\"https://www.youtube.com/embed/eW5XdFqeTW4?showinfo=0&start=5&end=167\" frameborder=\"0\" allowfullscreen></iframe>"
+
+    val url = "https://youtu.be/eW5XdFqeTW4?start=123&lel=lel"
+    val url2 = "https://youtube.com/watch?v=eW5XdFqeTW4&start=123&lel=lel"
+
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(url), Some(embedCode)))))
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(url2), Some(embedCode)))))
+
+    val Success((result, _, _)) = lenkeConverterModule.convert(content, ImportStatus.empty)
+    result should be(
+      s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="https://youtu.be/eW5XdFqeTW4?lel=lel&start=5&end=167" />""")
+    verify(lenkeConverterModule, times(1)).buildYoutubeEmbedTag(embedCode, url)
+
+    val Success((result2, _, _)) = lenkeConverterModule.convert(content, ImportStatus.empty)
+    result2 should be(
+      s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="https://youtube.com/watch?v=eW5XdFqeTW4&lel=lel&start=5&end=167" />""")
+    verify(lenkeConverterModule, times(1)).buildYoutubeEmbedTag(embedCode, url2)
+  }
+
+  test("youtube and youtu.be urls should keep rel=0 query parameter") {
+    val lenkeConverterModule = spy(LenkeConverterModule)
+    val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
+    val embedCode =
+      "<iframe width=\"640\" height=\"360\" src=\"https://www.youtube.com/embed/eW5XdFqeTW4?rel=0&showinfo=0&start=5&rel=0&denna=nopls&end=167\" frameborder=\"0\" allowfullscreen></iframe>"
+
+    val url = "https://youtu.be/eW5XdFqeTW4?start=123"
+
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(url), Some(embedCode)))))
+
+    val Success((result, _, _)) = lenkeConverterModule.convert(content, ImportStatus.empty)
+    result should be(
+      s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="https://youtu.be/eW5XdFqeTW4?start=5&rel=0&end=167" />""")
+    verify(lenkeConverterModule, times(1)).buildYoutubeEmbedTag(embedCode, url)
   }
 }

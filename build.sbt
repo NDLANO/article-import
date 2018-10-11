@@ -1,6 +1,6 @@
 import java.util.Properties
 
-val Scalaversion = "2.12.6"
+val Scalaversion = "2.12.7"
 val Scalatraversion = "2.5.1"
 val ScalaLoggingVersion = "3.5.0"
 val Log4JVersion = "2.9.1"
@@ -31,7 +31,7 @@ lazy val article_import = (project in file("."))
     libraryDependencies ++= Seq(
       "ndla" %% "network" % "0.29",
       "ndla" %% "mapping" % "0.10",
-      "ndla" %% "validation" % "0.24",
+      "ndla" %% "validation" % "0.25",
       "joda-time" % "joda-time" % "2.8.2",
       "org.scalatra" %% "scalatra" % Scalatraversion,
       "org.scalatra" %% "scalatra-json" % Scalatraversion,
@@ -49,14 +49,14 @@ lazy val article_import = (project in file("."))
       "org.scalaj" %% "scalaj-http" % "2.3.0",
       "org.apache.lucene" % "lucene-test-framework" % "6.4.1" % "test",
       "org.jsoup" % "jsoup" % "1.11.2",
-      "com.netaporter" %% "scala-uri" % "0.4.16",
+      "io.lemonlabs" %% "scala-uri" % "1.3.1",
       "org.scalatra" %% "scalatra-scalatest" % Scalatraversion % "test",
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
       "org.mockito" % "mockito-all" % MockitoVersion % "test",
       "org.apache.commons" % "commons-text" % "1.2",
       "org.typelevel" %% "cats-core" % "1.0.1",
       "log4j" % "log4j" % "1.2.16",
-      "net.bull.javamelody" % "javamelody-core" % "1.73.1",
+      "net.bull.javamelody" % "javamelody-core" % "1.74.0",
       "org.jrobin" % "jrobin" % "1.5.9",
       "com.amazonaws" % "aws-java-sdk-cloudwatch" % AwsSdkversion
     )
