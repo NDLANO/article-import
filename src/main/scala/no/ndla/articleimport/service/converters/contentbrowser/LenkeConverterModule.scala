@@ -164,7 +164,7 @@ trait LenkeConverterModule {
       * @return Embed-tag html
       */
     private[service] def buildYoutubeEmbedTag(embedCode: String, url: String): String = {
-      val paramTypesToTransfer = List("t", "time_continue", "start", "end")
+      val paramTypesToTransfer = List("t", "time_continue", "start", "end", "rel")
       val doc = stringToJsoupDocument(embedCode).select("iframe").first()
       val embedUrl = doc.attr("src")
       val queryParamsToTransfer = embedUrl.query.filterNames(pn => paramTypesToTransfer.contains(pn))
