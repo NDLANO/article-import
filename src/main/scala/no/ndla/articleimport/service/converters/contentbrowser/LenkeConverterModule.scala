@@ -167,7 +167,7 @@ trait LenkeConverterModule {
       val paramTypesToTransfer = List("t", "time_continue", "start", "end", "rel")
       val doc = stringToJsoupDocument(embedCode).select("iframe").first()
       val embedUrl = doc.attr("src")
-      val queryParamsToTransfer = embedUrl.query.filterNames(pn => paramTypesToTransfer.contains(pn))
+      val queryParamsToTransfer = embedUrl.query.filterNames(paramTypesToTransfer.contains)
 
       val newUrl = queryParamsToTransfer.params.foldLeft(url) { (url, parameter) =>
         url.replaceParams(parameter._1, parameter._2).toString
