@@ -17,7 +17,7 @@ import no.ndla.network.NdlaClient
 
 import scala.util.Try
 import scalaj.http.Http
-import com.netaporter.uri.dsl._
+import io.lemonlabs.uri.dsl._
 import no.ndla.articleimport.caching.Memoize
 
 trait MigrationApiClient {

@@ -15,8 +15,8 @@ import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
 import no.ndla.validation.ResourceType
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import org.mockito.Mockito._
-import com.netaporter.uri.dsl._
 import no.ndla.articleimport.caching.Memoize
+import io.lemonlabs.uri.dsl._
 import no.ndla.network.model.HttpRequestException
 import org.mockito.Matchers._
 import org.mockito.Mockito

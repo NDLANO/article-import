@@ -11,7 +11,7 @@ import java.net.URL
 import java.util.Date
 
 import scala.language.implicitConversions
-import com.netaporter.uri.dsl._
+import io.lemonlabs.uri.dsl._
 import no.ndla.articleimport.integration.{LanguageContent, MigrationEditorialKeywords}
 
 case class NodeGeneralContent(nid: String, tnid: String, title: String, content: String, language: String) {
@@ -62,7 +62,7 @@ case class ContentFilMeta(nid: String,
                           fileSize: String)
 
 object ContentFilMeta {
-  implicit def stringToUrl(s: String): URL = new URL(s.uri)
+  implicit def stringToUrl(s: String): URL = new URL(s.url)
 }
 
 case class BiblioMeta(biblio: Biblio, authors: Seq[BiblioAuthor])
