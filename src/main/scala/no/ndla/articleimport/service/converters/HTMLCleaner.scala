@@ -53,6 +53,8 @@ trait HTMLCleaner {
       unwrapNestedPs(element)
 
       convertH3sToH2s(element)
+
+      convertAsideH2sToH1(element)
       val finalCleanedDocument = allContentMustBeWrappedInSectionBlocks(element)
 
       // Jsoup doesn't support removing elements while iterating the dom-tree.
@@ -63,6 +65,10 @@ trait HTMLCleaner {
                       metaDescription = metaDescription,
                       ingress = ingress),
          importStatus.addMessages(illegalTags ++ illegalAttributes)))
+    }
+
+    private def convertAsideH2sToH1(element: Element): Unit = {
+      element.select("aside h2").asScala.foreach(_.tagName("h1"))
     }
 
     private def convertH3sToH2s(element: Element) {
