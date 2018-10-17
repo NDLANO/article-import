@@ -920,8 +920,8 @@ class HTMLCleanerTest extends UnitSuite with TestEnvironment {
   }
 
   test("H5's should be converted to p->strong") {
-    val initialContent = TestData.sampleContent.copy(content =
-      """<section><h5>Hei</h5><p>More stuff down here</p></section>""")
+    val initialContent =
+      TestData.sampleContent.copy(content = """<section><h5>Hei</h5><p>More stuff down here</p></section>""")
     val expectedResult =
       "<section><p><strong>Hei</strong></p><p>More stuff down here</p></section>"
     val Success((result, _)) =
