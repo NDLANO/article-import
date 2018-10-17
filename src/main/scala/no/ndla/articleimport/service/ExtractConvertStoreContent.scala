@@ -54,13 +54,21 @@ trait ExtractConvertStoreContent {
         case (Some(newImportId), Some(oldImportId)) if newImportId == oldImportId =>
           val msg = s"Skipping node '$externalId' since importId is the same as existing."
           logger.info(msg)
-          (false, importStatus.addMessage(msg))
+          val stautsWithAritcleId =
+            draftApiClient.getArticleIdFromExternalId(externalId).map(importStatus.setArticleId).getOrElse(importStatus)
+          (false, stautsWithAritcleId.addMessage(msg))
         case _ =>
           val mainNid = getMainNodeId(externalId)
           if (importStatus.visitedNodes.contains(mainNid.getOrElse(externalId))) {
             logger.info(s"Skipping node '$externalId' since main nid '${mainNid.getOrElse(0)}' is already imported.")
-            (false, importStatus)
-          } else { (true, importStatus) }
+            val statusWithArticleId = draftApiClient
+              .getArticleIdFromExternalId(externalId)
+              .map(importStatus.setArticleId)
+              .getOrElse(importStatus)
+            (false, statusWithArticleId)
+          } else {
+            (true, importStatus)
+          }
       }
     }
 
