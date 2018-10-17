@@ -437,9 +437,12 @@ trait HTMLCleaner {
 
     private def unwrapNestedDivs(child: Element) {
       if (child.tagName() == "div" && child.siblingElements.size == 0) {
-        val firstChild = child.children.first
+        val firstChild = Option(child.children.first)
         child.unwrap()
-        unwrapNestedDivs(firstChild)
+        firstChild match {
+          case Some(c) => unwrapNestedDivs(c)
+          case None    =>
+        }
       }
     }
 
