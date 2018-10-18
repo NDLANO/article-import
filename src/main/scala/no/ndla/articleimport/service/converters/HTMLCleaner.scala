@@ -25,8 +25,10 @@ trait HTMLCleaner {
   val htmlCleaner: HTMLCleaner
 
   class HTMLCleaner extends ConverterModule with LazyLogging {
+
     override def convert(content: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
       val element = stringToJsoupDocument(content.content)
+      convertH5sToPStrong(element)
       val illegalTags = unwrapIllegalTags(element)
         .map(x => s"Illegal tag(s) removed: $x")
         .distinct
@@ -53,7 +55,6 @@ trait HTMLCleaner {
       unwrapNestedPs(element)
 
       convertH3sToH2s(element)
-
       convertAsideH2sToH1(element)
       val finalCleanedDocument = allContentMustBeWrappedInSectionBlocks(element)
 
@@ -65,6 +66,10 @@ trait HTMLCleaner {
                       metaDescription = metaDescription,
                       ingress = ingress),
          importStatus.addMessages(illegalTags ++ illegalAttributes)))
+    }
+
+    private def convertH5sToPStrong(element: Element): Unit = {
+      element.select("h5").asScala.foreach(_.tagName("strong").wrap("p"))
     }
 
     private def convertAsideH2sToH1(element: Element): Unit = {
