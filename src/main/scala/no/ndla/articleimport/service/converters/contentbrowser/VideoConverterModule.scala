@@ -24,9 +24,10 @@ trait VideoConverterModule {
     override def convert(content: ContentBrowser,
                          importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val (linkText, nodeId) = (content.get("link_text"), content.get("nid"))
+      val LightboxPattern = "(lightbox_.*)".r
 
       val (embedVideo, updatedStatus) = content.get("insertion") match {
-        case "link" =>
+        case "link" | LightboxPattern(_) =>
           toVideoLink(linkText, nodeId, importStatus) match {
             case Success(link) => link
             case Failure(e)    => return Failure(e)

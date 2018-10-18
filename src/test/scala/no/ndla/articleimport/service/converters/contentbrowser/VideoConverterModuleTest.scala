@@ -61,4 +61,22 @@ class VideoConverterModuleTest extends UnitSuite with TestEnvironment {
     result should equal(expectedResult)
     requiredLibraries.length should equal(0)
   }
+
+  test("The contentbrowser should be converted to link if insertion method is lightbox") {
+    val contentWithInsertionLink = TestData.contentBrowserWithFields(List.empty,
+                                                                     "nid" -> nodeId,
+                                                                     "alt" -> altText,
+                                                                     "link_text" -> caption,
+                                                                     "insertion" -> "lightbox_auto")
+    val expectedResult =
+      s"""<$ResourceHtmlEmbedTag data-content-id="1" data-link-text="$caption" data-resource="${ResourceType.ContentLink}" />"""
+
+    when(extractConvertStoreContent.processNode(nodeId, ImportStatus.empty))
+      .thenReturn(Success(TestData.sampleApiArticle, ImportStatus.empty))
+
+    val Success((result, requiredLibraries, _)) =
+      VideoConverterModule.convert(contentWithInsertionLink, ImportStatus.empty)
+    result should equal(expectedResult)
+    requiredLibraries.length should equal(0)
+  }
 }
