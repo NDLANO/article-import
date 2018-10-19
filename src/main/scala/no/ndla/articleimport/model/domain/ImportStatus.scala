@@ -34,6 +34,7 @@ case class ImportStatus(messages: Seq[String],
 
   def addVisitedNodes(nodeIDs: Set[String]): ImportStatus =
     this.copy(visitedNodes = this.visitedNodes ++ nodeIDs)
+
   def setArticleId(id: Long): ImportStatus = this.copy(articleId = Some(id))
 
   def withNewNodeLocalContext(): ImportStatus =
