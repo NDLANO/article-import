@@ -80,11 +80,10 @@ trait LeafNodeConverter {
         .toH5PEmbed(cont.nid) match {
         case Success(html) =>
           el.append(s"<section>$html</section>")
-          Success(
-            (cont.copy(content = jsoupDocumentToString(el), metaDescription = defaultMetaDescription), importStatus))
+          Success((cont.copy(content = jsoupDocumentToString(el)), importStatus))
         case Failure(ex) =>
           if (el.text().length > 0) {
-            Success(cont.copy(content = jsoupDocumentToString(el), metaDescription = defaultMetaDescription),
+            Success(cont.copy(content = jsoupDocumentToString(el)),
                     importStatus.addError(ImportException(cont.nid, ex.getMessage)))
           } else {
             Failure(ex)

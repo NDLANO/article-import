@@ -45,7 +45,7 @@ class LeafNodeConverterTest extends UnitSuite with TestEnvironment {
       LeafNodeConverter.convert(sampleLanguageContent, ImportStatus.empty)
 
     result.content should equal(expectedResult)
-    result.metaDescription should equal("Beskrivelse mangler")
+    result.metaDescription should equal("metadescription")
     result.requiredLibraries.size should equal(0)
   }
 
@@ -96,7 +96,7 @@ class LeafNodeConverterTest extends UnitSuite with TestEnvironment {
       LeafNodeConverter.convert(sampleLanguageContent, ImportStatus.empty)
 
     result.content should equal(expectedResult)
-    result.metaDescription should equal("Beskrivelse mangler")
+    result.metaDescription should equal("metadescription")
     result.requiredLibraries.size should equal(0)
     status.errors should be(
       Seq(ImportException("1234", "Failed to import H5P with id 1234: Not yet exported to new H5P service")))
