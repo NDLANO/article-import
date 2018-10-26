@@ -357,4 +357,16 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       s"""<$ResourceHtmlEmbedTag data-resource="external" data-url="https://youtu.be/eW5XdFqeTW4?start=5&rel=0&end=167" />""")
     verify(lenkeConverterModule, times(1)).buildYoutubeEmbedTag(embedCode, url)
   }
+
+  test("Youtube embeds on another format should be handled correctly") {
+    val embedCode =
+      "<object style=\"height: 390px; width: 640px\"><param name=\"movie\" value=\"http://www.youtube.com/v/ezgUPIgX8z8?version=3\"><param name=\"allowFullScreen\" value=\"true\"><param name=\"allowScriptAccess\" value=\"always\"><embed src=\"http://www.youtube.com/v/ezgUPIgX8z8?version=3\" type=\"application/x-shockwave-flash\" allowfullscreen=\"true\" allowScriptAccess=\"always\" width=\"640\" height=\"390\"></object>"
+    val url = "https://youtu.be/ezgUPIgX8z8"
+
+    val newEmbed = LenkeConverterModule.buildYoutubeEmbedTag(embedCode, url)
+    val newUrl = stringToJsoupDocument(newEmbed).select("embed").first().attr("data-url")
+
+    newUrl should be(url)
+    newUrl.query.params.sortBy(_._1) should be(Vector())
+  }
 }
