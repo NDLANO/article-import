@@ -1,16 +1,15 @@
 import java.util.Properties
 
 val Scalaversion = "2.12.7"
-val Scalatraversion = "2.5.1"
-val ScalaLoggingVersion = "3.5.0"
-val Log4JVersion = "2.9.1"
-val Jettyversion = "9.4.11.v20180605"
-val AwsSdkversion = "1.11.297"
-val ScalaTestVersion = "3.0.1"
-val MockitoVersion = "1.10.19"
-val Elastic4sVersion = "5.2.8"
-val ElasticsearchVersion = "5.1.1"
-val JacksonVersion = "2.9.5"
+val Scalatraversion = "2.6.3"
+val ScalaLoggingVersion = "3.9.0"
+val ScalaTestVersion = "3.0.5"
+val Log4JVersion = "2.11.1"
+val Jettyversion = "9.4.12.v20180830"
+val AwsSdkversion = "1.11.434"
+val MockitoVersion = "2.23.0"
+val JacksonVersion = "2.9.7"
+val Json4SVersion = "3.5.4"
 
 val appProperties = settingKey[Properties]("The application properties")
 
@@ -29,32 +28,31 @@ lazy val article_import = (project in file("."))
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     scalacOptions := Seq("-target:jvm-1.8", "-unchecked", "-deprecation", "-feature", "-Ypartial-unification"),
     libraryDependencies ++= Seq(
-      "ndla" %% "network" % "0.29",
+      "ndla" %% "network" % "0.35",
       "ndla" %% "mapping" % "0.10",
       "ndla" %% "validation" % "0.25",
-      "joda-time" % "joda-time" % "2.8.2",
+      "joda-time" % "joda-time" % "2.10",
       "org.scalatra" %% "scalatra" % Scalatraversion,
       "org.scalatra" %% "scalatra-json" % Scalatraversion,
       "org.scalatra" %% "scalatra-swagger" % Scalatraversion,
       "org.eclipse.jetty" % "jetty-webapp" % Jettyversion % "container;compile",
       "org.eclipse.jetty" % "jetty-plus" % Jettyversion % "container",
-      "javax.servlet" % "javax.servlet-api" % "3.1.0" % "container;provided;test",
-      "org.json4s" %% "json4s-native" % "3.5.0",
+      "javax.servlet" % "javax.servlet-api" % "4.0.1" % "container;provided;test",
+      "org.json4s" %% "json4s-native" % Json4SVersion,
       "com.typesafe.scala-logging" %% "scala-logging" % ScalaLoggingVersion,
       "org.apache.logging.log4j" % "log4j-api" % Log4JVersion,
       "org.apache.logging.log4j" % "log4j-core" % Log4JVersion,
       "org.apache.logging.log4j" % "log4j-slf4j-impl" % Log4JVersion,
       "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % JacksonVersion,
       "com.fasterxml.jackson.core" % "jackson-databind" % JacksonVersion, // Overriding jackson-databind used in elastic4s because of https://snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-32111
-      "org.scalaj" %% "scalaj-http" % "2.3.0",
-      "org.apache.lucene" % "lucene-test-framework" % "6.4.1" % "test",
-      "org.jsoup" % "jsoup" % "1.11.2",
+      "org.scalaj" %% "scalaj-http" % "2.4.1",
+      "org.jsoup" % "jsoup" % "1.11.3",
       "io.lemonlabs" %% "scala-uri" % "1.3.1",
       "org.scalatra" %% "scalatra-scalatest" % Scalatraversion % "test",
       "org.scalatest" %% "scalatest" % ScalaTestVersion % "test",
-      "org.mockito" % "mockito-all" % MockitoVersion % "test",
+      "org.mockito" % "mockito-core" % MockitoVersion % "test",
       "org.apache.commons" % "commons-text" % "1.2",
-      "org.typelevel" %% "cats-core" % "1.0.1",
+      "org.typelevel" %% "cats-core" % "1.4.0",
       "log4j" % "log4j" % "1.2.16",
       "net.bull.javamelody" % "javamelody-core" % "1.74.0",
       "org.jrobin" % "jrobin" % "1.5.9",

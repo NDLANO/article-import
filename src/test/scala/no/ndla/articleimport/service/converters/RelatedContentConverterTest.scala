@@ -9,17 +9,15 @@ package no.ndla.articleimport.service.converters
 
 import java.util.Date
 
-import no.ndla.articleimport.caching.Memoize
 import no.ndla.articleimport.integration.{MigrationEmbedMeta, MigrationRelatedContent}
+import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.{ArticleTitle, ArticleType, ImportStatus, NodeToConvert}
 import no.ndla.articleimport.{ArticleImportProperties, TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
-import no.ndla.validation.TagAttributes._
 import no.ndla.validation.ResourceType._
-import no.ndla.articleimport.model.api.{ImportException, ImportExceptions, TaxonomyException}
+import no.ndla.validation.TagAttributes._
+import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
-import org.mockito.Matchers._
-import org.mockito.Matchers
 import org.mockito.invocation.InvocationOnMock
 
 import scala.util.{Failure, Success}
@@ -35,7 +33,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     when(taxonomyApiClient.getResource(any[String])).thenReturn(Success(Some(TestData.sampleTaxonomyResource)))
     when(taxonomyApiClient.getTopic(any[String])).thenReturn(Success(Some(TestData.sampleTaxonomyTopic)))
     when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
-      val nid = i.getArgumentAt(0, "".getClass)
+      val nid = i.getArgument[String](0)
       Success(
         TestData.sampleNodeToConvert.copy(
           contents = Seq(
@@ -62,14 +60,10 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
   test("convert should return a Success with error in importStatus if trying to link to a concept as related content") {
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
       .thenAnswer((i: InvocationOnMock) => {
-        Success(
-          (TestData.sampleApiConcept.copy(id = 1),
-           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+        Success((TestData.sampleApiConcept.copy(id = 1), i.getArgument[ImportStatus](1)))
       })
       .thenAnswer((i: InvocationOnMock) => {
-        Success(
-          (TestData.sampleApiArticle.copy(id = 2),
-           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+        Success((TestData.sampleApiArticle.copy(id = 2), i.getArgument[ImportStatus](1)))
       })
 
     when(migrationApiClient.getAllTranslationNids(languageContent.nid))
@@ -95,14 +89,10 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
 
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
       .thenAnswer((i: InvocationOnMock) => {
-        Success(
-          (TestData.sampleApiArticle.copy(id = 1),
-           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+        Success((TestData.sampleApiArticle.copy(id = 1), i.getArgument[ImportStatus](1)))
       })
       .thenAnswer((i: InvocationOnMock) => {
-        Success(
-          (TestData.sampleApiArticle.copy(id = 2),
-           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+        Success((TestData.sampleApiArticle.copy(id = 2), i.getArgument[ImportStatus](1)))
       })
 
     when(migrationApiClient.getAllTranslationNids(languageContent.nid))
@@ -125,17 +115,13 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeType("1234")).thenReturn(Some("unsupported"))
     when(extractService.getNodeType("5678")).thenReturn(Some("fagstoff"))
 
-    when(extractConvertStoreContent.processNode(Matchers.eq("1234"), any[ImportStatus]))
+    when(extractConvertStoreContent.processNode(eqTo("1234"), any[ImportStatus]))
       .thenAnswer((i: InvocationOnMock) => {
-        Success(
-          (TestData.sampleApiArticle.copy(id = 1),
-           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+        Success((TestData.sampleApiArticle.copy(id = 1), i.getArgument[ImportStatus](1)))
       })
-    when(extractConvertStoreContent.processNode(Matchers.eq("5678"), any[ImportStatus]))
+    when(extractConvertStoreContent.processNode(eqTo("5678"), any[ImportStatus]))
       .thenAnswer((i: InvocationOnMock) => {
-        Success(
-          (TestData.sampleApiArticle.copy(id = 2),
-           i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]))
+        Success((TestData.sampleApiArticle.copy(id = 2), i.getArgument[ImportStatus](1)))
       })
 
     when(migrationApiClient.getAllTranslationNids(languageContent.nid))
@@ -207,9 +193,9 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
 
     val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="2" $DataResource="$RelatedContent"></div></section>"""
 
-    when(extractConvertStoreContent.processNode(Matchers.eq("1234"), any[ImportStatus]))
+    when(extractConvertStoreContent.processNode(eqTo("1234"), any[ImportStatus]))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1), ImportStatus.empty)))
-    when(extractConvertStoreContent.processNode(Matchers.eq("5678"), any[ImportStatus]))
+    when(extractConvertStoreContent.processNode(eqTo("5678"), any[ImportStatus]))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
 
     val Success((result, _)) =

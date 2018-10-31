@@ -15,8 +15,7 @@ import no.ndla.articleimport.model.api.{ImportException, OptimisticLockException
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.network.model.HttpRequestException
-import org.mockito.Matchers
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 
@@ -70,7 +69,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
       .thenReturn(Try(TestData.sampleApiArticle, ImportStatus.empty))
 
     when(extractConvertStoreContent.getMainNodeId(any[String]))
-      .thenAnswer((invocation: InvocationOnMock) => Some(invocation.getArgumentAt(0, classOf[String])))
+      .thenAnswer((invocation: InvocationOnMock) => Some(invocation.getArgument[String](0)))
   }
 
   test("That ETL extracts, translates and loads a node correctly") {
@@ -304,7 +303,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     val ids = ImportId(None)
     val nodeToConvert = TestData.sampleNodeToConvert.copy(
       contents = Seq(TestData.sampleContent.copy(nid = externalId, tnid = externalId)))
-    when(draftApiClient.getImportId(Matchers.eq(externalId))).thenReturn(Some(ids))
+    when(draftApiClient.getImportId(eqTo(externalId))).thenReturn(Some(ids))
     when(extractService.getNodeData(externalId)).thenReturn(Success(nodeToConvert))
     val (result, _) = eCSService.shouldImport(externalId, ImportStatus.empty(importId = None))
     result should be(true)
@@ -315,7 +314,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     val ids = ImportId(None)
     val nodeToConvert = TestData.sampleNodeToConvert.copy(
       contents = Seq(TestData.sampleContent.copy(nid = externalId, tnid = externalId)))
-    when(draftApiClient.getImportId(Matchers.eq(externalId))).thenReturn(Some(ids))
+    when(draftApiClient.getImportId(eqTo(externalId))).thenReturn(Some(ids))
     when(extractService.getNodeData(externalId)).thenReturn(Success(nodeToConvert))
     val (result, _) = eCSService.shouldImport(externalId, ImportStatus.empty.copy(visitedNodes = Set(externalId)))
     result should be(false)
@@ -325,7 +324,7 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
     val externalId = "1234"
     val importId = "b5bc6dd2-cd6e-4c74-abd5-811679b09b0d"
     val ids = ImportId(Some(importId))
-    when(draftApiClient.getImportId(Matchers.eq(externalId))).thenReturn(Some(ids))
+    when(draftApiClient.getImportId(eqTo(externalId))).thenReturn(Some(ids))
     val (result, _) = eCSService.shouldImport(externalId, ImportStatus.empty.copy(importId = Some(importId)))
     result should be(false)
   }

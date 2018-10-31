@@ -18,7 +18,7 @@ import org.mockito.Mockito._
 import no.ndla.articleimport.caching.Memoize
 import io.lemonlabs.uri.dsl._
 import no.ndla.network.model.HttpRequestException
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito
 import scalaj.http.{Http, HttpRequest, HttpResponse}
 

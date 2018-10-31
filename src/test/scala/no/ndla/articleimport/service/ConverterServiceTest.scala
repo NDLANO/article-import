@@ -23,8 +23,7 @@ import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.validation.ResourceType
 import no.ndla.mapping.License.{CC_BY, CC_BY_SA}
 import org.mockito.Mockito._
-import org.mockito.Matchers._
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers.{eq => eqTo, _}
 import org.mockito.invocation.InvocationOnMock
 
 import scala.util.{Success, Try}
@@ -523,7 +522,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     when(taxonomyApiClient.getResource(any[String])).thenReturn(Success(Some(TestData.sampleTaxonomyResource)))
     when(extractService.getNodeType(any[String])).thenReturn(Some("fagstoff"))
     when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
-      val nid = i.getArgumentAt(0, "".getClass)
+      val nid = i.getArgument[String](0)
       Success(
         TestData.sampleNodeToConvert.copy(
           contents = Seq(
@@ -531,8 +530,8 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
           )))
     })
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus])).thenAnswer((i: InvocationOnMock) => {
-      val externalId = i.getArgumentAt(0, "".getClass)
-      val status = i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]
+      val externalId = i.getArgument[String](0)
+      val status = i.getArgument[ImportStatus](1)
       val importedId = ("1" + externalId).toInt
       Success((TestData.sampleApiArticle.copy(id = importedId), status))
     })
@@ -568,7 +567,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     when(extractService.getNodeType(any[String])).thenReturn(Some("fagstoff"))
     when(extractService.getNodeType(fileNodeId)).thenReturn(Some("fil"))
     when(extractService.getNodeData(any[String])).thenAnswer((i: InvocationOnMock) => {
-      val nid = i.getArgumentAt(0, "".getClass)
+      val nid = i.getArgument[String](0)
       Success(
         TestData.sampleNodeToConvert.copy(
           contents = Seq(
@@ -578,8 +577,8 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
 
     reset(extractConvertStoreContent)
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus])).thenAnswer((i: InvocationOnMock) => {
-      val externalId = i.getArgumentAt(0, "".getClass)
-      val status = i.getArgumentAt(1, ImportStatus.getClass).asInstanceOf[ImportStatus]
+      val externalId = i.getArgument[String](0)
+      val status = i.getArgument[ImportStatus](1)
       val importedId = ("1" + externalId).toInt
       Success((TestData.sampleApiArticle.copy(id = importedId), status))
     })
@@ -596,7 +595,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
             "78547"
           )
         )))
-    when(attachmentStorageService.uploadFileFromUrl(Matchers.eq(fileNodeId), any[ContentFilMeta])).thenReturn(
+    when(attachmentStorageService.uploadFileFromUrl(eqTo(fileNodeId), any[ContentFilMeta])).thenReturn(
       Success("yabadaba/all_the_filerino.pdf")
     )
 
