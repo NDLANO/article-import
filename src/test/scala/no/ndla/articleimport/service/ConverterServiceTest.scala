@@ -466,7 +466,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
       Author("leVerandør", "E"),
       Author("Språklig", "F")
     )
-    val copyright = service.toDomainCopyright("by-sa", authors)
+    val copyright = service.toDomainCopyright(Some("by-sa"), authors)
     copyright.creators should contain(Author("Originator", "A"))
 
     copyright.rightsholders should contain(Author("Distributor", "D"))

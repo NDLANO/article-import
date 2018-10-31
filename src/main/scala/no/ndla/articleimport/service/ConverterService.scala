@@ -97,7 +97,7 @@ trait ConverterService {
         None,
         convertedNode.titles,
         convertedNode.contents.map(_.asContent),
-        toDomainCopyright(convertedNode.license, convertedNode.authors),
+        toDomainCopyright(emptyStringToNone(convertedNode.license), convertedNode.authors),
         convertedNode.tags.filter(tag => languagesInNode.contains(tag.language)),
         requiredLibraries,
         visualElements,
@@ -113,13 +113,14 @@ trait ConverterService {
     }
 
     private def toDomainConcept(convertedNode: NodeToConvert): Concept = {
-      val license = Option(convertedNode.license).filter(_.nonEmpty)
+      val license = convertedNode.license.filter(_.nonEmpty)
+      val mustHaveCopyright = license.nonEmpty || convertedNode.authors.nonEmpty
 
       Concept(
         None,
         convertedNode.titles.map(title => ConceptTitle(title.title, title.language)),
         convertedNode.contents.map(content => ConceptContent(content.content, content.language)),
-        license.map(l => toDomainCopyright(l.getOrElse(""), convertedNode.authors)),
+        if (mustHaveCopyright) Some(toDomainCopyright(license, convertedNode.authors)) else None,
         convertedNode.created,
         convertedNode.updated
       )
@@ -143,7 +144,7 @@ trait ConverterService {
       }
     }
 
-    private[service] def toDomainCopyright(license: String, authors: Seq[Author]): Copyright = {
+    private[service] def toDomainCopyright(license: Option[String], authors: Seq[Author]): Copyright = {
       val origin = authors
         .find(author => author.`type`.toLowerCase == "opphavsmann")
         .map(_.name)
@@ -256,7 +257,7 @@ trait ConverterService {
 
     def toApiCopyright(copyright: Copyright): api.Copyright = {
       api.Copyright(
-        Some(toApiLicense(copyright.license)),
+        copyright.license.map(toApiLicense),
         copyright.origin,
         copyright.creators.map(toApiAuthor),
         copyright.processors.map(toApiAuthor),

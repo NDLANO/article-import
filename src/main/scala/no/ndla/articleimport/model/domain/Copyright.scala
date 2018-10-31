@@ -9,7 +9,7 @@ package no.ndla.articleimport.model.domain
 
 import java.util.Date
 
-case class Copyright(license: String,
+case class Copyright(license: Option[String],
                      origin: Option[String],
                      creators: Seq[Author],
                      processors: Seq[Author],

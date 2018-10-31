@@ -18,9 +18,10 @@ import no.ndla.mapping.License.{CC_BY_SA, PublicDomain}
 import org.joda.time.DateTime
 
 object TestData {
-  private val publicDomainCopyright = Copyright("publicdomain", None, Seq.empty, Seq.empty, Seq.empty, None, None, None)
+  private val publicDomainCopyright =
+    Copyright(Some("publicdomain"), None, Seq.empty, Seq.empty, Seq.empty, None, None, None)
   private val byNcSaCopyright =
-    Copyright("by-nc-sa", Some("Gotham City"), Seq.empty, Seq.empty, Seq.empty, None, None, None)
+    Copyright(Some("by-nc-sa"), Some("Gotham City"), Seq.empty, Seq.empty, Seq.empty, None, None, None)
   private val today = new DateTime().toDate
 
   val articleId = 1
@@ -51,7 +52,7 @@ object TestData {
     Option(2),
     Seq(ArticleTitle("title", "nb")),
     Seq(ArticleContent("content", "nb")),
-    Copyright("by", Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None),
+    Copyright(Some("by"), Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None),
     Seq(),
     Seq(),
     Seq(),
@@ -70,7 +71,7 @@ object TestData {
     None,
     Seq(ArticleTitle("test", "en")),
     Seq(ArticleContent("<article><div>test</div></article>", "en")),
-    Copyright("publicdomain", Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None),
+    Copyright(Some("publicdomain"), Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None),
     Seq(),
     Seq(),
     Seq(),
@@ -179,7 +180,7 @@ object TestData {
     Some(1),
     Seq(ConceptTitle("Tittel for begrep", "nb")),
     Seq(ConceptContent("Innhold for begrep", "nb")),
-    Some(Copyright(PublicDomain.toString, Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None)),
+    Some(Copyright(Some(PublicDomain.toString), Some(""), Seq.empty, Seq.empty, Seq.empty, None, None, None)),
     DateTime.now().minusDays(4).toDate,
     DateTime.now().minusDays(2).toDate
   )
