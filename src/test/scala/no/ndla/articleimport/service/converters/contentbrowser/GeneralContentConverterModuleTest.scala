@@ -15,7 +15,7 @@ import no.ndla.articleimport.model.api.NotFoundException
 import no.ndla.articleimport.model.domain._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 
 import scala.util.{Failure, Success, Try}
 
@@ -58,7 +58,7 @@ class GeneralContentConverterModuleTest extends UnitSuite with TestEnvironment {
 
   override def beforeEach = {
     when(extractConvertStoreContent.getMainNodeId(any[String]))
-      .thenAnswer((invocation: InvocationOnMock) => Some(invocation.getArgumentAt(0, classOf[String])))
+      .thenAnswer((invocation: InvocationOnMock) => Some(invocation.getArgument[String](0)))
     when(extractService.getNodeData(any[String])).thenReturn(Success(sampleNodeToConvert))
   }
 

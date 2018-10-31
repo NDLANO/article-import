@@ -14,7 +14,7 @@ import no.ndla.articleimport.model.api.ImportException
 import no.ndla.validation.EmbedTagRules.ResourceHtmlEmbedTag
 import no.ndla.articleimport.model.domain._
 import org.mockito.Mockito._
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 
 import scala.util.Success
 
