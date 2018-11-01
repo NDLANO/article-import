@@ -590,7 +590,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
             fileNodeId,
             "Woop woop all the files",
             "all_the_files.pdf",
-            new URL("http://ndla.no/sites/default/files/all_the_filerino.pdf"),
+            "http://ndla.no/sites/default/files/all_the_filerino.pdf",
             "application/pdf",
             "78547"
           )

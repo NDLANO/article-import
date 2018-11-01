@@ -57,7 +57,7 @@ case class ContentFilMeta(nid: String,
                           tnid: String,
                           title: String,
                           fileName: String,
-                          url: URL,
+                          url: String,
                           mimeType: String,
                           fileSize: String)
 

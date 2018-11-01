@@ -243,7 +243,7 @@ case class MigrationContentFileMeta(nid: String,
                                     fileSize: String) {
 
   def asContentFilMeta: ContentFilMeta =
-    ContentFilMeta(nid, tnid, title, fileName, new URL(url.withScheme("https")), mimeType, fileSize)
+    ContentFilMeta(nid, tnid, title, fileName, url.withScheme("https"), mimeType, fileSize)
 }
 
 case class MigrationEmbedMeta(url: Option[String], embedCode: Option[String])
