@@ -31,7 +31,7 @@ trait AttachmentStorageService {
       metaData.setContentLength(filMeta.fileSize.toLong)
 
       val request =
-        if (filMeta.url.hostOption.exists(h => h.toString == NdlaRedHost))
+        if (filMeta.url.hostOption.exists(_.toString == NdlaRedHost))
           Http(filMeta.url).auth(NdlaRedUsername, NdlaRedPassword)
         else
           Http(filMeta.url)
