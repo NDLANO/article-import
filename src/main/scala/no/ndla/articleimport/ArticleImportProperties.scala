@@ -120,6 +120,10 @@ object ArticleImportProperties extends LazyLogging {
       throw new RuntimeException(s"Unable to load remote secrets from $SecretsFile", exception)
   }
 
+  val NdlaRedHost = "red.ndla.no"
+  val NdlaRedUsername = prop("NDLA_RED_USERNAME")
+  val NdlaRedPassword = prop("NDLA_RED_PASSWORD")
+
   def booleanProp(key: String): Boolean = prop(key).toBoolean
 
   def prop(key: String): String =

@@ -33,6 +33,9 @@ abstract class UnitSuite
   setEnvIfAbsent("MIGRATION_USER", "some-user")
   setEnvIfAbsent("MIGRATION_PASSWORD", "some-password")
 
+  setEnv("NDLA_RED_USERNAME", "user")
+  setEnv("NDLA_RED_PASSWORD", "pass")
+
   setEnv("NDLA_BRIGHTCOVE_ACCOUNT_ID", "some-account-id")
   setEnv("NDLA_BRIGHTCOVE_PLAYER_ID", "some-player-id")
   setEnv("SEARCH_INDEX_NAME", "article-integration-test-index")
