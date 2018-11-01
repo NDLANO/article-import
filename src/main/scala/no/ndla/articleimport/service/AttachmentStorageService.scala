@@ -28,8 +28,8 @@ trait AttachmentStorageService {
       metaData.setContentType(filMeta.mimeType)
       metaData.setContentLength(filMeta.fileSize.toLong)
 
-      uploadFile(new PutObjectRequest(attachmentStorageName, storageKey, connection.getInputStream, metaData),
-                 storageKey)
+      Try(connection.getInputStream).flatMap(inputStream =>
+        uploadFile(new PutObjectRequest(attachmentStorageName, storageKey, inputStream, metaData), storageKey))
     }
 
     def uploadFile(request: PutObjectRequest, storageKey: String): Try[String] =
