@@ -94,16 +94,58 @@ trait SimpleTagConverter {
     }
 
     private def convertSpans(element: Element): Unit = {
-      addLangTagToChineseText(element)
+      unwrapOldChineseSpans(element)
+      wrapChineseTextInSpans(element)
       setLanguageParameterIfPresent(element)
     }
 
-    private def addLangTagToChineseText(element: Element): Unit = {
+    private def unwrapOldChineseSpans(element: Element): Unit = {
       element
         .select("span[style~=font-size]")
         .asScala
         .filter(tag => containsChineseText(tag.text))
-        .foreach(el => replaceAttribute(el, "style", TagAttributes.Lang.toString -> "zh"))
+        .foreach(el => el.unwrap())
+    }
+
+    private def wrapChineseTextInSpans(element: Element): Unit = {
+      element
+        .select("*")
+        .asScala
+        .filter(t => containsChineseText(t.ownText()))
+        .foreach(t => {
+          t.childNodes()
+            .asScala
+            .foreach(c => {
+              if (c.nodeName() == "#text" && containsChineseText(c.outerHtml())) {
+                // Need a temporary element to contain text and eventual spans
+                val newNode = new Element("ElementToUnwrap")
+                newNode.html(wrapChineseText(c.outerHtml()))
+                c.replaceWith(newNode)
+              }
+            })
+          t.select("ElementToUnwrap").unwrap()
+        })
+    }
+
+    private def wrapChineseText(text: String): String = {
+      // Split up string into parts that might be wrapped in spans if they contain chinese
+      val splitString = text.foldLeft((List(""), false)) {
+        case ((acc, spanWasOpen), chr) =>
+          if ((isChineseCharacter(chr) && !spanWasOpen) || (!isChineseCharacter(chr) && spanWasOpen))
+            (acc :+ chr.toString, !spanWasOpen)
+          else
+            (acc.init :+ acc.last + chr, spanWasOpen)
+      }
+
+      // Wrap the splits that actually contain chinese
+      splitString._1
+        .map(textPart => if (containsChineseText(textPart)) s"""<span lang="zh">$textPart</span>""" else textPart)
+        .mkString
+    }
+
+    private def isChineseCharacter(c: Char, includeCommon: Boolean = true): Boolean = {
+      val t = Character.UnicodeScript.of(c)
+      t == Character.UnicodeScript.HAN || (t == Character.UnicodeScript.COMMON && includeCommon)
     }
 
     private def setLanguageParameterIfPresent(element: Element) {

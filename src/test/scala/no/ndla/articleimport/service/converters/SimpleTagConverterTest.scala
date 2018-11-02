@@ -235,8 +235,8 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
 
     val expectedContent =
       """
-        |<p><span lang="zh">基围虾</span><br>500克</p>
-        |<p><span lang="zh">葱</span><br>适量</p>
+        |<p><span lang="zh">基围虾</span><br><span lang="zh">500克</span></p>
+        |<p><span lang="zh">葱</span><br><span lang="zh">适量</span></p>
       """.stripMargin.replace("\n", "")
 
     val Success((result, _)) =
@@ -258,6 +258,66 @@ class SimpleTagConverterTest extends UnitSuite with TestEnvironment {
       SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
 
     result.content should equal(expectedContentResult)
+  }
+
+  test("that chinese text is wrapped in spans") {
+    val content = """<section><p>适 量适量 Hello this is</p></section>"""
+    val expected = """<section><p><span lang="zh">适 量适量 </span>Hello this is</p></section>"""
+
+    val Success((result, _)) =
+      SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
+
+    result.content should be(expected)
+  }
+
+  test("that chinese text anyhwere is wrapped in spans") {
+    val content =
+      """
+        |<section><h1>Hello this is article about chinese!!!&lt;-&gt;</h1></section>
+        |<section><h1>适 量适量 Hello this is article about 适量 chinese</h1></section>
+        |<section><p><strong>REALLY</strong> chinese.</p><p>Like you really gotta make some 适量 when we are going around</p><p>适量适量适量适量</p></section>
+      """.stripMargin.replace("\n", "")
+    val expected =
+      """
+        |<section><h1>Hello this is article about chinese!!!&lt;-&gt;</h1></section>
+        |<section><h1><span lang="zh">适 量适量 </span>Hello this is article about<span lang="zh"> 适量 </span>chinese</h1></section>
+        |<section><p><strong>REALLY</strong> chinese.</p><p>Like you really gotta make some<span lang="zh"> 适量 </span>when we are going around</p><p><span lang="zh">适量适量适量适量</span></p></section>
+      """.stripMargin.replace("\n", "")
+    val Success((result, _)) =
+      SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
+
+    result.content should be(expected)
+  }
+
+  test("that chinese text is wrapped in spans correctly even in nested html") {
+    val content =
+      """
+        |<section>
+        |<div>适 量适量
+        |<p>This div contains chinese stuff</p>
+        |<p>Some of it 适</p>
+        |<div>Not all
+        |<p>适 量适量</p>
+        |</div>
+        |</div>
+        |</section>
+      """.stripMargin.replace("\n", "")
+    val expected =
+      """
+        |<section>
+        |<div><span lang="zh">适 量适量</span>
+        |<p>This div contains chinese stuff</p>
+        |<p>Some of it<span lang="zh"> 适</span></p>
+        |<div>Not all
+        |<p><span lang="zh">适 量适量</span></p>
+        |</div>
+        |</div>
+        |</section>
+      """.stripMargin.replace("\n", "")
+    val Success((result, _)) =
+      SimpleTagConverter.convert(TestData.sampleContent.copy(content = content), ImportStatus.empty)
+
+    result.content should be(expected)
   }
 
   test("That embed-tags from old ndla makes converter insert error-embed and succeed") {
