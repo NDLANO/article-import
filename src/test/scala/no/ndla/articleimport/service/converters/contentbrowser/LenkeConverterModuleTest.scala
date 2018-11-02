@@ -229,6 +229,26 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
       Seq("External resource to be embedded: https://play.kahoot.it/#/k/e577f7e9-59ff-4a80-89a1-c95acf04815d"))
   }
 
+  test("That LenkeConverter returns an external embed for geogebra resources") {
+    val geogebraUrl =
+      "https://www.geogebra.org/material/iframe/id/juVBCefc/width/958/height/547/border/888888/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false"
+    val geogebraEmbedCode =
+      s"""<iframe scrolling="no" title="Finn sannsynligheten for at tegnestiften lander med spissen ned!" src="$geogebraUrl" width="632px" height="361px" style="border:0px;"> </iframe>"""
+
+    val content =
+      TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "alt" -> altText, "insertion" -> "inline")
+    val expectedResult =
+      s"""<$ResourceHtmlEmbedTag data-height="361px" data-resource="${ResourceType.IframeContent}" data-url="$geogebraUrl" data-width="632px" />"""
+
+    when(migrationApiClient.getNodeEmbedData)
+      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(geogebraUrl), Some(geogebraEmbedCode)))))
+    val Success((result, _, status)) =
+      LenkeConverterModule.convert(content, ImportStatus.empty)
+
+    result should equal(expectedResult)
+    status.messages should be(Seq(s"External resource to be embedded: $geogebraUrl"))
+  }
+
   test("LenkeConverter should include an url fragment if defined in contentbrowser") {
     val anchor = "9a-4"
     val content =
