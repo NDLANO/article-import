@@ -99,7 +99,16 @@ trait LenkeConverterModule {
       "issuu.com",
       "livestream.com",
       "channel9.msdn.com",
-      "tomknudsen.no"
+      "tomknudsen.no",
+      "geogebra.org",
+      "www.geogebra.org",
+      "ggbm.at",
+      "www.imdb.com",
+      "imdb.com",
+      "miljoatlas.miljodirektoratet.no",
+      "www.miljostatus.no",
+      "miljostatus.no",
+      "phet.colorado.edu"
     ).map(_.asDomainRegex)
 
     private def urlIsWhitelisted(url: String): Boolean = {
@@ -132,6 +141,12 @@ trait LenkeConverterModule {
         val tomknudsenUrlPattern = "tomknudsen.no".asDomainRegex
         val youtubecomUrlPattern = "youtube.com".asDomainRegex
         val youtubeUrlPattern = "youtu.be".asDomainRegex
+        val geogebraUrlPattern = "geogebra.org".asDomainRegex
+        val ggbmatUrlPattern = "ggbm.at".asDomainRegex
+        val imdbUrlPattern = "imdb.com".asDomainRegex
+        val miljoatlasUrlPattern = "miljoatlas.miljodirektoratet.no".asDomainRegex
+        val miljostatusUrlPattern = "miljostatus.no".asDomainRegex
+        val phetUrlPattern = "phet.colorado.edu".asDomainRegex
 
         url.hostOption.map(_.toString).getOrElse("") match {
           case NRKUrlPattern(_) =>
@@ -140,7 +155,9 @@ trait LenkeConverterModule {
           case kunnskapsFilmUrlPattern(_) => Success(getKunnskapsFilmEmbedTag(embedCode), None, updatedStatus)
           case PreziUrlPattern(_) | NdlaFilmIundervisningUrlPattern(_) | KahootUrlPattern(_) |
               khanAcademyUrlPattern(_) | tv2SkoleUrlPattern(_) | scribdUrlPattern(_) | vgNoUrlPattern(_) |
-              livestreamUrlPattern(_) | channel9MsdnUrlPattern(_) | tomknudsenUrlPattern(_) =>
+              livestreamUrlPattern(_) | channel9MsdnUrlPattern(_) | tomknudsenUrlPattern(_) | geogebraUrlPattern(_) |
+              ggbmatUrlPattern(_) | imdbUrlPattern(_) | miljoatlasUrlPattern(_) | miljostatusUrlPattern(_) |
+              phetUrlPattern(_) =>
             buildRegularEmbedTag(embedCode, nid, url, updatedStatus).map {
               case (embedTag, status) => (embedTag, None, status)
             }
