@@ -10,8 +10,8 @@ package no.ndla.articleimport.service.converters
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.{ConverterModule, LanguageContent}
 import no.ndla.articleimport.model.domain.ImportStatus
-import no.ndla.validation.{ResourceType, TagAttributes}
-import org.jsoup.nodes.Element
+import no.ndla.validation.TagAttributes
+import org.jsoup.nodes.{Element, TextNode}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -28,9 +28,8 @@ trait FileDivConverter {
     }
 
     /**
-      * Locates <FileListEntries> with more than 1 element and moves them out of inline parents
-      * and converts them to divs. If the <FileListEntries> has one element,
-      * the <FileListEntries> is unwrapped and the lone <embed> is left.
+      * Locates <FileListEntries> and moves them out of inline parents and converts them to divs.
+      * Leaves alt of <embed> if <FileListEntries> only has one child.
       *
       * @param element Entire html element
       */
@@ -39,16 +38,24 @@ trait FileDivConverter {
         .select(s"""FileListEntries""")
         .asScala
         .foreach(d => {
-          if (d.children().size() > 1) {
-            outOfInlines(d).tagName("div")
-          } else {
-            d.unwrap()
+          if (d.children.size <= 1) {
+            d.children.asScala.headOption.map(child => {
+              // Leave altText before moving if only child
+              val alt = Option(child.attr(TagAttributes.DataAlt.toString)).getOrElse("")
+              if (alt.length > 0) {
+                val textNode = new TextNode(alt)
+                d.after(textNode)
+              }
+            })
           }
+
+          outOfInlines(d).tagName("div")
         })
     }
 
     /**
       * Moves element out of parent until it is in a block element
+      *
       * @param element Element to be moved out of parent
       * @return Element that is moved out of parent
       */

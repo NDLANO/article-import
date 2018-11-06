@@ -559,7 +559,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     result.content.map(_.content) should be(Seq(expectedNbContent, expectedEnContent))
   }
 
-  test("That single file embeds are left inline without wrapper") {
+  test("That single file embeds are moved to after inline, but text is left inline") {
 
     val fileNodeId = "6666"
     val taxonomyResource = Resource("urn:resource:1:123", "fint navn", None, "/fin/path/egentlig")
@@ -608,7 +608,7 @@ class ConverterServiceTest extends UnitSuite with TestEnvironment {
     val languageContent = TestData.sampleContent.copy(language = "nb", content = content)
 
     val expectedContent =
-      s"""<section><p>Hei hå, her har vi inlinefiler <embed data-alt="Her er den fine linken" data-path="files/yabadaba/all_the_filerino.pdf" data-resource="file" data-title="Woop woop all the files" data-type="pdf">, jaddajadda!</p></section>""".stripMargin
+      s"""<section><p>Hei hå, her har vi inlinefiler Her er den fine linken, jaddajadda!</p><div data-type="file"><embed data-alt="Her er den fine linken" data-path="files/yabadaba/all_the_filerino.pdf" data-resource="file" data-title="Woop woop all the files" data-type="pdf"></div></section>""".stripMargin
 
     val node = sampleNode.copy(contents = List(languageContent))
     val Success((result: Article, _)) = service.toDomainArticle(node, ImportStatus.empty.withNewNodeLocalContext())
