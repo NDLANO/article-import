@@ -7,20 +7,20 @@
 
 package no.ndla.articleimport.service.converters.contentbrowser
 
-import io.lemonlabs.uri.dsl._
-import io.lemonlabs.uri.Url
 import com.typesafe.scalalogging.LazyLogging
+import io.lemonlabs.uri.Url
+import io.lemonlabs.uri.dsl._
+import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
+import no.ndla.articleimport.integration.MigrationEmbedMeta
 import no.ndla.articleimport.model.api.ImportException
 import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
+import no.ndla.articleimport.service.DomainRegex._
 import no.ndla.articleimport.service.ExtractService
-import no.ndla.articleimport.service.converters.HtmlTagGenerator
+import no.ndla.articleimport.service.converters.{HtmlTagGenerator, LightboxPattern}
+import no.ndla.network.NdlaClient
 import no.ndla.validation.ResourceType
 import org.jsoup.Jsoup
-import no.ndla.articleimport.integration.MigrationEmbedMeta
-import no.ndla.articleimport.service.DomainRegex._
-import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
-import no.ndla.network.NdlaClient
-import scalaj.http.{Http, HttpRequest}
+import scalaj.http.Http
 
 import scala.util.{Failure, Success, Try}
 
@@ -43,7 +43,6 @@ trait LenkeConverterModule {
 
     def convertLink(cont: ContentBrowser,
                     importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
-      val LightboxPattern = "(lightbox_.*)".r
       val externalId = cont.get("nid")
 
       extractService.getLinkEmbedMeta(externalId) match {
@@ -268,7 +267,7 @@ trait LenkeConverterModule {
       val htmlTag = HtmlTagGenerator.buildAnchor(urlWithFragment.getOrElse(url),
                                                  cont.get("link_text"),
                                                  cont.get("link_title_text"),
-                                                 true)
+                                                 openInNewTab = true)
       Success(s" $htmlTag", None, importStatus)
     }
 

@@ -11,7 +11,7 @@ import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.integration.DraftApiClient
 import no.ndla.articleimport.model.api.{Article, Concept, ImportException}
 import no.ndla.articleimport.model.domain.{ImportStatus, Language, NodeToConvert, RequiredLibrary}
-import no.ndla.articleimport.service.converters.HtmlTagGenerator
+import no.ndla.articleimport.service.converters.{HtmlTagGenerator, LightboxPattern}
 import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
 import no.ndla.articleimport.ArticleImportProperties.supportedTextTypes
 
@@ -52,7 +52,6 @@ trait GeneralContentConverterModule {
                       contentNodeData: Try[NodeToConvert],
                       contentBrowser: ContentBrowser,
                       importStatus: ImportStatus): Try[(String, ImportStatus)] = {
-      val LightboxPattern = "(lightbox_.*)".r
       val insertionMethod = contentBrowser.get("insertion")
 
       insertionMethod match {

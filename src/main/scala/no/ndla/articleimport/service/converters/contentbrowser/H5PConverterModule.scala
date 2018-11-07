@@ -9,16 +9,15 @@ package no.ndla.articleimport.service.converters.contentbrowser
 
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
-import no.ndla.articleimport.service.ExtractService
-import no.ndla.articleimport.service.converters.HtmlTagGenerator
-import no.ndla.articleimport.ArticleImportProperties.H5PResizerScriptUrl
+import no.ndla.articleimport.service.{ExtractConvertStoreContent, ExtractService}
+import no.ndla.articleimport.service.converters.{HtmlTagGenerator, LightboxPattern}
 import no.ndla.articleimport.integration.H5PApiClient
 import no.ndla.articleimport.model.api.ImportException
 
 import scala.util.{Failure, Success, Try}
 
 trait H5PConverterModule {
-  this: ExtractService with HtmlTagGenerator with H5PApiClient =>
+  this: ExtractService with HtmlTagGenerator with H5PApiClient with ExtractConvertStoreContent =>
 
   object H5PConverterModule extends ContentBrowserConverterModule with LazyLogging {
     override val typeName: String = "h5p_content"
@@ -26,13 +25,21 @@ trait H5PConverterModule {
     override def convert(content: ContentBrowser,
                          importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val nodeId = content.get("nid")
+      val linkText = content.get("link_text")
 
       logger.info(s"Converting h5p_content with nid $nodeId")
-      toH5PEmbed(nodeId) match {
-        case Success(replacement) =>
-          Success((replacement, Seq.empty, importStatus))
-        case Failure(ex) =>
-          Failure(ex)
+
+      content.get("insertion") match {
+        case "link" | LightboxPattern(_*) =>
+          toH5PLink(linkText, nodeId, importStatus).map { case (link, status) => (link, Seq.empty, status) }
+        case _ => toH5PEmbed(nodeId).map(replacement => (replacement, Seq.empty, importStatus))
+      }
+    }
+
+    private def toH5PLink(linkText: String, nodeId: String, importStatus: ImportStatus): Try[(String, ImportStatus)] = {
+      extractConvertStoreContent.processNode(nodeId, importStatus).map {
+        case (content, status) =>
+          (HtmlTagGenerator.buildContentLinkEmbedContent(content.id, linkText, openInNewWindow = false), status)
       }
     }
 

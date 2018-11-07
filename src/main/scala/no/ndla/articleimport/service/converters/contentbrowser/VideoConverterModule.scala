@@ -11,7 +11,7 @@ import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.ArticleImportProperties.{NDLABrightcoveAccountId, NDLABrightcovePlayerId}
 import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
 import no.ndla.articleimport.service.ExtractConvertStoreContent
-import no.ndla.articleimport.service.converters.HtmlTagGenerator
+import no.ndla.articleimport.service.converters.{HtmlTagGenerator, LightboxPattern}
 
 import scala.util.{Failure, Success, Try}
 
@@ -24,7 +24,6 @@ trait VideoConverterModule {
     override def convert(content: ContentBrowser,
                          importStatus: ImportStatus): Try[(String, Seq[RequiredLibrary], ImportStatus)] = {
       val (linkText, nodeId) = (content.get("link_text"), content.get("nid"))
-      val LightboxPattern = "(lightbox_.*)".r
 
       val video = content.get("insertion") match {
         case "link" | LightboxPattern(_) => toVideoLink(linkText, nodeId, importStatus)
@@ -41,10 +40,9 @@ trait VideoConverterModule {
     private def toVideoLink(linkText: String,
                             nodeId: String,
                             importStatus: ImportStatus): Try[(String, ImportStatus)] = {
-      extractConvertStoreContent.processNode(nodeId, importStatus) match {
-        case Success((content, status)) =>
-          Success(HtmlTagGenerator.buildContentLinkEmbedContent(content.id, linkText, openInNewWindow = false), status)
-        case Failure(ex) => Failure(ex)
+      extractConvertStoreContent.processNode(nodeId, importStatus).map {
+        case (content, status) =>
+          (HtmlTagGenerator.buildContentLinkEmbedContent(content.id, linkText, openInNewWindow = false), status)
       }
     }
 
