@@ -160,7 +160,7 @@ trait RelatedContentConverter {
 
       nid == mainNid match {
         case true  => existsInTaxonomy(nid)
-        case false => existsInTaxonomy(mainNid)
+        case false => existsInTaxonomy(mainNid).orElse(existsInTaxonomy(nid))
       }
     }
 
