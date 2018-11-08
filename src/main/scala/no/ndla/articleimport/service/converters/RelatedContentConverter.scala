@@ -144,16 +144,23 @@ trait RelatedContentConverter {
     }
 
     private def existsInTaxonomy(nid: String): Try[Boolean] = {
-      // Make sure we have the main node id
+      taxonomyApiClient.getResource(nid).map(_.isDefined) match {
+        case Success(true) => Success(true)
+        case _             => taxonomyApiClient.getTopic(nid).map(_.isDefined)
+      }
+    }
+
+    private def atLeastOneExistsInTaxonomy(nid: String): Try[Boolean] = {
+      // Get the main node id
       val mainNid = extractService
         .getNodeData(nid)
         .map(_.getMainNid)
         .getOrElse(None)
         .getOrElse(nid)
 
-      taxonomyApiClient.getResource(mainNid).map(_.isDefined) match {
-        case Success(true) => Success(true)
-        case _             => taxonomyApiClient.getTopic(mainNid).map(_.isDefined)
+      nid == mainNid match {
+        case true  => existsInTaxonomy(nid)
+        case false => existsInTaxonomy(mainNid)
       }
     }
 
@@ -170,7 +177,7 @@ trait RelatedContentConverter {
             ImportException(nid,
                             s"Related content with node id $nid ($nodeType) is unsupported and will not be imported."))
         case (nid, _) =>
-          existsInTaxonomy(nid) match {
+          atLeastOneExistsInTaxonomy(nid) match {
             case Success(true) => Right(nid)
             case Success(false) =>
               Left(
