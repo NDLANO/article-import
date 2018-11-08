@@ -269,4 +269,49 @@ class TableConverterTest extends UnitSuite {
     result.content should equal(table2x3ExpectedResult)
   }
 
+  test("table headers in leftmost column should be supported") {
+    val table2x3 =
+      s"""
+         |<table>
+         |<tbody>
+         |<tr>
+         |<th><strong>Antall øyne</strong></th>
+         |<td>1</td>
+         |<td>2</td>
+         |</tr>
+         |<tr>
+         |<th>Sannsynlighet</th>
+         |<td>1/2</td>
+         |<td>1/2</td>
+         |</tr>
+         |</tbody>
+         |</table>
+       """.stripMargin.replace("\n", "")
+
+    val expectedResult =
+      s"""
+         |<table>
+         |<tbody>
+         |<tr>
+         |<th>Antall øyne</th>
+         |<td>1</td>
+         |<td>2</td>
+         |</tr>
+         |<tr>
+         |<th>Sannsynlighet</th>
+         |<td>1/2</td>
+         |<td>1/2</td>
+         |</tr>
+         |</tbody>
+         |</table>
+       """.stripMargin.replace("\n", "")
+
+    val initialContent = TestData.sampleContent.copy(content = table2x3)
+    val Success((result, _)) =
+      TableConverter.convert(initialContent, ImportStatus.empty)
+
+    result.content should equal(expectedResult)
+
+  }
+
 }
