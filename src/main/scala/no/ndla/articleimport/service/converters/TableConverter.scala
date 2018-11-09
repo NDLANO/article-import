@@ -26,11 +26,12 @@ object TableConverter extends ConverterModule {
     Success(content.copy(content = jsoupDocumentToString(element)), importStatus)
   }
 
-  def wrapHeaderRowInThead(el: Element) = {
+  def wrapHeaderRowInThead(el: Element): Unit = {
     for (table <- el.select("table").asScala) {
       if (table.select("thead").asScala.isEmpty) {
         table.select("tr>th").parents.first() match {
-          case row: Element =>
+          // Only wrap row in thead if all cells are th
+          case row: Element if row.select("th").size() == row.childNodeSize() =>
             table.prepend(row.outerHtml())
             row.remove()
             table.select("tbody").first.tagName("thead")
@@ -44,7 +45,7 @@ object TableConverter extends ConverterModule {
     }
   }
 
-  def stripParagraphTag(el: Element) = {
+  def stripParagraphTag(el: Element): Unit = {
     for (cell <- el.select("td").asScala) {
       val paragraphs = cell.select("p")
       if (paragraphs.size() == 1) {
@@ -53,15 +54,17 @@ object TableConverter extends ConverterModule {
     }
   }
 
-  def convertFirstTrToTh(el: Element) = {
+  def convertFirstTrToTh(el: Element): Unit = {
     for (table <- el.select("table").asScala) {
       Option(table.select("tr").first).foreach(firstRow => {
-        if (firstRow.select("strong").asScala.nonEmpty) {
+        if (containsTag(firstRow, "strong") && !containsTag(firstRow, "th")) {
           firstRow.select("td").tagName("th")
-          firstRow.select("strong").unwrap()
         }
+        firstRow.select("strong").asScala.foreach(_.unwrap())
       })
     }
   }
+
+  private def containsTag(el: Element, tagName: String): Boolean = el.select(tagName).asScala.nonEmpty
 
 }
