@@ -151,17 +151,17 @@ trait RelatedContentConverter {
     }
 
     private def atLeastOneExistsInTaxonomy(nid: String): Try[Boolean] = {
-      // Get the main node id
-      val mainNid = extractService
+      extractService
         .getNodeData(nid)
-        .map(_.getMainNid)
-        .getOrElse(None)
-        .getOrElse(nid)
+        .flatMap(node => {
+          // Convert to stream so we only to api calls if necessary
+          val taxonomyResponses = node.contents.toStream.map(_.nid).map(existsInTaxonomy)
 
-      nid == mainNid match {
-        case true  => existsInTaxonomy(nid)
-        case false => existsInTaxonomy(mainNid).orElse(existsInTaxonomy(nid))
-      }
+          taxonomyResponses
+            .collectFirst { case Success(exists) if exists              => Success(exists) } // Finds if the node is in taxonomy
+            .orElse { taxonomyResponses.collectFirst { case Failure(ex) => Failure(ex) } } // Checks whether there was any errors
+            .getOrElse { Success(false) } // If not found nor any errors we return Success(false)
+        })
     }
 
     /**
