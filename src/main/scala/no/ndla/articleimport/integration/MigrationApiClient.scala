@@ -115,9 +115,12 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle],
     )
     val lic = emptySomeToNone(license).flatMap(licenseMapping.get)
 
+    val languageContents = asLanguageContents.map(c =>
+      c.copy(visualElement = if (articleType.contains(ArticleType.TopicArticle)) c.visualElement else None))
+
     NodeToConvert(
       titles.map(x => x.asContentTitle),
-      asLanguageContents,
+      languageContents,
       lic,
       authors.flatMap(x => x.asAuthor),
       tags,
