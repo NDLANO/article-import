@@ -30,7 +30,7 @@ lazy val article_import = (project in file("."))
     libraryDependencies ++= Seq(
       "ndla" %% "network" % "0.36",
       "ndla" %% "mapping" % "0.10",
-      "ndla" %% "validation" % "0.29",
+      "ndla" %% "validation" % "0.30",
       "joda-time" % "joda-time" % "2.10",
       "org.scalatra" %% "scalatra" % Scalatraversion,
       "org.scalatra" %% "scalatra-json" % Scalatraversion,
@@ -71,7 +71,7 @@ checkfmt := {
   noErrorsInMainFiles && noErrorsInTestFiles && noErrorsInSbtConfigFiles
 }
 
-Test / test := ((Test / test).dependsOn(Test / checkfmt)).value
+Test / test := (Test / test).dependsOn(Test / checkfmt).value
 
 val fmt = taskKey[Unit]("Automatically apply code style fixes")
 fmt := {
