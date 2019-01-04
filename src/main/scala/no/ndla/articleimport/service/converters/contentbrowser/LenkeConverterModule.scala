@@ -107,7 +107,10 @@ trait LenkeConverterModule {
       "miljoatlas.miljodirektoratet.no",
       "www.miljostatus.no",
       "miljostatus.no",
-      "phet.colorado.edu"
+      "phet.colorado.edu",
+      "lab.concord.org",
+      "data.worldbank.org",
+      "worldbank.org"
     ).map(_.asDomainRegex)
 
     private def urlIsWhitelisted(url: String): Boolean = {
@@ -146,6 +149,8 @@ trait LenkeConverterModule {
         val miljoatlasUrlPattern = "miljoatlas.miljodirektoratet.no".asDomainRegex
         val miljostatusUrlPattern = "miljostatus.no".asDomainRegex
         val phetUrlPattern = "phet.colorado.edu".asDomainRegex
+        val labConcordPattern = "lab.concord.org".asDomainRegex
+        val worldmapPattern = "worldbank.org".asDomainRegex
 
         url.hostOption.map(_.toString).getOrElse("") match {
           case NRKUrlPattern(_) =>
@@ -156,7 +161,7 @@ trait LenkeConverterModule {
               khanAcademyUrlPattern(_) | tv2SkoleUrlPattern(_) | scribdUrlPattern(_) | vgNoUrlPattern(_) |
               livestreamUrlPattern(_) | channel9MsdnUrlPattern(_) | tomknudsenUrlPattern(_) | geogebraUrlPattern(_) |
               ggbmatUrlPattern(_) | imdbUrlPattern(_) | miljoatlasUrlPattern(_) | miljostatusUrlPattern(_) |
-              phetUrlPattern(_) =>
+              phetUrlPattern(_) | labConcordPattern(_) | worldmapPattern(_) =>
             buildRegularEmbedTag(embedCode, nid, url, updatedStatus).map {
               case (embedTag, status) => (embedTag, None, status)
             }
