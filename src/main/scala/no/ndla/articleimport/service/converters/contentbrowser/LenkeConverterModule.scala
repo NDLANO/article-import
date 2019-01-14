@@ -189,8 +189,8 @@ trait LenkeConverterModule {
       val document = stringToJsoupDocument(embedCode)
       val iframe = document.select("iframe")
       val embed = document.select("embed")
-      val doc = if (!iframe.isEmpty) iframe.first() else embed.first()
-      val embedUrl = doc.attr("src")
+      val doc = Option(if (!iframe.isEmpty) iframe.first() else embed.first())
+      val embedUrl = doc.map(_.attr("src")).getOrElse(url)
       val queryParamsToTransfer = embedUrl.query.filterNames(paramTypesToTransfer.contains)
 
       val newUrl = queryParamsToTransfer.params.foldLeft(url) { (url, parameter) =>

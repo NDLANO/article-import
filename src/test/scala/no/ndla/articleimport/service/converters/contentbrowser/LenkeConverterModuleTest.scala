@@ -389,4 +389,13 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     newUrl should be(url)
     newUrl.query.params.sortBy(_._1) should be(Vector())
   }
+
+  test("That youtube embeds without embed codes just uses url") {
+    val url = "https://youtu.be/ezgUPIgX8z8"
+
+    val newEmbed = LenkeConverterModule.buildYoutubeEmbedTag("", url)
+    val newUrl = stringToJsoupDocument(newEmbed).select("embed").first().attr("data-url")
+
+    newUrl should be(url)
+  }
 }
