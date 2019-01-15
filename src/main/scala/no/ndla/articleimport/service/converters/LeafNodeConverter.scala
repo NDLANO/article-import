@@ -51,8 +51,8 @@ trait LeafNodeConverter {
 
     private def doLink(cont: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
       extractService.getLinkEmbedMeta(cont.nid) match {
-        case Success(MigrationEmbedMeta(Some(url), embedCode)) =>
-          val inlineEmbed = LenkeConverterModule.insertInline(cont.nid, url, embedCode.getOrElse(""), importStatus)
+        case Success(MigrationEmbedMeta(Some(url), Some(embedCode))) =>
+          val inlineEmbed = LenkeConverterModule.insertInline(cont.nid, url, embedCode, importStatus)
 
           inlineEmbed.map {
             case (embedTag, requiredLibraries, status) =>
