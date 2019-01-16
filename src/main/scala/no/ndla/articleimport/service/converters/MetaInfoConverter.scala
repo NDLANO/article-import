@@ -52,27 +52,28 @@ trait MetaInfoConverter {
                                                  typeFromMigration: ArticleType.Value,
                                                  importStatus: ImportStatus): (ArticleType.Value, ImportStatus) = {
       nids.flatMap(taxonomyForNid) match {
+        case Nil =>
+          (typeFromMigration, importStatus)
         case head :: Nil =>
           (head, importStatus)
-        case head :: tail :: Nil =>
+        case head :: tail =>
           val errorMsg =
-            s"Article with nids '${nids.mkString(", ")}' have multiple article types in taxonomy, using type from migration: '${typeFromMigration.toString}'."
+            s"Article with nids '${nids.mkString(", ")}' have multiple article types in taxonomy, using type: '${ArticleType.TopicArticle}'."
           logger.error(errorMsg)
           val updatedStatus = importStatus.addError(ImportException(nids.headOption.getOrElse(""), errorMsg))
-          (typeFromMigration, updatedStatus)
-        case _ =>
-          (typeFromMigration, importStatus)
+          (ArticleType.TopicArticle, updatedStatus)
       }
     }
 
-    private def taxonomyForNid(nid: String): Option[ArticleType.Value] =
+    private def taxonomyForNid(nid: String): Seq[ArticleType.Value] =
       (taxonomyApiClient.getResource(nid), taxonomyApiClient.getTopic(nid)) match {
-        case (Success(Some(_)), Success(None)) => Some(ArticleType.Standard)
-        case (Success(None), Success(Some(_))) => Some(ArticleType.TopicArticle)
-        case (Success(None), Success(None))    => None
+        case (Success(Some(_)), Success(None))    => Seq(ArticleType.Standard)
+        case (Success(None), Success(Some(_)))    => Seq(ArticleType.TopicArticle)
+        case (Success(Some(_)), Success(Some(_))) => Seq(ArticleType.Standard, ArticleType.TopicArticle)
+        case (Success(None), Success(None))       => Seq.empty
         case (_, _) =>
           logger.error(s"Could not fetch article type from taxonomy for $nid")
-          None
+          Seq.empty
       }
 
     private def combineAuthors(nodeToConvert: NodeToConvert, importStatus: ImportStatus) =
