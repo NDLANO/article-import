@@ -9,15 +9,15 @@ package no.ndla.articleimport.service.converters
 
 import com.typesafe.scalalogging.LazyLogging
 import no.ndla.articleimport.ArticleImportProperties.nodeTypeLink
-import no.ndla.articleimport.integration.ImageApiClient
+import no.ndla.articleimport.integration.{ImageApiClient, TaxonomyApiClient}
 import no.ndla.articleimport.model.api.ImportException
-import no.ndla.articleimport.model.domain._
-import no.ndla.mapping.License.{getLicenses, CC_BY_SA}
+import no.ndla.articleimport.model.domain.{ArticleType, _}
+import no.ndla.mapping.License.{CC_BY_SA, getLicenses}
 
 import scala.util.{Failure, Success, Try}
 
 trait MetaInfoConverter {
-  this: ImageApiClient =>
+  this: ImageApiClient with TaxonomyApiClient =>
 
   object MetaInfoConverter extends LazyLogging {
 
@@ -27,6 +27,8 @@ trait MetaInfoConverter {
       handleLicenses(nodeToConvert, importStatus).map {
         case (license, updatedStatus) =>
           val authors = combineAuthors(nodeToConvert, updatedStatus)
+          val (articleType, finalStatus) =
+            articleTypeFromTaxonomy(nodeToConvert.contents.map(_.nid), nodeToConvert.articleType, updatedStatus)
 
           (NodeWithConvertedMeta(
              titles = nodeToConvert.titles,
@@ -39,13 +41,40 @@ trait MetaInfoConverter {
              created = nodeToConvert.created,
              updated = nodeToConvert.updated,
              metaImages = getMetaImages(nodeToConvert),
-             articleType = nodeToConvert.articleType,
+             articleType = articleType,
              editorialKeywords = nodeToConvert.editorialKeywords
            ),
-           updatedStatus)
+           finalStatus)
       }
-
     }
+
+    private[service] def articleTypeFromTaxonomy(nids: Seq[String],
+                                                 typeFromMigration: ArticleType.Value,
+                                                 importStatus: ImportStatus): (ArticleType.Value, ImportStatus) = {
+      nids.flatMap(taxonomyForNid) match {
+        case Nil =>
+          (typeFromMigration, importStatus)
+        case head :: Nil =>
+          (head, importStatus)
+        case head :: tail =>
+          val errorMsg =
+            s"Article with nids '${nids.mkString(", ")}' have multiple article types in taxonomy, using type: '${ArticleType.TopicArticle}'."
+          logger.error(errorMsg)
+          val updatedStatus = importStatus.addError(ImportException(nids.headOption.getOrElse(""), errorMsg))
+          (ArticleType.TopicArticle, updatedStatus)
+      }
+    }
+
+    private def taxonomyForNid(nid: String): Seq[ArticleType.Value] =
+      (taxonomyApiClient.getResource(nid), taxonomyApiClient.getTopic(nid)) match {
+        case (Success(Some(_)), Success(None))    => Seq(ArticleType.Standard)
+        case (Success(None), Success(Some(_)))    => Seq(ArticleType.TopicArticle)
+        case (Success(Some(_)), Success(Some(_))) => Seq(ArticleType.Standard, ArticleType.TopicArticle)
+        case (Success(None), Success(None))       => Seq.empty
+        case (_, _) =>
+          logger.error(s"Could not fetch article type from taxonomy for $nid")
+          Seq.empty
+      }
 
     private def combineAuthors(nodeToConvert: NodeToConvert, importStatus: ImportStatus) =
       (nodeToConvert.authors ++ importStatus.nodeLocalContext.insertedAuthors).toSet
