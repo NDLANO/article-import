@@ -7,10 +7,12 @@
 
 package no.ndla.articleimport.service.converters
 
-import no.ndla.articleimport.integration.ConverterModule.{jsoupDocumentToString, stringToJsoupDocument}
+import java.util.UUID.randomUUID
+
+import no.ndla.articleimport.integration.ConverterModule.stringToJsoupDocument
 import no.ndla.articleimport.integration.{AudioApiClient, ConverterModule, ImageApiClient, LanguageContent}
 import no.ndla.articleimport.model.api.ImportException
-import no.ndla.articleimport.model.domain.{ImportStatus, RequiredLibrary}
+import no.ndla.articleimport.model.domain.{ArticleType, ImportStatus, RequiredLibrary}
 import no.ndla.articleimport.service.ExtractService
 import no.ndla.articleimport.service.converters.contentbrowser.{
   AudioConverterModule,
@@ -18,9 +20,9 @@ import no.ndla.articleimport.service.converters.contentbrowser.{
   ImageConverterModule,
   VideoConverterModule
 }
+import org.jsoup.nodes.TextNode
 
-import scala.collection.JavaConverters._
-import scala.util.{Failure, Success, Try}
+import scala.util.{Success, Try}
 
 trait VisualElementConverter {
   this: ExtractService
@@ -35,41 +37,60 @@ trait VisualElementConverter {
   object VisualElementConverter extends ConverterModule {
 
     def convert(content: LanguageContent, importStatus: ImportStatus): Try[(LanguageContent, ImportStatus)] = {
-      if (content.visualElement.isEmpty)
-        return Success((content, importStatus))
 
-      content.visualElement.flatMap(nodeIdToVisualElement) match {
-        case Some((visual, requiredLibs)) =>
-          val requiredLibraries = content.requiredLibraries ++ requiredLibs
-          Success(
-            content.copy(content = removeVisualElementFromContent(content.content, visual),
-                         visualElement = Some(visual),
-                         requiredLibraries = requiredLibraries),
-            importStatus
-          )
+      // Only 'topic-article's should attempt to extract visual element
+      val (newContent, newEmbed) =
+        if (importStatus.articleType == ArticleType.TopicArticle) contentAndVisualElementFromContent(content.content)
+        else (content.content, None)
+
+      content.visualElement match {
+        case Some(visualElementNodeId) =>
+          nodeIdToVisualElement(visualElementNodeId) match {
+            case Some((visual, requiredLibs)) =>
+              val requiredLibraries = content.requiredLibraries ++ requiredLibs
+              Success(content.copy(
+                        content = newContent,
+                        visualElement = Some(visual),
+                        requiredLibraries = requiredLibraries
+                      ),
+                      importStatus)
+            case None =>
+              val status = importStatus.addError(
+                ImportException(content.nid,
+                                s"Failed to convert visual element node ${content.visualElement.getOrElse("")}"))
+              val visual = newEmbed.getOrElse(HtmlTagGenerator.buildErrorContent("Innhold mangler."))
+              Success((content.copy(content = newContent, visualElement = Some(visual)), status))
+          }
         case None =>
-          Success(
-            (content.copy(visualElement = Some(HtmlTagGenerator.buildErrorContent("Innhold mangler."))),
-             importStatus.addError(
-               ImportException(content.nid,
-                               s"Failed to convert visual element node ${content.visualElement.getOrElse("")}")
-             )))
+          Success(content.copy(content = newContent, visualElement = newEmbed), importStatus)
       }
     }
 
-    private def removeVisualElementFromContent(content: String, visualElement: String): String = {
+    /** Attempts to extract any embed appearing before text returns (contentWithoutEmbed, extractedEmbed) */
+    private[service] def contentAndVisualElementFromContent(content: String): (String, Option[String]) = {
       val element = stringToJsoupDocument(content)
-      val visualEmbed =
-        stringToJsoupDocument(visualElement).select("embed").first()
-      element
-        .select("embed")
-        .asScala
-        .foreach(contentEmbed => {
-          if (contentEmbed.toString == visualEmbed.toString) {
-            contentEmbed.remove()
-          }
+      val firstEmbed = Option(element.select("embed").first())
+
+      val shouldExtract = firstEmbed match {
+        case Some(embed) =>
+          val uuidStr = randomUUID().toString
+          val textNode = new TextNode(uuidStr)
+          embed.before(textNode)
+          val embedIsBeforeText = element.text().startsWith(uuidStr)
+          textNode.remove()
+          embedIsBeforeText
+        case None => false
+      }
+
+      val extractedEmbed = if (shouldExtract) {
+        firstEmbed.map(e => {
+          val html = e.outerHtml()
+          e.remove()
+          html
         })
-      jsoupDocumentToString(element)
+      } else { None }
+
+      (element.html(), extractedEmbed)
     }
 
     private def nodeIdToVisualElement(nodeId: String): Option[(String, Seq[RequiredLibrary])] = {

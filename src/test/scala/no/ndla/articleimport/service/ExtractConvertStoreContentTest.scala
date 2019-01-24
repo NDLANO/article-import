@@ -50,6 +50,10 @@ class ExtractConvertStoreContentTest extends UnitSuite with TestEnvironment {
   val eCSService = new ExtractConvertStoreContent
 
   override def beforeEach: Unit = {
+    when(extractService.articleTypeFromTaxonomy(any[Seq[String]], any[ArticleType.Value], any[ImportStatus]))
+      .thenAnswer((i: InvocationOnMock) => {
+        (i.getArgument[ArticleType.Value](1), i.getArgument[ImportStatus](2))
+      })
     when(extractService.getNodeData(nodeId)).thenReturn(Success(sampleNode))
     when(extractService.getNodeData(nodeId2)).thenReturn(Success(sampleNode))
     when(extractService.getNodeType(nodeId2)).thenReturn(Some("fagstoff"))
