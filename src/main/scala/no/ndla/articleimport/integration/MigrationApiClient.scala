@@ -89,10 +89,12 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle],
                                    emneartikkelData: Seq[MigrationEmneArtikkelData]) {
 
   def asNodeToConvert(nodeId: String, tags: List[ArticleTag]): NodeToConvert = {
-    val articleType = nodeType.map(
-      nType =>
-        if (nType == "emneartikkel") ArticleType.TopicArticle
-        else ArticleType.Standard)
+    val articleType = nodeType
+      .map(
+        nType =>
+          if (nType == "emneartikkel") ArticleType.TopicArticle
+          else ArticleType.Standard)
+      .getOrElse(ArticleType.Standard)
 
     val licenseMapping = Map(
       "by" -> "CC-BY-4.0",
@@ -116,7 +118,7 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle],
     val lic = emptySomeToNone(license).flatMap(licenseMapping.get)
 
     val languageContents = asLanguageContents.map(c =>
-      c.copy(visualElement = if (articleType.contains(ArticleType.TopicArticle)) c.visualElement else None))
+      c.copy(visualElement = if (articleType == ArticleType.TopicArticle) c.visualElement else None))
 
     NodeToConvert(
       titles.map(x => x.asContentTitle),
@@ -128,7 +130,7 @@ case class MigrationMainNodeImport(titles: Seq[MigrationContentTitle],
       contentType.headOption.map(_.`type`).getOrElse("unknown"),
       contents.minBy(_.created).created,
       contents.maxBy(_.changed).changed,
-      articleType.getOrElse(ArticleType.Standard),
+      articleType,
       editorialKeywords
     )
   }

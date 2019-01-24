@@ -8,8 +8,9 @@
 package no.ndla.articleimport.controller
 
 import no.ndla.articleimport.auth.{Role, User}
-import no.ndla.articleimport.model.domain.ImportStatus
+import no.ndla.articleimport.model.domain.{ArticleType, ImportStatus}
 import no.ndla.articleimport.service._
+import org.json4s.ext.EnumNameSerializer
 import org.json4s.{DefaultFormats, Formats}
 
 import scala.util.{Failure, Success}
@@ -20,7 +21,7 @@ trait InternController {
 
   class InternController extends NdlaController {
 
-    protected implicit override val jsonFormats: Formats = DefaultFormats
+    protected implicit override val jsonFormats: Formats = DefaultFormats + new EnumNameSerializer(ArticleType)
     private val RoleDraftWrite = "drafts:write"
 
     post("/import/:external_id") {

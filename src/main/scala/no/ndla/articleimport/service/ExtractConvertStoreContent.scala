@@ -31,7 +31,7 @@ trait ExtractConvertStoreContent {
         extract(externalId) match {
           case Success((node, mainNodeId)) =>
             val allNodeIds = (mainNodeId +: node.contents.map(_.nid).toList).distinct // Make sure the mainNodeId is first
-            getConvertedNode(externalId, allNodeIds, node, status) match {
+            getConvertedNode(externalId, allNodeIds, node, status.withArticleType(node.articleType)) match {
               case Success(converted) => Success(converted)
               case Failure(ex) =>
                 logger.warn(s"Failed to import node with id $externalId. Deleting any previous version")
@@ -74,22 +74,27 @@ trait ExtractConvertStoreContent {
 
     private def getConvertedNode(externalId: String,
                                  allNodeIds: List[String],
-                                 node: NodeToConvert,
+                                 nodeToConvert: NodeToConvert,
                                  importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
+      // Derive articleType from taxonomy before converting since some converters behaves differently for different types.
+      val (taxonomyType, updatedStatus) =
+        extractService.articleTypeFromTaxonomy(allNodeIds, nodeToConvert.articleType, importStatus)
+      val node = nodeToConvert.copy(articleType = taxonomyType)
+
       for {
         // Generate an ID for the content before converting the node.
         // This ensures that cyclic dependencies between articles does not cause an infinite recursive import job
         _ <- generateNewIdIfFirstTimeImported(allNodeIds, node.nodeType)
         (convertedContent, updatedImportStatus) <- converterService.toDomainArticle(
           node,
-          importStatus.withNewNodeLocalContext())
+          updatedStatus.withNewNodeLocalContext())
         (content, storeImportStatus) <- store(convertedContent, allNodeIds, updatedImportStatus)
       } yield
         (content,
          storeImportStatus
            .addMessage(s"Successfully imported node $externalId: ${content.id}")
            .setArticleId(content.id)
-           .resetNodeLocalContext(importStatus.nodeLocalContext))
+           .resetNodeLocalContext(updatedStatus.nodeLocalContext))
 
     }
 

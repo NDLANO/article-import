@@ -15,7 +15,8 @@ case class ImportStatus(messages: Seq[String],
                         articleId: Option[Long] = None,
                         forceUpdateArticles: Boolean = false,
                         nodeLocalContext: NodeLocalImportStatus = NodeLocalImportStatus(),
-                        importId: Option[String] = None) {
+                        importId: Option[String] = None,
+                        articleType: ArticleType.Value = ArticleType.Standard) {
 
   def addMessage(message: String): ImportStatus =
     this.copy(messages = this.messages :+ message)
@@ -48,6 +49,8 @@ case class ImportStatus(messages: Seq[String],
 
   def addInsertedAuthors(authors: List[Author]): ImportStatus =
     this.copy(nodeLocalContext = this.nodeLocalContext.addInsertedAuthors(authors))
+
+  def withArticleType(articleType: ArticleType.Value): ImportStatus = this.copy(articleType = articleType)
 }
 
 object ImportStatus {
