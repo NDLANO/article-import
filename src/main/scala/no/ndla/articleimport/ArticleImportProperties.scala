@@ -17,6 +17,8 @@ import scala.util.Properties._
 import scala.util.{Failure, Success}
 
 object ArticleImportProperties extends LazyLogging {
+  val IsKubernetes: Boolean = envOrNone("NDLA_IS_KUBERNETES").isDefined
+
   val ApplicationName = "article-import"
   val SecretsFile = "article-api.secrets"
 
@@ -37,7 +39,7 @@ object ArticleImportProperties extends LazyLogging {
   val DraftHost = propOrElse("DRAFT_API_HOST", "draft-api.ndla-local")
   val AudioHost = propOrElse("AUDIO_API_HOST", "audio-api.ndla-local")
   val ImageHost = propOrElse("IMAGE_API_HOST", "image-api.ndla-local")
-  val ApiGatewayUrl = "api-gateway.ndla-local"
+  val ApiGatewayUrl = propOrElse("API_GATEWAY_HOST", "api-gateway.ndla-local")
 
   val nodeTypeBegrep: String = "begrep"
   val nodeTypeVideo: String = "video"
@@ -130,13 +132,11 @@ object ArticleImportProperties extends LazyLogging {
     propOrElse(key, throw new RuntimeException(s"Unable to load property $key"))
 
   def propOrElse(key: String, default: => String): String = {
-    secrets.get(key).flatten match {
-      case Some(secret) => secret
-      case None =>
-        envOrNone(key) match {
-          case Some(env) => env
-          case None      => default
-        }
+    envOrNone(key) match {
+      case Some(prop)            => prop
+      case None if !IsKubernetes => secrets.get(key).flatten.getOrElse(default)
+      case _                     => default
     }
   }
+
 }
