@@ -26,7 +26,7 @@ object ArticleImportProperties extends LazyLogging {
   val ContactEmail = "christergundersen@ndla.no"
   val Environment = propOrElse("NDLA_ENVIRONMENT", "local")
 
-  val AttachmentStorageName = s"$Environment.article-attachments.ndla"
+  val AttachmentStorageName = s"${Environment.replace('_', '-')}.article-attachments.ndla"
 
   val TopicAPIUrl =
     "http://api.topic.ndla.no/rest/v1/keywords/?filter[node]=ndlanode_"
