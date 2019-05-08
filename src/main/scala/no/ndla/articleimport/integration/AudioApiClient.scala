@@ -21,7 +21,7 @@ trait AudioApiClient {
     private val AudioMetaInternEndpoint =
       s"http://${ArticleImportProperties.AudioHost}/intern"
     private val AudioMetaFromExternalIdEndpoint =
-      s"$AudioMetaInternEndpoint/:external_id"
+      s"$AudioMetaInternEndpoint/external/:external_id"
     private val ImportAudioEndpoint =
       s"$AudioMetaInternEndpoint/import/:external_id"
     private val AudioHealthEndpoint =
