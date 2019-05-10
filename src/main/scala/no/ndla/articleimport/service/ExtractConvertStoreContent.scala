@@ -8,7 +8,7 @@
 package no.ndla.articleimport.service
 
 import com.typesafe.scalalogging.LazyLogging
-import no.ndla.articleimport.integration.{DraftApiClient, MigrationApiClient}
+import no.ndla.articleimport.integration.{DraftApiClient, ExplanationApiClient, MigrationApiClient}
 import no.ndla.articleimport.model.api.{ApiContent, ArticleStatus, ImportException, NotFoundException}
 import no.ndla.articleimport.model.api
 import no.ndla.articleimport.model.domain._
@@ -18,7 +18,7 @@ import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
 trait ExtractConvertStoreContent {
-  this: ExtractService with MigrationApiClient with ConverterService with DraftApiClient =>
+  this: ExtractService with MigrationApiClient with ExplanationApiClient with ConverterService with DraftApiClient =>
 
   val extractConvertStoreContent: ExtractConvertStoreContent
 
@@ -145,11 +145,7 @@ trait ExtractConvertStoreContent {
                       importStatus: ImportStatus): Try[(ApiContent, ImportStatus)] = {
       content match {
         case article: Article => storeArticle(article, nodeIds, importStatus)
-        case concept: Concept =>
-          storeConcept(concept, nodeIds) match {
-            case Success(con) => Success((con, importStatus))
-            case Failure(ex)  => Failure(ex)
-          }
+        case concept: Concept => storeConcept(concept, nodeIds).map(con => (con, importStatus))
       }
     }
 
@@ -211,17 +207,22 @@ trait ExtractConvertStoreContent {
     }
 
     private def storeConcept(concept: Concept, nodeIds: List[String]): Try[ApiContent] = {
-      val mainNodeId = nodeIds.headOption.getOrElse("")
-      val storedConcept =
-        draftApiClient.getConceptIdFromExternalId(mainNodeId).isDefined match {
-          case true  => draftApiClient.updateConcept(concept, nodeIds)
-          case false => draftApiClient.newConcept(concept, nodeIds)
-        }
-
-      storedConcept
-        .flatMap(c => draftApiClient.publishConcept(c.id))
-        .flatMap(_ => storedConcept)
+      explanationApiClient.createOrUpdateConcept(nodeIds, concept, "") // TODO: Subject
     }
+
+//    private def storeConcept(concept: Concept, nodeIds: List[String]): Try[ApiContent] = {
+//      // TODO: Convert this to call new explanation api
+//      val mainNodeId = nodeIds.headOption.getOrElse("")
+//      val storedConcept =
+//        draftApiClient.getConceptIdFromExternalId(mainNodeId).isDefined match {
+//          case true  => draftApiClient.updateConcept(concept, nodeIds)
+//          case false => draftApiClient.newConcept(concept, nodeIds)
+//        }
+//
+//      storedConcept
+//        .flatMap(c => draftApiClient.publishConcept(c.id))
+//        .flatMap(_ => storedConcept)
+//    }
 
     private def getSubjectIds(nodeId: String): Set[String] =
       migrationApiClient.getSubjectForNode(nodeId) match {
@@ -231,9 +232,10 @@ trait ExtractConvertStoreContent {
 
     private def generateNewIdIfFirstTimeImported(nodeIds: List[String], nodeType: String): Try[Long] = {
       nodeType match {
-        case `nodeTypeBegrep` =>
-          generateNewConceptIdIfExternalIdDoesNotExist(nodeIds)
-        case _ => generateNewArticleIdIfExternalIdDoesNotExist(nodeIds)
+        // Concepts are now stored in explanations-api.
+        // Given that concepts only can contain text there are no dangers of cyclic dependencies for concepts.
+        case `nodeTypeBegrep` => Success(-1)
+        case _                => generateNewArticleIdIfExternalIdDoesNotExist(nodeIds)
       }
     }
 
@@ -244,14 +246,6 @@ trait ExtractConvertStoreContent {
           draftApiClient
             .newEmptyArticle(nodeIds, getSubjectIds(mainNodeId))
             .map(_.id)
-        case Some(id) => Success(id)
-      }
-    }
-
-    private def generateNewConceptIdIfExternalIdDoesNotExist(nodeIds: List[String]): Try[Long] = {
-      val mainNodeId = nodeIds.headOption.getOrElse("")
-      draftApiClient.getConceptIdFromExternalId(mainNodeId) match {
-        case None     => draftApiClient.newEmptyConcept(nodeIds)
         case Some(id) => Success(id)
       }
     }

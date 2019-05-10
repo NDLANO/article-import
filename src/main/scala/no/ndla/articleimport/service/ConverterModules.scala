@@ -81,10 +81,11 @@ trait ConverterModules {
 
     if (exceptions.nonEmpty) {
       val failedNodeIds = nodeToConvert.contents.map(_.nid)
-      return Failure(ImportExceptions(failedNodeIds.toSet, errors = exceptions))
+      Failure(ImportExceptions(failedNodeIds.toSet, errors = exceptions))
+    } else {
+      Success((convertedNode, finalImportStatus))
     }
 
-    Success((convertedNode, finalImportStatus))
   }
 
 }

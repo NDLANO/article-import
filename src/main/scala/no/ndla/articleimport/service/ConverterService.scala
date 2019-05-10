@@ -39,15 +39,16 @@ trait ConverterService {
     def toDomainArticle(nodeToConvert: NodeToConvert, importStatus: ImportStatus): Try[(Content, ImportStatus)] = {
       val nodeIdsToImport = nodeToConvert.contents.map(_.nid).toSet
 
-      convert(nodeToConvert, maxConvertionRounds, importStatus.addVisitedNodes(nodeIdsToImport))
-        .flatMap { case (content, status) => postProcess(content, status) } match {
-        case Failure(f) =>
-          Failure(f)
+      val converted = convert(nodeToConvert, maxConvertionRounds, importStatus.addVisitedNodes(nodeIdsToImport))
+      val postProcessed = converted.flatMap { case (content, status) => postProcess(content, status) }
+
+      postProcessed match {
+        case Failure(f) => Failure(f)
         case Success((convertedContent, converterStatus)) if convertedContent.nodeType == nodeTypeBegrep =>
           Success((toDomainConcept(convertedContent), converterStatus))
         case Success((convertedContent, converterStatus)) =>
           MetaInfoConverter.convert(convertedContent, converterStatus).map {
-            case (converted, is) => (toDomainArticle(converted), is)
+            case (convertedWithMeta, is) => (toDomainArticle(convertedWithMeta), is)
           }
       }
     }
@@ -59,21 +60,20 @@ trait ConverterService {
         val message =
           "Maximum number of converter rounds reached; Some content might not be converted"
         logger.warn(message)
-        return Success((nodeToConvert, importStatus.copy(messages = importStatus.messages :+ message)))
-      }
-
-      val (updatedContent, updatedStatus) =
+        Success((nodeToConvert, importStatus.copy(messages = importStatus.messages :+ message)))
+      } else {
         executeConverterModules(nodeToConvert, importStatus) match {
-          case Failure(e) => return Failure(e)
-          case Success(s) => s
+          case Failure(e)                               => Failure(e)
+          case Success((updatedContent, updatedStatus)) =>
+            // If this converting round did not yield any changes to the content, this node is finished (case true)
+            // If changes were made during this conversion, we run the converters again (case false)
+            if (updatedContent == nodeToConvert)
+              Success((updatedContent, updatedStatus))
+            else
+              convert(updatedContent, maxRoundsLeft - 1, updatedStatus)
         }
-
-      // If this converting round did not yield any changes to the content, this node is finished (case true)
-      // If changes were made during this conversion, we run the converters again (case false)
-      updatedContent == nodeToConvert match {
-        case true  => Success((updatedContent, updatedStatus))
-        case false => convert(updatedContent, maxRoundsLeft - 1, updatedStatus)
       }
+
     }
 
     private def postProcess(nodeToConvert: NodeToConvert,
