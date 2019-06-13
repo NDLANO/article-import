@@ -5,10 +5,10 @@ val Scalatraversion = "2.6.3"
 val ScalaLoggingVersion = "3.9.0"
 val ScalaTestVersion = "3.0.5"
 val Log4JVersion = "2.11.1"
-val Jettyversion = "9.4.12.v20180830"
+val Jettyversion = "9.4.18.v20190429"
 val AwsSdkversion = "1.11.434"
 val MockitoVersion = "2.23.0"
-val JacksonVersion = "2.9.8"
+val JacksonVersion = "2.9.9"
 val Json4SVersion = "3.5.4"
 
 val appProperties = settingKey[Properties]("The application properties")
