@@ -9,7 +9,7 @@ val Jettyversion = "9.4.18.v20190429"
 val AwsSdkversion = "1.11.434"
 val MockitoVersion = "2.23.0"
 val JacksonVersion = "2.9.9.3"
-val Json4SVersion = "3.5.4"
+val Json4SVersion = "3.6.7"
 
 val appProperties = settingKey[Properties]("The application properties")
 
@@ -28,7 +28,7 @@ lazy val article_import = (project in file("."))
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     scalacOptions := Seq("-target:jvm-1.8", "-unchecked", "-deprecation", "-feature", "-Ypartial-unification"),
     libraryDependencies ++= Seq(
-      "ndla" %% "network" % "0.38",
+      "ndla" %% "network" % "0.42",
       "ndla" %% "mapping" % "0.10",
       "ndla" %% "validation" % "0.30",
       "joda-time" % "joda-time" % "2.10",

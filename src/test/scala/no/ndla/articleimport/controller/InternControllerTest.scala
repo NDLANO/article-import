@@ -12,6 +12,8 @@ import java.util.Date
 import no.ndla.articleimport.TestData._
 import no.ndla.articleimport.model.domain._
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
+import org.json4s.{DefaultFormats, Formats}
+import org.json4s.ext.EnumNameSerializer
 import org.json4s.native.Serialization._
 import org.scalatra.test.scalatest.ScalatraFunSuite
 import org.mockito.ArgumentMatchers.{eq => eqTo, _}
@@ -20,7 +22,7 @@ import org.mockito.Mockito._
 import scala.util.{Failure, Success, Try}
 
 class InternControllerTest extends UnitSuite with TestEnvironment with ScalatraFunSuite {
-  implicit val formats = org.json4s.DefaultFormats
+  implicit val formats: Formats = DefaultFormats + new EnumNameSerializer(ArticleType)
 
   val author = Author("forfatter", "Henrik")
 
