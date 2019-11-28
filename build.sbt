@@ -9,7 +9,7 @@ val Jettyversion = "9.4.18.v20190429"
 val AwsSdkversion = "1.11.434"
 val MockitoVersion = "2.23.0"
 val JacksonVersion = "2.9.9.3"
-val Json4SVersion = "3.5.4"
+val Json4SVersion = "3.6.7"
 
 val appProperties = settingKey[Properties]("The application properties")
 
