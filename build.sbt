@@ -8,7 +8,7 @@ val Log4JVersion = "2.11.1"
 val Jettyversion = "9.4.18.v20190429"
 val AwsSdkversion = "1.11.434"
 val MockitoVersion = "2.23.0"
-val JacksonVersion = "2.9.10.2"
+val JacksonVersion = "2.10.2"
 val Json4SVersion = "3.6.7"
 
 val appProperties = settingKey[Properties]("The application properties")
@@ -83,7 +83,8 @@ fmt := {
 assembly / assemblyJarName := "article-import.jar"
 assembly / mainClass := Some("no.ndla.articleimport.JettyLauncher")
 assembly / assemblyMergeStrategy := {
-  case "mime.types" => MergeStrategy.filterDistinctLines
+  case "module-info.class" => MergeStrategy.discard
+  case "mime.types"        => MergeStrategy.filterDistinctLines
   case PathList("org", "joda", "convert", "ToString.class") =>
     MergeStrategy.first
   case PathList("org", "joda", "convert", "FromString.class") =>
