@@ -5,3 +5,8 @@
 **/.DS_Store
 *.iml
 .env
+
+.bloop/
+.metals/
+project/metals.sbt
+
