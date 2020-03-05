@@ -8,7 +8,7 @@
 package no.ndla.articleimport.service.converters.contentbrowser
 
 import org.jsoup.nodes.Element
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.matching.Regex
 
 trait ContentBrowser {

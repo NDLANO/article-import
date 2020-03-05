@@ -33,7 +33,7 @@ case class Article(id: Option[Long],
                    editorialKeywords: Seq[String])
     extends Content {
   lazy val supportedLanguages: Set[String] =
-    (content union title union tags union visualElement union introduction union metaDescription)
+    (content concat title concat tags concat visualElement concat introduction concat metaDescription)
       .map(_.language)
       .toSet
 }
@@ -60,5 +60,5 @@ case class Concept(id: Option[Long],
                    updated: Date)
     extends Content {
   lazy val supportedLanguages: Set[String] =
-    (content union title).map(_.language).toSet
+    (content concat title).map(_.language).toSet
 }

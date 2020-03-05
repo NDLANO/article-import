@@ -13,7 +13,7 @@ import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.TagAttributes.XMLNsAttribute
 import org.jsoup.nodes.Element
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.{Success, Try}
 
 object MathMLConverter extends ConverterModule {

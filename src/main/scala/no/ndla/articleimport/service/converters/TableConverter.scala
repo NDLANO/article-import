@@ -12,7 +12,7 @@ import no.ndla.articleimport.integration.{ConverterModule, LanguageContent}
 import no.ndla.articleimport.model.domain.ImportStatus
 import org.jsoup.nodes.Element
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.{Success, Try}
 
 object TableConverter extends ConverterModule {
