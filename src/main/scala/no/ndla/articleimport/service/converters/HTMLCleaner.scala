@@ -17,7 +17,7 @@ import org.apache.commons.text.translate.{AggregateTranslator, EntityArrays, Loo
 import org.jsoup.nodes.{Element, Node, TextNode}
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.{Success, Try}
 
 trait HTMLCleaner {
@@ -76,14 +76,14 @@ trait HTMLCleaner {
       element.select("aside h2").asScala.foreach(_.tagName("h1"))
     }
 
-    private def convertH3sToH2s(element: Element) {
+    private def convertH3sToH2s(element: Element): Unit = {
       if (element.select("h2").size() == 0)
         element.select("h3").asScala.foreach(_.tagName("h2"))
     }
 
-    private def unwrapDivsAroundDetailSummaryBox(element: Element) {
+    private def unwrapDivsAroundDetailSummaryBox(element: Element): Unit = {
       @tailrec
-      def unwrapNestedDivs(detailsElem: Element) {
+      def unwrapNestedDivs(detailsElem: Element): Unit = {
         if (detailsElem.parent.tagName == "div" && detailsElem.siblingElements.size == 0) {
           detailsElem.parent.unwrap()
           unwrapNestedDivs(detailsElem)
@@ -104,7 +104,7 @@ trait HTMLCleaner {
         .foreach(_.unwrap)
     }
 
-    private def moveEmbedsOutOfPTags(element: Element) {
+    private def moveEmbedsOutOfPTags(element: Element): Unit = {
       val embedsThatShouldNotBeInPTags = Set(
         ResourceType.Audio,
         ResourceType.Brightcove,
@@ -132,7 +132,7 @@ trait HTMLCleaner {
         })
     }
 
-    private def mergeTwoFirstSectionsIfFeasible(el: Element) {
+    private def mergeTwoFirstSectionsIfFeasible(el: Element): Unit = {
       val sections = el.select("section").asScala
 
       if (sections.size < 2)
@@ -219,7 +219,7 @@ trait HTMLCleaner {
         .flatMap(tag => HtmlTagRules.removeIllegalAttributes(tag, HtmlTagRules.legalAttributesForTag(tag.tagName)))
     }
 
-    private def removeComments(node: Node) {
+    private def removeComments(node: Node): Unit = {
       var i = 0
 
       while (i < node.childNodeSize()) {
@@ -255,7 +255,7 @@ trait HTMLCleaner {
     // Since jsoup does not provide a way to remove &nbsp; from a tag, but not its children
     // We first replace it with a placeholder to then replace replace the placeholder with &nbsp;
     // in tags where nbsp's are allowed.
-    private def removeNbsp(el: Element) {
+    private def removeNbsp(el: Element): Unit = {
       el.select("*")
         .select("mo")
         .asScala
@@ -274,7 +274,7 @@ trait HTMLCleaner {
       val paragraph = if (el.tagName == "p") el else el.parent
 
       if (paragraph.select("strong").text == paragraph.text)
-        paragraph.select("strong").asScala
+        paragraph.select("strong").asScala.toSeq
       else
         Seq(el)
     }
@@ -383,7 +383,7 @@ trait HTMLCleaner {
         } else {
           ingressTexts.foreach(
             t =>
-              findElementWithText(el.select("p").asScala, "strong", t)
+              findElementWithText(el.select("p").asScala.toSeq, "strong", t)
                 .map(_.remove))
           removeEmptyTags(el)
           Some(ingressText)
@@ -398,7 +398,7 @@ trait HTMLCleaner {
 
     val NodeTypesToGroupTogether = "em" :: "#text" :: "math" :: "strong" :: Nil
 
-    private def wrapThingsInP(nodes: Seq[Node]) {
+    private def wrapThingsInP(nodes: Seq[Node]): Unit = {
       val grouped = new Element("p")
 
       val firstNonTextElementIdx = nodes.indexWhere(
@@ -424,7 +424,7 @@ trait HTMLCleaner {
 
         while (firstTextNodeIdx > -1) {
           val childNodes = section.childNodes().asScala
-          wrapThingsInP(childNodes.drop(firstTextNodeIdx))
+          wrapThingsInP(childNodes.drop(firstTextNodeIdx).toSeq)
         }
       })
 
@@ -440,7 +440,7 @@ trait HTMLCleaner {
       element
     }
 
-    private def unwrapNestedDivs(child: Element) {
+    private def unwrapNestedDivs(child: Element): Unit = {
       if (child.tagName() == "div" && child.siblingElements.size == 0) {
         val firstChild = Option(child.children.first)
         child.unwrap()

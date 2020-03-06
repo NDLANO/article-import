@@ -7,6 +7,7 @@
 
 package no.ndla.articleimport.service.converters.contentbrowser
 
+import com.typesafe.scalalogging.Logger
 import no.ndla.articleimport.{TestData, TestEnvironment, UnitSuite}
 import no.ndla.articleimport.integration.MigrationEmbedMeta
 import no.ndla.articleimport.model.api.ImportException
@@ -313,8 +314,11 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
     when(migrationApiClient.getNodeEmbedData).thenReturn(
       memoizeMockGetNodeEmbedData(
         Success(MigrationEmbedMeta(Some("http://livestream.com/video/123"), Some(s"<iframe src='http://$src'>")))))
-    val lenkeConverterModule = spy(LenkeConverterModule)
+
+    val lenkeConverterModule = spy(LenkeConverterModule, lenient = true)
+
     when(lenkeConverterModule.checkAvailability(any[String])).thenReturn(Left(Some(errorResponse)))
+
     val Success((result, _, status)) = lenkeConverterModule.convert(content, ImportStatus.empty)
     result should be(s"""<embed data-height="" data-resource="iframe" data-url="https://$src" data-width="" />""")
     status.errors should be(
@@ -338,7 +342,7 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
   }
 
   test("youtube and youtu.be executes the same function and yields correct results") {
-    val lenkeConverterModule = spy(LenkeConverterModule)
+    val lenkeConverterModule = spy(LenkeConverterModule, lenient = true)
     val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
     val embedCode =
       "<iframe width=\"640\" height=\"360\" src=\"https://www.youtube.com/embed/eW5XdFqeTW4?showinfo=0&start=5&end=167\" frameborder=\"0\" allowfullscreen></iframe>"
@@ -348,7 +352,7 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
 
     when(migrationApiClient.getNodeEmbedData)
       .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(url), Some(embedCode)))))
-      .thenReturn(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(url2), Some(embedCode)))))
+      .andThen(memoizeMockGetNodeEmbedData(Success(MigrationEmbedMeta(Some(url2), Some(embedCode)))))
 
     val Success((result, _, _)) = lenkeConverterModule.convert(content, ImportStatus.empty)
     result should be(
@@ -362,7 +366,7 @@ class LenkeConverterModuleTest extends UnitSuite with TestEnvironment {
   }
 
   test("youtube and youtu.be urls should keep rel=0 query parameter") {
-    val lenkeConverterModule = spy(LenkeConverterModule)
+    val lenkeConverterModule = spy(LenkeConverterModule, lenient = true)
     val content = TestData.contentBrowserWithFields(List.empty, "nid" -> nodeId, "insertion" -> "inline")
     val embedCode =
       "<iframe width=\"640\" height=\"360\" src=\"https://www.youtube.com/embed/eW5XdFqeTW4?rel=0&showinfo=0&start=5&rel=0&denna=nopls&end=167\" frameborder=\"0\" allowfullscreen></iframe>"

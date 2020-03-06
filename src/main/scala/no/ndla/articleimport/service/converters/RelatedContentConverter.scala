@@ -155,7 +155,7 @@ trait RelatedContentConverter {
         .getNodeData(nid)
         .flatMap(node => {
           // Convert to stream so we only to api calls if necessary
-          val taxonomyResponses = node.contents.toStream.map(_.nid).map(existsInTaxonomy)
+          val taxonomyResponses = node.contents.to(LazyList).map(_.nid).map(existsInTaxonomy)
 
           taxonomyResponses
             .collectFirst { case Success(exists) if exists              => Success(exists) } // Finds if the node is in taxonomy

@@ -14,7 +14,7 @@ import no.ndla.articleimport.model.domain.ImportStatus
 import no.ndla.validation.{TagAttributes, TextValidator}
 import org.jsoup.nodes.Element
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.{Success, Try}
 
 trait SimpleTagConverter {
@@ -57,7 +57,7 @@ trait SimpleTagConverter {
          importStatus.addErrors(errorMessages.map(err => ImportException(content.nid, err)))))
     }
 
-    def convertDivs(el: Element) {
+    def convertDivs(el: Element): Unit = {
       for (el <- el.select("div").asScala) {
         el.className() match {
           case "right"     => replaceTag(el, "aside")
@@ -78,7 +78,7 @@ trait SimpleTagConverter {
       }
     }
 
-    def convertHeadings(el: Element) {
+    def convertHeadings(el: Element): Unit = {
       for (el <- el.select("h1, h2, h3, h4, h5, h6").asScala) {
         el.className() match {
           case "frame" => replaceTagWithClass(el, "div", "c-bodybox")
@@ -87,7 +87,7 @@ trait SimpleTagConverter {
       }
     }
 
-    private def convertPres(el: Element) {
+    private def convertPres(el: Element): Unit = {
       for (el <- el.select("pre").asScala) {
         el.html("<code>" + el.html() + "</code>")
       }
@@ -148,7 +148,7 @@ trait SimpleTagConverter {
       t == Character.UnicodeScript.HAN || (t == Character.UnicodeScript.COMMON && includeCommon)
     }
 
-    private def setLanguageParameterIfPresent(element: Element) {
+    private def setLanguageParameterIfPresent(element: Element): Unit = {
       element
         .select("span")
         .asScala
@@ -161,7 +161,7 @@ trait SimpleTagConverter {
         })
     }
 
-    private def handle_hide(el: Element) {
+    private def handle_hide(el: Element): Unit = {
       replaceTag(el, "details")
       el.select("a.re-collapse").remove()
       val details = el.select("div.details").html() // save content
@@ -171,12 +171,12 @@ trait SimpleTagConverter {
       el.append(details)
     }
 
-    private def replaceTagWithClass(el: Element, replacementTag: String, className: String) {
+    private def replaceTagWithClass(el: Element, replacementTag: String, className: String): Unit = {
       replaceTag(el, replacementTag)
       el.addClass(className)
     }
 
-    private def replaceTag(el: Element, replacementTag: String) {
+    private def replaceTag(el: Element, replacementTag: String): Unit = {
       el.tagName(replacementTag)
       el.removeAttr("class")
     }

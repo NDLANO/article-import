@@ -27,7 +27,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
   val relatedContent2 = MigrationRelatedContent("5678", "Palma", "uri", 1)
   val languageContent = TestData.sampleContent.copy(relatedContent = Seq(relatedContent1, relatedContent2))
 
-  override def beforeEach() {
+  override def beforeEach(): Unit = {
     when(extractService.getNodeType("1234")).thenReturn(Some("fagstoff"))
     when(extractService.getNodeType("5678")).thenReturn(Some("fagstoff"))
     when(taxonomyApiClient.getResource(any[String])).thenReturn(Success(Some(TestData.sampleTaxonomyResource)))
@@ -44,11 +44,9 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
 
   test("convert should insert a new section with an related-content embed tag") {
     val origContent = "<section><h1>hmm</h1></section>"
-    when(
-      extractConvertStoreContent
-        .processNode(any[String], any[ImportStatus]))
+    when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1: Long), ImportStatus.empty)))
-      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
+      .andThen(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
 
     val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="1" $DataResource="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="2" $DataResource="$RelatedContent"></div></section>"""
 
@@ -62,7 +60,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       .thenAnswer((i: InvocationOnMock) => {
         Success((TestData.sampleApiConcept.copy(id = 1), i.getArgument[ImportStatus](1)))
       })
-      .thenAnswer((i: InvocationOnMock) => {
+      .andThenAnswer((i: InvocationOnMock) => {
         Success((TestData.sampleApiArticle.copy(id = 2), i.getArgument[ImportStatus](1)))
       })
 
@@ -91,7 +89,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       .thenAnswer((i: InvocationOnMock) => {
         Success((TestData.sampleApiArticle.copy(id = 1), i.getArgument[ImportStatus](1)))
       })
-      .thenAnswer((i: InvocationOnMock) => {
+      .andThenAnswer((i: InvocationOnMock) => {
         Success((TestData.sampleApiArticle.copy(id = 2), i.getArgument[ImportStatus](1)))
       })
 
@@ -174,7 +172,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
 
     when(extractConvertStoreContent.processNode(any[String], any[ImportStatus]))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1), ImportStatus.empty)))
-      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
+      .andThen(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
 
     val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag $DataArticleId="1" $DataResource="$RelatedContent"></div></section>"""
 
@@ -230,7 +228,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       extractConvertStoreContent
         .processNode(any[String], any[ImportStatus]))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1: Long), ImportStatus.empty)))
-      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
+      .andThen(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
 
     val expectedContent = origContent + s"""<section><div data-type="$RelatedContent"><$ResourceHtmlEmbedTag data-resource="$RelatedContent" $DataTitle="$title" $DataUrl="$url"></div></section>"""
 
@@ -251,7 +249,7 @@ class RelatedContentConverterTest extends UnitSuite with TestEnvironment {
       extractConvertStoreContent
         .processNode(any[String], any[ImportStatus]))
       .thenReturn(Success((TestData.sampleApiArticle.copy(id = 1: Long), ImportStatus.empty)))
-      .thenReturn(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
+      .andThen(Success((TestData.sampleApiArticle.copy(id = 2), ImportStatus.empty)))
 
     when(extractService.getNodeType(relatedNotMainNid)).thenReturn(Some("fagstoff"))
 

@@ -16,7 +16,7 @@ import no.ndla.articleimport.service._
 import no.ndla.articleimport.service.converters._
 import no.ndla.articleimport.service.converters.contentbrowser._
 import no.ndla.network.NdlaClient
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.scalatest.MockitoSugar
 
 trait TestEnvironment
     extends LazyLogging

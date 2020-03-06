@@ -14,7 +14,7 @@ import no.ndla.validation.TagAttributes
 import org.jsoup.nodes.{Element, TextNode}
 
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.{Success, Try}
 
 trait FileDivConverter {
