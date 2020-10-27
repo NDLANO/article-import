@@ -4,8 +4,8 @@ val Scalaversion = "2.13.1"
 val Scalatraversion = "2.7.0"
 val ScalaLoggingVersion = "3.9.2"
 val ScalaTestVersion = "3.1.1"
-val Log4JVersion = "2.11.1"
-val Jettyversion = "9.4.27.v20200227"
+val Log4JVersion = "2.13.3"
+val Jettyversion = "9.4.33.v20201020"
 val AwsSdkversion = "1.11.434"
 val MockitoVersion = "1.11.4"
 val JacksonVersion = "2.10.2"
@@ -18,6 +18,13 @@ appProperties := {
   IO.load(prop, new File("build.properties"))
   prop
 }
+
+// Sometimes we override transitive dependencies because of vulnerabilities, we put these here
+val vulnerabilityOverrides = Seq(
+  "com.fasterxml.jackson.core" % "jackson-databind" % JacksonVersion,
+  "commons-codec" % "commons-codec" % "1.14",
+  "org.apache.httpcomponents" % "httpclient" % "4.5.13"
+)
 
 lazy val article_import = (project in file("."))
   .settings(
@@ -43,8 +50,6 @@ lazy val article_import = (project in file("."))
       "org.apache.logging.log4j" % "log4j-api" % Log4JVersion,
       "org.apache.logging.log4j" % "log4j-core" % Log4JVersion,
       "org.apache.logging.log4j" % "log4j-slf4j-impl" % Log4JVersion,
-      "com.fasterxml.jackson.core" % "jackson-databind" % JacksonVersion,
-      "com.fasterxml.jackson.core" % "jackson-databind" % JacksonVersion, // Overriding jackson-databind used in dependencies because of https://app.snyk.io/vuln/SNYK-JAVA-COMFASTERXMLJACKSONCORE-72884
       "org.scalaj" %% "scalaj-http" % "2.4.2",
       "org.jsoup" % "jsoup" % "1.11.3",
       "io.lemonlabs" %% "scala-uri" % "1.5.1",
@@ -54,11 +59,10 @@ lazy val article_import = (project in file("."))
       "org.mockito" %% "mockito-scala-scalatest" % MockitoVersion % "test",
       "org.apache.commons" % "commons-text" % "1.2",
       "org.typelevel" %% "cats-core" % "2.1.1",
-      "log4j" % "log4j" % "1.2.16",
       "net.bull.javamelody" % "javamelody-core" % "1.74.0",
       "org.jrobin" % "jrobin" % "1.5.9",
       "com.amazonaws" % "aws-java-sdk-cloudwatch" % AwsSdkversion
-    )
+    ) ++ vulnerabilityOverrides
   )
   .enablePlugins(DockerPlugin)
   .enablePlugins(JettyPlugin)
